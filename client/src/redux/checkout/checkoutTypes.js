@@ -1,0 +1,2 @@
+export const ADD_DETAILS = "ADD_DETAILS"
+export const DETAILS_FROM_DB = "DETAILS_FROM_DB"
