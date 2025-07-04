@@ -47,7 +47,9 @@ function NavBar() {
         // console.log(e.target.id);
         // console.log(e.currentTarget.id);
 
-        const navTo = e.target.id === "orders" ? "/my-orders" : "/"
+        const navTo = e.target.id === "orders" ? "/my-orders" :
+                    e.target.id === "wishlist" ? "/my-wishlist" :
+                    "/"
         
         if(!userState.userName){
             navigate("/login", {state: navTo})
@@ -58,7 +60,7 @@ function NavBar() {
             window.location.href = '/';
         }
         else{
-            navigate("/my-orders")
+            navigate(navTo)
         }
     }
 
@@ -242,6 +244,7 @@ function NavBar() {
                             >
                                 <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem>
                                 <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
+                                <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem>
                             </Menu>
                     </Box>
                 </Toolbar>

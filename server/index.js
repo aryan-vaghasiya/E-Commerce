@@ -7,6 +7,7 @@ const cartRoutes = require("./routes/cartRoutes")
 const checkoutRoutes = require("./routes/checkoutRoutes")
 const orderRoutes = require("./routes/orderRoutes")
 const productRoutes = require("./routes/productRoutes")
+const wishlistRoutes = require("./routes/wishlistRoutes")
 
 const app = express();
 const port = 3000;
@@ -23,6 +24,7 @@ app.use("/products", productRoutes);
 app.use("/my-orders", verifyToken, orderRoutes);
 app.use("/checkout", checkoutRoutes);
 app.use("/cart", verifyToken, cartRoutes);
+app.use("/wishlist", verifyToken, wishlistRoutes);
 
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);

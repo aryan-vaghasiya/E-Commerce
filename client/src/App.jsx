@@ -19,6 +19,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { store, persistor } from './redux/store'
 import ProductsSearched from './components/ProductsSearched'
 import Signup from './components/Signup'
+import MyWishlist from './components/MyWishlist'
 
 function App() {
 
@@ -39,6 +40,7 @@ function App() {
             <Route path='/login' element={<Login />} />
             <Route path='/signup' element={<Signup />} />
             <Route path='/my-orders' element={<MyOrders />} />
+            <Route path='/my-wishlist' element={<MyWishlist />} />
           </Routes>
         </PersistGate>
       </Provider>

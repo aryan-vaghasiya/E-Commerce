@@ -12,6 +12,7 @@ import { searchReducer } from "./search/searchReducer"
 
 import { persistStore, persistReducer } from "redux-persist"
 import storage from "redux-persist/lib/storage"
+import { wishlistReducer } from "./wishlist/wishlistReducer"
 // import getStorage from "redux-persist/lib/storage/getStorage"
 
 const persistConfig = {
@@ -21,7 +22,7 @@ const persistConfig = {
     // whitelist: ["userReducer", "detailsReducer"]
 }
 
-const rootReducer = combineReducers({productReducer, cartReducer, userReducer, orderReducer, detailsReducer, snackbarReducer, searchReducer})
+const rootReducer = combineReducers({productReducer, cartReducer, userReducer, orderReducer, detailsReducer, snackbarReducer, searchReducer, wishlistReducer})
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 

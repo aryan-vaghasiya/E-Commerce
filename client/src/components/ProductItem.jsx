@@ -1,4 +1,4 @@
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { addToCart } from '../redux/cart/cartActions'
 import { Link } from 'react-router'
 
@@ -16,8 +16,12 @@ import Alert from '@mui/material/Alert'
 import { showSnack } from '../redux/snackbar/snackbarActions'
 import Skeleton from '@mui/material/Skeleton'
 import loadingImg from "../assets/loading-img.jpg"
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { addToWishlist, addWishlistDb, removeFromWishlist } from '../redux/wishlist/wishlistActions'
 
 import styled from "styled-components";
+import IconButton from '@mui/material/IconButton'
 
 export const ButtonBlue = styled.button`
 background-color: ${props => props.$variant === "contained" ? "#1976d2" : "white"};
@@ -41,10 +45,34 @@ transform: scale(0.95)
 
 function ProductItem({product, loading}) {
     const dispatch = useDispatch()
+    const [wishlisted, setWishlisted] = useState(false)
+    const wishlistState = useSelector(state => state.wishlistReducer)
+    const userState = useSelector(state => state.userReducer)
+    // console.log(product);
+    
+    // const included = wishlistState.includes(product.id)
+    // console.log(included);
+    
 
     const handleAddToCart = () => {
         dispatch(addToCart(product))
         // dispatch(showSnack({message: "Item added to Cart", severity: "success"}))
+    }
+
+    const handleWishlist = () => {
+        if(userState.userName){
+            
+            if(!wishlisted){
+                dispatch(addWishlistDb(product.id))
+            }
+            else{
+                dispatch(removeFromWishlist(product.id))
+            }
+            setWishlisted(prev => !prev)
+        }
+        else{
+            dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
+        }
     }
 
     return (
@@ -97,6 +125,16 @@ function ProductItem({product, loading}) {
                             <Button variant='outlined' sx={{width: "100%", mt: 1}}
                                 onClick={handleAddToCart}
                             >Add to Cart</Button>
+                            {/* <IconButton></IconButton> */}
+                            <Button variant='outlined' sx={{mt: 1}} onClick={handleWishlist}>
+                                {
+                                    // wishlisted?
+                                    wishlistState.includes(product.id)?
+                                    <FavoriteIcon></FavoriteIcon>
+                                    :
+                                    <FavoriteBorderIcon></FavoriteBorderIcon>
+                                }
+                            </Button>
                         </CardActions>
                         </CardContent>
                         </Card>
