@@ -17,6 +17,7 @@ import Alert from '@mui/material/Alert'
 import { fetchOrders } from '../redux/order/orderActions'
 import { fetchDetails } from '../redux/checkout/checkoutActions'
 import { useState } from 'react'
+import { getFullWishlist } from '../redux/wishlist/wishlistActions'
 
 function Login() {
     // const [signup, setSignup] = useState(false)
@@ -61,6 +62,7 @@ function Login() {
             dispatch(fetchCart(token))
             dispatch(fetchOrders(token))
             dispatch(fetchDetails(token))
+            dispatch(getFullWishlist(token))
             navigate(fromPath, { replace: true })
         }
         else{

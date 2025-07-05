@@ -33,7 +33,7 @@ export const addToCart = (product) => {
         const token = getState().userReducer.token
         if(!token){
             dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
-            console.log("Please Login");
+            // console.log("Please Login");
             return 
         }
         // console.log(token);

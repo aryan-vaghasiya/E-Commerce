@@ -18,9 +18,13 @@ import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { faL } from '@fortawesome/free-solid-svg-icons'
 import Skeleton from '@mui/material/Skeleton'
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
 import styled from 'styled-components'
 import { ButtonBlue } from './ProductItem'
+import { addWishlistDb, removeWishlistDb } from '../redux/wishlist/wishlistActions'
+import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 
 const ButtonRed = styled(ButtonBlue)`
 background-color: red;
@@ -30,8 +34,12 @@ color: white;
 function ProductPage() {
 
     const [imgIndex, setImgIndex] = useState(0)
+    // const [wishlisted, setWishlisted] = useState(false)
     const dispatch = useDispatch()
     const navigate = useNavigate()
+    const wishlistState = useSelector(state => state.wishlistReducer)
+    const userState = useSelector(state => state.userReducer)
+    const snackbarState = useSelector((state) => state.snackbarReducer)
 
     const { productId } = useParams()
     // const products = useSelector(state => state.productReducer.products)
@@ -54,17 +62,36 @@ function ProductPage() {
     // console.log(product);
 
     const handleBuyNow = () => {
-        dispatch(addToCart(product))
-        navigate("/checkout")
+        if(userState.userName){
+            dispatch(addToCart(product))
+            navigate("/checkout")
+        }
+        dispatch(showSnack({message: "Please Login to Buy", severity: "warning"}))
     }
 
     const handleAddToCart = () => {
-        setSnack(true)
+        // setSnack(true)
         dispatch(addToCart(product))
     }
 
     const handleClose = () => {
         setSnack(false)
+    }
+
+    const handleWishlist = () => {
+        if(userState.userName){
+            if(!wishlistState.products.some(item => item.id === product.id)){
+                dispatch(addWishlistDb(product))
+            }
+            else{
+                dispatch(removeWishlistDb(product))
+            }
+            // setWishlisted(prev => !prev)
+            console.log(wishlistState.products.includes({id: product.id}));
+        }
+        else{
+            dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
+        }
     }
 
 
@@ -77,7 +104,7 @@ function ProductPage() {
                 product ?
                     (
                         <Card sx={{ display: "inline-flex", width: "90%" }}>
-                            {
+                            {/* {
                                 snack ?
                                 <Snackbar
                                 open={snack}
@@ -94,7 +121,21 @@ function ProductPage() {
                             </Snackbar>
                             :
                             null
-                            }
+                            } */}
+
+                            <Snackbar
+                                open={snackbarState.show}
+                                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                                autoHideDuration={1000}
+                                onClose={() => dispatch(hideSnack())}
+                                sx={{
+                                    '&.MuiSnackbar-root': { top: '70px' },
+                                }}
+                            >
+                                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                                    {snackbarState.message}
+                                </Alert>
+                            </Snackbar>
                             
                             <Box>
                                 <Card sx={{ mb: "auto", position: "relative", mt: 2, mx: 3 }}>
@@ -104,6 +145,17 @@ function ProductPage() {
                                         image={product.images[imgIndex]}
                                         alt="Product Image"
                                     />
+                                    <IconButton
+                                        sx={{ position: "absolute", top: "7%", right: 12, transform: "translateY(-50%)" }}
+                                        onClick={handleWishlist}
+                                    >
+                                        {
+                                        wishlistState.products.some(item => item.id === product.id)?
+                                        <FavoriteIcon color='primary'></FavoriteIcon>
+                                        :
+                                        <FavoriteBorderIcon color='primary'></FavoriteBorderIcon>
+                                        }
+                                    </IconButton>
                                     <IconButton
                                         onClick={() => setImgIndex((prev) => (prev - 1 + product.images.length) % product.images.length)}
                                         color='primary'

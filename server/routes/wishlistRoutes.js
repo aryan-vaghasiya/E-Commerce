@@ -4,7 +4,7 @@ const router = express.Router();
 const wishlistController = require("../controllers/wishlistController");
 
 router.post("/add", wishlistController.addWishlistItem);
-// router.post("/remove", );
-// router.get("/get-cart", cartController.getCartItems);
+router.post("/remove", wishlistController.removeWishlistItem);
+router.get("/get-wishlist", wishlistController.getAllWishlist);
 
 module.exports = router;

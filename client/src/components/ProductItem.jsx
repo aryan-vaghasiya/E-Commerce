@@ -18,7 +18,7 @@ import Skeleton from '@mui/material/Skeleton'
 import loadingImg from "../assets/loading-img.jpg"
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import { addToWishlist, addWishlistDb, removeFromWishlist } from '../redux/wishlist/wishlistActions'
+import { addToWishlist, addWishlistDb, removeFromWishlist, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 
 import styled from "styled-components";
 import IconButton from '@mui/material/IconButton'
@@ -45,7 +45,7 @@ transform: scale(0.95)
 
 function ProductItem({product, loading}) {
     const dispatch = useDispatch()
-    const [wishlisted, setWishlisted] = useState(false)
+    // const [wishlisted, setWishlisted] = useState(false)
     const wishlistState = useSelector(state => state.wishlistReducer)
     const userState = useSelector(state => state.userReducer)
     // console.log(product);
@@ -61,14 +61,14 @@ function ProductItem({product, loading}) {
 
     const handleWishlist = () => {
         if(userState.userName){
-            
-            if(!wishlisted){
-                dispatch(addWishlistDb(product.id))
+            if(!wishlistState.products.some(item => item.id === product.id)){
+                dispatch(addWishlistDb(product))
             }
             else{
-                dispatch(removeFromWishlist(product.id))
+                dispatch(removeWishlistDb(product))
             }
-            setWishlisted(prev => !prev)
+            // setWishlisted(prev => !prev)
+            console.log(wishlistState.products.includes({id: product.id}));
         }
         else{
             dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
@@ -86,7 +86,10 @@ function ProductItem({product, loading}) {
                                 <Skeleton variant='text' sx={{fontSize: 14, width: "50%"}} animation="wave"></Skeleton>
                                 <Skeleton variant='text' sx={{fontSize: 14, width: "25%"}} animation="wave"></Skeleton>
                                 <Skeleton variant='text' sx={{fontSize: 15, width: "25%"}} animation="wave"></Skeleton>
-                                <Skeleton variant='rounded' height={37} sx={{mt: 2, mb: 1.5}} animation="wave"></Skeleton>
+                                <Box sx={{display: "flex"}}>
+                                    <Skeleton variant='rounded' height={37} sx={{mt: 2, mb: 1.5,mr: 1, width: "75%"}} animation="wave"></Skeleton>
+                                    <Skeleton variant='rounded' height={37} sx={{mt: 2, mb: 1.5, width: "25%"}} animation="wave"></Skeleton>
+                                </Box>
                             </CardContent>
                         </Card>
                     )
@@ -122,14 +125,16 @@ function ProductItem({product, loading}) {
 
                             {/* <ButtonBlue $variant="outlined" onClick={handleAddToCart}>ADD TO CART</ButtonBlue> */}
 
-                            <Button variant='outlined' sx={{width: "100%", mt: 1}}
+                            <Button variant='outlined' sx={{width: "75%", mt: 1}}
                                 onClick={handleAddToCart}
                             >Add to Cart</Button>
                             {/* <IconButton></IconButton> */}
-                            <Button variant='outlined' sx={{mt: 1}} onClick={handleWishlist}>
+                            <Button variant='outlined' sx={{mt: 1, width: "25%"}} onClick={handleWishlist}>
                                 {
                                     // wishlisted?
-                                    wishlistState.includes(product.id)?
+                                    // wishlistState.products.includes(product.id)?
+                                    // wishlistState.products.includes({id: product.id, ...product})?
+                                    wishlistState.products.some(item => item.id === product.id)?
                                     <FavoriteIcon></FavoriteIcon>
                                     :
                                     <FavoriteBorderIcon></FavoriteBorderIcon>

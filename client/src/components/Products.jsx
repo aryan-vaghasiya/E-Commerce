@@ -21,7 +21,7 @@ const Products = () => {
     // window.scrollTo({top: 0, behavior: 'smooth'})
 
     const handlePage = (event, value) => {
-        if(searchState.query){
+        if(searchState.query.trim() !== ""){
             dispatch(setPageSearch(value))
         }
         else{
@@ -38,7 +38,7 @@ const Products = () => {
 
     useEffect(() => {
         
-        if(searchState.query){
+        if(searchState.query.trim() !== ""){
             dispatch(searchProducts(searchState.query));
         }
         else{

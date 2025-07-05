@@ -10,7 +10,7 @@ import StarIcon from '@mui/icons-material/Star'
 import Container from '@mui/material/Container'
 import DeleteIcon from '@mui/icons-material/Delete';
 import Tooltip from '@mui/material/Tooltip'
-import { removeFromWishlist } from '../redux/wishlist/wishlistActions'
+import { removeFromWishlist, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 
 function WishlistItem({item}) {
 const dispatch = useDispatch()
@@ -57,7 +57,7 @@ const dispatch = useDispatch()
                     </Box> */}
                 </Box>
                 <Tooltip title="Remove from Wishlist">
-                    <Button onClick={() => dispatch(removeFromWishlist(item.id))}>
+                    <Button onClick={() => dispatch(removeWishlistDb(item))}>
                         <DeleteIcon sx={{mt: 1, mr: 1}}></DeleteIcon>
                     </Button>
                 </Tooltip>
