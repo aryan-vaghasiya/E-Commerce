@@ -12,7 +12,7 @@ export const wishlistReducer = (state = initWishlistState, action) => {
             // return [...state, action.payload]
             return {
                 noOfItems: state.noOfItems + 1,
-                products: [...state.products, action.payload]
+                products: [action.payload, ...state.products]
             }
         case REMOVE_FROM_WISHLIST:
             // const newArr = state
@@ -31,7 +31,7 @@ export const wishlistReducer = (state = initWishlistState, action) => {
             
             return{
                 noOfItems: action.payload.length,
-                products: action.payload
+                products: action.payload.reverse()
             }
         default:
             return state

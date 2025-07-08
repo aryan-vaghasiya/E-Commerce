@@ -1,7 +1,7 @@
 const runQuery = require("../db");
 
 exports.getAllProducts = async(page, limit, offset) => {
-    const results = await runQuery("SELECT * FROM products LIMIT ? OFFSET ?", [limit, offset]);
+    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id LIMIT ? OFFSET ?", [limit, offset]);
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -21,7 +21,7 @@ exports.getAllProducts = async(page, limit, offset) => {
 }
 
 exports.getSearchedProducts = async (page, limit, offset, query) => {
-    const results = await runQuery(`SELECT * FROM products WHERE title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%') LIMIT ? OFFSET ?`, [query, query, limit, offset]);
+    const results = await runQuery(`SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%') LIMIT ? OFFSET ?`, [query, query, limit, offset]);
     if(results.length === 0){
         // throw new Error ("Could not select searched products")
         return {}
@@ -43,7 +43,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
 
 
 exports.getSingleProduct = async(productId) => {
-    const results = await runQuery("SELECT * FROM products WHERE id = ?", [productId]);
+    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.id = ?", [productId]);
     if(results.length === 0){
         throw new Error ("Failed to fetch product details")
     }

@@ -91,7 +91,7 @@ function MyOrders() {
                                     </Box>
                                     <Box sx={{ml: "auto", display: "flex", flexDirection: "column", justifyContent: "center", pr: 5}} >
                                         <Typography>Quantity: {item.quantity}</Typography>
-                                        <Typography>Total: ${item.priceValue}</Typography>
+                                        <Typography>Total: ${item.quantity * item.price}</Typography>
                                     </Box>
                                 </Card>
                             ))}

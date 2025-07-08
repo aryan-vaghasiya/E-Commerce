@@ -8,7 +8,7 @@ import React from 'react'
 import { useDispatch } from 'react-redux'
 import StarIcon from '@mui/icons-material/Star'
 import Container from '@mui/material/Container'
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from '@mui/icons-material/Delete'
 import Tooltip from '@mui/material/Tooltip'
 import { removeFromWishlist, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 

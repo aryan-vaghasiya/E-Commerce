@@ -20,7 +20,7 @@ export const addOrders = (orders) => {
         // console.log(token);
         // const productId = product.id
         try{
-            const response = await fetch("http://localhost:3000/addOrder", {
+            const response = await fetch("http://localhost:3000/orders/add-order", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -46,7 +46,7 @@ export const fetchOrders = (token) => {
         // console.log("Token : ", token);
         // const token = getState().userReducer.token
         try {
-            const res = await fetch("http://localhost:3000/my-orders/get-orders", {
+            const res = await fetch("http://localhost:3000/orders/get-orders", {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

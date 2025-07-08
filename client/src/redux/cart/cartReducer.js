@@ -1,4 +1,4 @@
-import { ADD_TO_CART, EMPTY_CART, REMOVE_FROM_CART, CART_FROM_DB} from "./cartTypes";
+import { ADD_TO_CART, EMPTY_CART, REMOVE_FROM_CART, CART_FROM_DB, REMOVE_CART_ITEM} from "./cartTypes";
 
 const initCart = {
     noOfItems: 0,
@@ -58,6 +58,13 @@ const cartReducer = (state=initCart, action) => {
                     cartValue: parseFloat((state.cartValue - action.payload.price).toFixed(2))
                 }
             }
+        
+        case REMOVE_CART_ITEM:
+            return {
+                    noOfItems: state.noOfItems - (action.payload.quantity),
+                    products: state.products.filter(item => item.id !== action.payload.id),
+                    cartValue: parseFloat((state.cartValue - (action.payload.price * action.payload.quantity)).toFixed(2))
+                }
 
         case EMPTY_CART:
             return initCart

@@ -7,13 +7,17 @@ import Typography from '@mui/material/Typography'
 import Card from '@mui/material/Card'
 import Skeleton from '@mui/material/Skeleton'
 import { useEffect, useState } from 'react'
-import { showSnack } from '../redux/snackbar/snackbarActions'
+import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+import { fetchCart } from '../redux/cart/cartActions'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
 
 function MyCart() {
     const productState = useSelector(state => state.cartReducer.products)
     const noOfItems = useSelector(state => state.cartReducer.noOfItems)
     const cartValue = useSelector(state => state.cartReducer.cartValue)
     const userState = useSelector(state => state.userReducer)
+    const snackbarState = useSelector(state => state.snackbarReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
 
@@ -22,14 +26,22 @@ function MyCart() {
     const checkOutNavigate = async () => {
 
         if (userState.token) {
-            const res = await fetch("http://localhost:3000/my-orders", {
+            const res = await fetch("http://localhost:3000/auth/check", {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
                     // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`
                 }
             });
             if (res.status === 200) {
+                // console.log("Checked");
+                
                 navigate("/checkout")
+                // if(productState.some(item => item.stock === 0)){
+                //     navigate("/cart")
+                // }
+                // else{
+                //     navigate("/checkout")
+                // }
             }
             // else if(res.status === 402){
             //     dispatch(showSnack({message: "Please Login to access this Section", severity: "warning"}))
@@ -54,6 +66,9 @@ function MyCart() {
     }
 
     useEffect(() => {
+        if(userState.userName){
+            dispatch(fetchCart(userState.token))
+        }
         const timeOut = setTimeout(() => {
             setLoading(false)
         }, 1000)
@@ -90,6 +105,19 @@ function MyCart() {
                     :
                     (
                         <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
+                            <Snackbar
+                                open={snackbarState.show}
+                                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                                autoHideDuration={2000}
+                                onClose={() => dispatch(hideSnack())}
+                                sx={{
+                                    '&.MuiSnackbar-root': { top: '70px' },
+                                }}
+                            >
+                                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                                    {snackbarState.message}
+                                </Alert>
+                            </Snackbar>
                             {
                                 productState.length === 0 ?
                                     (
@@ -114,7 +142,16 @@ function MyCart() {
                                 productState.length > 0 ?
                                     <Box textAlign="center">
                                         <Typography>Cart Value: ${cartValue}</Typography>
+                                        {/* {productState.some(item => item.stock === 0)? */}
+                                        {productState.some(item => item.stock < item.quantity)?
+                                        
+                                        <Box>
+                                            <Typography color='error'>Some of the Items in your cart are Out Of Stock, Please remove them to Checkout</Typography>
+                                            <Button variant='contained' disabled onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
+                                        </Box>
+                                        :
                                         <Button variant='contained' onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
+                                        }
                                     </Box>
                                     :
                                     null

@@ -44,13 +44,17 @@ function CheckOut() {
         const response = await fetch("http://localhost:3000/checkout", {
             method: "POST",
             headers: {
+                Authorization: `Bearer ${userState.token}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({username: userState.userName, ...data})
         })
         if (response.status === 200){
-            const added = dispatch(addOrders(cartItems))
+            const added = await dispatch(addOrders(cartItems))
+            // console.log(added);
             if(!added){
+                dispatch(showSnack({message: "Some Products went Out Of Stock", severity: "warning"}))
+                navigate("/cart")
                 console.log("Order Failed");
                 return
             }
@@ -67,7 +71,7 @@ function CheckOut() {
 
             <Card sx={{ bgcolor: "white", p: 5, mr: 3 , mb: "auto"}}>
                 <form onSubmit={handleSubmit(handleCheckout)} noValidate>
-                    <Stack spacing={3} width={{ lg: 600, md: 400 }} >
+                    <Stack spacing={3} width={{ lg: 600, md: 400 }}>
                         <Typography>Ship To </Typography>
 
                         <Box sx={{ display: "inline-flex" }}>

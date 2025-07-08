@@ -173,11 +173,12 @@ function ProductPage() {
                                     </Typography>
                                 </Card>
                                 <Toolbar>
-                                    <Button variant='outlined' sx={{ width: "100%", mt: 1, mr: 2 }}
+
+                                    <Button disabled={!product.stock > 0} variant='outlined' sx={{ width: "100%", mt: 1, mr: 2 }}
                                         onClick={handleAddToCart}
                                     >Add to Cart</Button>
                                     {/* <ButtonRed onClick={handleAddToCart}>ADD TO CART</ButtonRed> */}
-                                    <Button variant='outlined' sx={{ width: "100%", mt: 1 }}
+                                    <Button disabled={!product.stock > 0} variant='outlined' sx={{ width: "100%", mt: 1 }}
                                         onClick={handleBuyNow}
                                     >Buy Now</Button>
                                 </Toolbar>
@@ -215,14 +216,18 @@ function ProductPage() {
                                 </Box>
 
                                 {
-                                product.stock ?
+                                product.stock > 0?
                                 <Box sx={{mt: 1}}>
                                     <Typography color='warning' sx={{}}>
                                         Hurry, only {product.stock} left!
                                     </Typography>
                                 </Box>
                                 :
-                                null
+                                <Box sx={{mt: 1}}>
+                                    <Typography color='error' sx={{}}>
+                                        Currently Out of Stock!
+                                    </Typography>
+                                </Box>
                                 }
 
                                 {/* <Box sx={{mt: 1}}>

@@ -119,15 +119,23 @@ function ProductItem({product, loading}) {
                                 </Typography>
                             </Box>
                             <Typography sx={{fontSize: 16}}>${product.price}</Typography>
+                            {/* <Typography sx={{fontSize: 16}}>{product.stock}</Typography> */}
                         </CardActionArea>
                         </Link>
                         <CardActions sx={{px: 0}}>
 
                             {/* <ButtonBlue $variant="outlined" onClick={handleAddToCart}>ADD TO CART</ButtonBlue> */}
 
-                            <Button variant='outlined' sx={{width: "75%", mt: 1}}
-                                onClick={handleAddToCart}
-                            >Add to Cart</Button>
+                            {
+                                product.stock > 0?
+                                <Button disabled={false} variant='outlined' sx={{width: "75%", mt: 1}}
+                                    onClick={handleAddToCart}
+                                >Add to Cart</Button>
+                                :
+                                <Button disabled={true} color='error' variant='outlined' sx={{width: "75%", mt: 1}}
+                                    onClick={handleAddToCart}
+                                >OUT OF STOCK</Button>
+                            }
                             {/* <IconButton></IconButton> */}
                             <Button variant='outlined' sx={{mt: 1, width: "25%"}} onClick={handleWishlist}>
                                 {

@@ -4,6 +4,6 @@ const verifyToken = require("../middlewares/verifyToken");
 const userController = require("../controllers/userController");
 
 router.post("/", userController.checkout);
-router.get("/get-form", verifyToken, userController.getForm);
+router.get("/get-form", userController.getForm);
 
 module.exports = router;

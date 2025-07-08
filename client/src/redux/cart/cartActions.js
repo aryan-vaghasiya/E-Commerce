@@ -1,4 +1,4 @@
-import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB } from "./cartTypes";
+import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM } from "./cartTypes";
 import { showSnack } from "../snackbar/snackbarActions";
 
 // export const addToCartLocal = (product) => {
@@ -30,11 +30,20 @@ export const cartFromDb = (cartItems) => {
 
 export const addToCart = (product) => {
     return async (dispatch, getState) => {
+        if(getState().cartReducer.products.some(item => item.id === product.id)){
+            const [quantity] = getState().cartReducer.products.filter(item => item.id === product.id)
+            // console.log(quantity.quantity);
+            
+            if(product.stock<=quantity.quantity){
+                dispatch(showSnack({message: "No more products in inventory", severity: "warning"}))
+                return
+            }
+        }
         const token = getState().userReducer.token
         if(!token){
             dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
             // console.log("Please Login");
-            return 
+            return
         }
         // console.log(token);
         const productId = product.id || product.product_id
@@ -74,10 +83,33 @@ export const removeFromCart = (product) => {
         if(!response.ok){
             const error = await response.json()
             console.error("Could not remove from Cart:", error.error);
-            return false
+            return 
         }
         dispatch({type: REMOVE_FROM_CART, payload: product})
-        return true
+        return 
+    }
+}
+
+export const removeCartItem = (product) => {
+    return async (dispatch, getState) => {
+        const token = getState().userReducer.token
+        // console.log(token);
+        const productId = product.id
+        const response = await fetch("http://localhost:3000/cart/remove-item", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({productId})
+        })
+        if(!response.ok){
+            const error = await response.json()
+            console.error("Could not remove Item from Cart:", error.error);
+            return
+        }
+        dispatch({type: REMOVE_CART_ITEM, payload: product})
+        return 
     }
 }
 

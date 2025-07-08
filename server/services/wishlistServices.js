@@ -24,7 +24,8 @@ exports.getWishlistService = async(userId) => {
                                         p.brand,
                                         p.thumbnail
                                     FROM wishlist wi JOIN products p ON wi.product_id = p.id
-                                    WHERE wi.user_id = ?`, [userId]);
+                                    WHERE wi.user_id = ?
+                                    ORDER BY wi.id`, [userId]);
     // console.log(getCart);
     if(getCart.length < 0){
         console.error("No wishlist items Exist");

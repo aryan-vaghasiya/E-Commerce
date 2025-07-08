@@ -28,6 +28,20 @@ exports.removeFromCart = async (req, res) => {
     }
 }
 
+exports.removeCartItem = async (req, res) => {
+    const { productId } = req.body;
+    const userId = req.user.id;
+
+    try{
+        await cartService.removeCartItemService(productId, userId)
+        return res.status(200).send("Removed Item from Cart");
+    }
+    catch(err){
+        console.error("Removing cart item failed:", err.message);
+        res.status(502).json({error : err.message});
+    }
+}
+
 exports.getCartItems = async (req, res) => {
     const userId = req.user.id;
 

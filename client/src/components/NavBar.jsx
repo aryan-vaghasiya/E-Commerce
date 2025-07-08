@@ -97,7 +97,7 @@ function NavBar() {
         e.preventDefault()
 
         if(userState.token){
-            const res = await fetch("http://localhost:3000/my-orders", {
+            const res = await fetch("http://localhost:3000/auth/check", {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
                     // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`
