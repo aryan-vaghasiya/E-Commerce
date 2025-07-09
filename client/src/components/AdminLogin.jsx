@@ -18,8 +18,10 @@ import { fetchOrders } from '../redux/order/orderActions'
 import { fetchDetails } from '../redux/checkout/checkoutActions'
 import { useState } from 'react'
 import { getFullWishlist } from '../redux/wishlist/wishlistActions'
+import { fetchDashboard } from '../redux/adminDashboard/dashboardActions'
+import { fetchAdminOrders } from '../redux/adminOrders/adminOrderActions'
 
-function Login() {
+function AdminLogin() {
     // const [signup, setSignup] = useState(false)
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -32,19 +34,19 @@ function Login() {
         }
     })
 
-    const location = useLocation()
-    const fromPath = location.state
+    // const location = useLocation()
+    // const fromPath = location.state
 
-    const handleSignup = () => {
-        // setSignup(prev => !prev)
-        navigate("/signup", {replace: true, state: "/my-orders"})
-    }
+    // const handleSignup = () => {
+    //     // setSignup(prev => !prev)
+    //     navigate("/signup", {replace: true, state: "/my-orders"})
+    // }
 
     const onSubmitOne = async (data) => {
         // console.log(data)
         // console.log(signup)
         // const request = signup ? "signup" : "login"
-        const response = await fetch(`http://localhost:3000/login`, {
+        const response = await fetch(`http://localhost:3000/admin/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -57,21 +59,23 @@ function Login() {
 
         if (response.status === 200) {
             const resData = await response.json()
-            const token = resData.token
+            // console.log(resData);
+            const token = resData.token;
             const decoded = JSON.parse(atob(token.split('.')[1]))
+            // console.log(token);
             dispatch(addUser(decoded.username, token, decoded.role))
-            // dispatch(addUser(data.username, token))
-            dispatch(fetchCart(token))
-            dispatch(fetchOrders(token))
-            dispatch(fetchDetails(token))
-            dispatch(getFullWishlist(token))
-            navigate(fromPath, { replace: true })
+            // dispatch(fetchAdminOrders(1, 5))
+            // dispatch(fetchDashboard(token))
+            // dispatch(fetchOrders(token))
+            // dispatch(fetchDetails(token))
+            // dispatch(getFullWishlist(token))
+            navigate("/admin/dashboard", { replace: true })
         }
         else{
             const error = await response.json()
             console.error(error.error);
             dispatch(showSnack({message: error.error, severity: "warning"}))
-        } 
+        }
     }
 
     return (
@@ -111,8 +115,8 @@ function Login() {
                                 message: "Password is required"
                             },
                             pattern: {
-                                value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,20}$/,
-                                message: "Must be alphanumeric and 5-20 characters long"
+                                value: /^(?=.*[A-Za-z])[A-Za-z\d]{5,20}$/,
+                                message: "Must be 5-20 characters long"
                             }
                         })}
                             error={!!errors.password}
@@ -120,9 +124,9 @@ function Login() {
                         />
                         <Button type='submit' variant="contained">Login</Button>
                     </Stack>
-                    <Box textAlign='right' sx={{pt: 2, pb: 0}}>
+                    {/* <Box textAlign='right' sx={{pt: 2, pb: 0}}>
                         <Button onClick={handleSignup} sx={{mt: 1}} variant='text'>Sign Up ?</Button>
-                    </Box>
+                    </Box> */}
                 </form>
             </Card>
             <DevTool control={control} />
@@ -130,4 +134,4 @@ function Login() {
     )
 }
 
-export default Login
+export default AdminLogin

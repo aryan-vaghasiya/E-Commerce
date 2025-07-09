@@ -21,7 +21,7 @@ import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
 
 
-function NavBar() {
+function AdminNavBar() {
     const noOfItems = useSelector(state=> state.cartReducer.noOfItems)
     const userState = useSelector(state => state.userReducer)
     const navigate = useNavigate()
@@ -37,7 +37,7 @@ function NavBar() {
 
     const open = Boolean(anchorEl);
     const handleMenu = (event) => {
-        setAnchorEl(event.currentTarget)
+        userState.userName ? setAnchorEl(event.currentTarget) : null
     }
     const handleClose = () => {
         setAnchorEl(null)
@@ -47,51 +47,34 @@ function NavBar() {
         // console.log(e.target.id);
         // console.log(e.currentTarget.id);
 
-        const navTo = e.target.id === "orders" ? "/my-orders" :
-                    e.target.id === "wishlist" ? "/my-wishlist" :
-                    "/"
+        // const navTo = e.target.id === "orders" ? "/my-orders" :
+        //             e.target.id === "wishlist" ? "/my-wishlist" :
+        //             "/"
         
-        if(!userState.userName){
-            navigate("/login", {state: navTo})
+        if(userState.userName){
+            localStorage.clear() 
+            window.location.href = '/admin';
+            // navigate("/admin/dashboard")
             setAnchorEl(null)
         }
-        else if(navTo === "/"){
-            localStorage.clear() 
-            window.location.href = '/';
-        }
+        // else if(navTo === "/"){
+        //     localStorage.clear() 
+        //     window.location.href = '/';
+        // }
         else{
-            navigate(navTo)
+            navigate("/admin")
         }
-    }
-
-    const handleChange = (e) => {
-        setInput(e.target.value)
-        // const timeOut = setTimeout(() => {
-            // dispatch(setSearchQuery(e.target.value))
-        //     dispatch(searchProducts(e.target.value))
-        // },1000)
     }
 
     useEffect(() => {
         // if (input.trim() === "") return;
         const timeOut = setTimeout(() => {
-            dispatch(setSearchQuery(input))
-            dispatch(searchProducts(input))
+            // dispatch(setSearchQuery(input))
+            // dispatch(searchProducts(input))
         },1000)
 
         return () => clearInterval(timeOut)
     },[input])
-
-    // const handleEnter = (e) => {
-    //     if (e.key === "Enter" && input.length > 0) {
-    //         dispatch(setSearchQuery(e.target.value))
-    //         dispatch(searchProducts(e.target.value))
-    //         // navigate("/products")
-    //     }
-    //     if (e.key === "Enter" && input.length === 0){
-    //         dispatch(setSearchQuery(e.target.value))
-    //     }
-    // }
 
     const HandleLogin = async (e) => {
         e.preventDefault()
@@ -121,98 +104,49 @@ function NavBar() {
         <AppBar position="sticky">
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <Box sx={{width: "7%", marginRight: 2, paddingTop: 0.5}}>
-                        <NavLink to={"/"}>
+                    <Box sx={{width: "7%", marginRight: 3, paddingTop: 0.5}}>
+                        <NavLink to={"/dashboard"}>
                             <img src={flipkartLogo} alt="logo"/>
                         </NavLink>
                     </Box>
-                    <NavLink to={"/"}>
+                    <NavLink to={"/admin/dashboard"}>
                         {({isActive}) => (
                             <Typography sx={getNavClass(isActive)}>
-                            Home
+                            Dashboard
                             </Typography>
-                        
                         )}
                     </NavLink>
-                    <NavLink to={"/products"}>
+                    <NavLink to={"/admin/products"}>
                         {({isActive}) => (
-                            <Typography
-                            sx={getNavClass(isActive)}>
+                            <Typography sx={getNavClass(isActive)}>
                             Products
                             </Typography>
                         )}
                     </NavLink>
-                    {/* {
-                        userState.userName 
-                        ?
-                        (<NavLink onClick={HandleLogin} to={"/my-orders"}>{({isActive}) => (
-                            <Typography
-                            sx={getNavClass(isActive)}>
-                            My Orders
+                    <NavLink to={"/admin/users"}>
+                        {({isActive}) => (
+                            <Typography sx={getNavClass(isActive)}>
+                            Customers
                             </Typography>
-                        )}</NavLink>)
-                        :
-                        (<NavLink onClick={HandleLogin} to={"/login"}>{({isActive}) => (
-                            <Typography
-                            sx={getNavClass(isActive)}>
-                            My Orders
+                        )}
+                    </NavLink>
+                    <NavLink to={"/admin/sales"}>
+                        {({isActive}) => (
+                            <Typography sx={getNavClass(isActive)}>
+                            Sales
                             </Typography>
-                        )}</NavLink>)
-                    } */}
+                        )}
+                    </NavLink>
                     <Box sx={{ml: "auto", display: "flex", alignItems: "center"}}>
-                        <Box sx={{mr: 1.5, bgcolor: "white", p: 0.75, px: 2, borderRadius: "30px", height: "40px", display: "flex", minWidth: "250px", width: "100%", alignItems: "center"}}>
-                            <SearchIcon color="primary" sx={{mr: 1}}></SearchIcon>
-                            {/* <Autocomplete
-                                sx={{ flex: 1 }}
-                                freeSolo
-                                // noOptionsText="No Products Found"
-                                // disableClearable
-                                options={productsState}
-                                getOptionLabel={(option) => option.title || ""}
-                                onChange={handleSelect} 
-                                onKeyDown={handleEnter}
-                                inputValue={input}
-                                onInputChange={(e, value, reason) => {
-                                    if(reason === "reset"){
-                                        setInput("")
-                                        return
-                                    }
-                                    setInput(value)
-                                }}
-                                filterOptions={(options) => 
-                                    input.length === 0
-                                    ? []
-                                    : options.filter((option) =>
-                                        option.title.toLowerCase().includes(input.toLowerCase())
-                                        )
-                                }
-                                renderInput={(params) => (
-                                    <TextField
-                                    {...params}
-                                    variant="standard"
-                                    // slotProps={{
-                                    //     input: {
-                                    //         ...params.InputProps,
-                                    //         type: 'search',
-                                    //     },
-                                    // }}
-                                    />
-                                )}
-                            /> */}
-                            <TextField variant="standard" slotProps={{input : {disableUnderline: true}}} onChange={handleChange}></TextField >
-                            {/* <TextField variant="standard" slotProps={{input : {disableUnderline: true}}} onChange={handleChange} onKeyDown={handleEnter}></TextField > */}
-                        </Box>
-                        <NavLink to={"/cart"}>
-                            <Badge badgeContent={noOfItems} color="secondary">
-                                <ShoppingCartIcon sx={{fontSize: 33}}/> 
-                            </Badge>
-                        </NavLink>
+                        <Typography>Admin</Typography>
                         <Tooltip title="Account settings">
-                            <IconButton sx={{mr: -2, ml: 1}} onClick={handleMenu}>
+                            <IconButton sx={{mr: 0, ml: 0.5}} onClick={handleMenu}>
                                 <Avatar >{userState.userName.toUpperCase().split('')[0]}</Avatar>
                                 {/* <Avatar ></Avatar> */}
                             </IconButton>
                         </Tooltip>
+                        {
+                            userState.userName ?
                             <Menu
                                 anchorEl={anchorEl}
                                 id="account-menu"
@@ -244,10 +178,14 @@ function NavBar() {
                                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                             >
-                                <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem>
+                                {/* <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem> */}
+                                {/* <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem> */}
                                 <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
-                                <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem>
+                                {/* <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem> */}
                             </Menu>
+                            :
+                            null
+                        }
                     </Box>
                 </Toolbar>
             </Container>
@@ -255,4 +193,4 @@ function NavBar() {
     )
 }
 
-export default NavBar
+export default AdminNavBar

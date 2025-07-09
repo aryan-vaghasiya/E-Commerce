@@ -3,7 +3,8 @@ import { ADD_USER } from "./userTypes";
 const userInitState = {
     userName: "",
     // password: "",
-    token: ""
+    token: "",
+    role: ""
 }
 
 const userReducer = (state=userInitState, action) => {
@@ -12,7 +13,8 @@ const userReducer = (state=userInitState, action) => {
             return {
                 userName: action.payload.username,
                 // password: action.payload.user.password,
-                token: action.payload.token
+                token: action.payload.token,
+                role: action.payload.role
             }
         default:
             return state

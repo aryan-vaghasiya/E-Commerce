@@ -16,6 +16,7 @@ exports.loginUser = async(username, password) => {
             {
                 id: user.id,
                 username: user.username,
+                role: "user"
             },
             secretKey,
             { expiresIn: "10h" }

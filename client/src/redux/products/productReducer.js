@@ -6,7 +6,7 @@ const productInitState = {
     error : "",
     total: 0,
     pages: 1,
-    currentPage: 1
+    currentPage: 1 
 }
 
 const productReducer = (state = productInitState, action) => {

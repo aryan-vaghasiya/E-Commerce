@@ -9,10 +9,12 @@ import orderReducer from "./order/orderReducer"
 import detailsReducer from "./checkout/checkoutReducer"
 import snackbarReducer from "./snackbar/snackbarReducer" 
 import { searchReducer } from "./search/searchReducer"
+import { dashboardReducer } from "./adminDashboard/dashboardReducer"
 
 import { persistStore, persistReducer } from "redux-persist"
 import storage from "redux-persist/lib/storage"
 import { wishlistReducer } from "./wishlist/wishlistReducer"
+import { adminOrdersReducer } from "./adminOrders/adminOrderReducer"
 // import getStorage from "redux-persist/lib/storage/getStorage"
 
 const persistConfig = {
@@ -22,7 +24,7 @@ const persistConfig = {
     // whitelist: ["userReducer", "detailsReducer"]
 }
 
-const rootReducer = combineReducers({productReducer, cartReducer, userReducer, orderReducer, detailsReducer, snackbarReducer, searchReducer, wishlistReducer})
+const rootReducer = combineReducers({productReducer, cartReducer, userReducer, orderReducer, detailsReducer, snackbarReducer, searchReducer, wishlistReducer, dashboardReducer, adminOrdersReducer})
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
 

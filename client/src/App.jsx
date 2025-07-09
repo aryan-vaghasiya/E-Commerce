@@ -8,6 +8,9 @@ import OrderComplete from './components/OrderComplete'
 import Login from './components/Login'
 import MyOrders from './components/MyOrders'
 import ProductPage from './components/ProductPage'
+import UserLayout from './components/layouts/UserLayout'
+import AdminLayout from './components/layouts/AdminLayout'
+import { BrowserRouter } from 'react-router'
 
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
@@ -20,6 +23,10 @@ import { store, persistor } from './redux/store'
 import ProductsSearched from './components/ProductsSearched'
 import Signup from './components/Signup'
 import MyWishlist from './components/MyWishlist'
+import AdminNavBar from './components/AdminNavbar'
+import AdminDashboard from './components/AdminDashboard'
+import AdminLogin from './components/AdminLogin'
+import AdminOrders from './components/AdminOrders'
 
 function App() {
 
@@ -28,20 +35,31 @@ function App() {
   return (
     <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
-          <NavBar />
-          {/* <NavBar2 /> */}
-          <Routes>
-            <Route path='/' element={<Products />} />
-            <Route path='/products/:productId' element={<ProductPage />}/>
-            <Route path='/products' element={<ProductsSearched />}/>
-            <Route path='/cart' element={<MyCart />} />
-            <Route path='/checkout' element={<CheckOut />} />
-            <Route path='/order-complete' element={<OrderComplete />} />
-            <Route path='/login' element={<Login />} />
-            <Route path='/signup' element={<Signup />} />
-            <Route path='/my-orders' element={<MyOrders />} />
-            <Route path='/my-wishlist' element={<MyWishlist />} />
-          </Routes>
+          <BrowserRouter>
+            {/* <NavBar /> */}
+            <Routes>
+
+              <Route element={<UserLayout />}>
+                <Route path='/' element={<Products />} />
+                <Route path='/products/:productId' element={<ProductPage />}/>
+                <Route path='/products' element={<ProductsSearched />}/>
+                <Route path='/cart' element={<MyCart />} />
+                <Route path='/checkout' element={<CheckOut />} />
+                <Route path='/order-complete' element={<OrderComplete />} />
+                <Route path='/login' element={<Login />} />
+                <Route path='/signup' element={<Signup />} />
+                <Route path='/my-orders' element={<MyOrders />} />
+                <Route path='/my-wishlist' element={<MyWishlist />} />
+              </Route>
+
+              <Route element={<AdminLayout />}>
+                <Route path='/admin' element={<AdminLogin />} />
+                <Route path='/admin/dashboard' element={<AdminDashboard />} />
+                <Route path='/admin/sales' element={<AdminOrders />} />
+              </Route>
+
+            </Routes>
+          </BrowserRouter>
         </PersistGate>
       </Provider>
   )

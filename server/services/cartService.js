@@ -50,7 +50,7 @@ exports.getCartService = async(userId) => {
                                         p.title,
                                         p.description,
                                         p.price,
-                                        p.rating,
+                                        p.rating, 
                                         pi.stock,
                                         p.brand,
                                         p.thumbnail

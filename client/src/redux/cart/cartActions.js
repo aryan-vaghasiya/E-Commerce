@@ -93,7 +93,7 @@ export const removeFromCart = (product) => {
 export const removeCartItem = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
-        // console.log(token);
+        // console.log(token); 
         const productId = product.id
         const response = await fetch("http://localhost:3000/cart/remove-item", {
             method: "POST",
