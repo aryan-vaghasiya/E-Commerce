@@ -15,6 +15,7 @@ import Divider from '@mui/material/Divider'
 import Toolbar from '@mui/material/Toolbar'
 import StarIcon from '@mui/icons-material/Star'
 import { showSnack } from '../redux/snackbar/snackbarActions'
+import { getImageUrl } from '../utils/imageUrl'
 
 function CheckOut() {
     const cartItems = useSelector(state => state.cartReducer)
@@ -200,7 +201,7 @@ function CheckOut() {
                         <Box key={item.id}>
                         <Toolbar sx={{my: 1}} >
                             <Box >
-                                <img src={item.thumbnail} alt="Product Image" className='max-w-30' />
+                                <img src={getImageUrl(item.thumbnail)} alt="Product Image" className='max-w-30' />
                             </Box>
                             <Box sx={{ textAlign: "left", width: "100%" }}>
 
@@ -223,7 +224,7 @@ function CheckOut() {
                     )
                 }
             </Card>
-            <DevTool control={control} />
+            {/* <DevTool control={control} /> */}
 
 
             {/* <form className=' flex flex-col m-2 w-fit bg-white py-5 px-5 rounded-2xl mx-8 shadow-xl h-150' noValidate>

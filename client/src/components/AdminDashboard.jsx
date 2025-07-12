@@ -137,7 +137,7 @@ function AdminDashboard() {
                         <TableCell align="left">{row.status}</TableCell>
                         <TableCell align="left">{row.order_date}</TableCell>
                         <TableCell align="right">${row.total}</TableCell>
-                        <TableCell align="center"><IconButton onClick={() => navigate(`/order/${row.id}`)} sx={{p: 0}}><AssignmentIcon></AssignmentIcon></IconButton></TableCell>
+                        <TableCell align="center"><IconButton onClick={() => navigate(`/admin/order/${row.id}`)} sx={{p: 0}}><AssignmentIcon></AssignmentIcon></IconButton></TableCell>
                         </TableRow>
                     ))}
                     </TableBody>

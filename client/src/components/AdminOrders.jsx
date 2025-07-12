@@ -1,16 +1,25 @@
 import Box from '@mui/material/Box'
 import { DataGrid } from '@mui/x-data-grid';
 import { useDispatch, useSelector } from 'react-redux';
-import { acceptOrders, fetchAdminOrders } from '../redux/adminOrders/adminOrderActions';
+import { updateOrderStatus, fetchAdminOrders } from '../redux/adminOrders/adminOrderActions';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import IconButton from '@mui/material/IconButton';
 import { useNavigate } from 'react-router';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
 
 
 
 function AdminOrders() {
+    const [orders, setOrders] = useState([]);
+    const [totalOrders, setTotalOrders] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const token = useSelector(state => state.userReducer.token);
+
+
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const adminOrdersState = useSelector(state => state.adminOrdersReducer)
@@ -18,29 +27,67 @@ function AdminOrders() {
         page: 0,
         pageSize: 5,
     });
-    const [selected, setSelected] = useState([])
+    const [selected, setSelected] = useState({})
     // console.log(selected);
-    
+
+    const fetchOrders = async (page, pageSize) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`http://localhost:3000/admin/get-orders?page=${page}&limit=${pageSize}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "Failed to fetch orders");
+            }
+
+            const result = await response.json();
+            // console.log(result);
+            
+            setOrders(result.orders);
+            setTotalOrders(result.total);
+        } 
+        catch (err) {
+            console.error(err.message)
+            setError(err.message);
+        } 
+        finally {
+            setLoading(false);
+        }
+    };
 
     const handlePaginationChange = (newModel) => {
         // console.log(newModel);
         
         setPaginationModel(newModel);
-        dispatch(fetchAdminOrders(newModel.page + 1, newModel.pageSize));
+        // dispatch(fetchAdminOrders(newModel.page + 1, newModel.pageSize));
+        fetchOrders(newModel.page + 1, newModel.pageSize);
     };
 
+    const handleSelection = (item) => {
+        setSelected(item.ids)
+        // console.log(item);
+    }
+    // console.log(selected);
+
     const handleAccept = () => {
-        dispatch(acceptOrders(selected))
+        dispatch(updateOrderStatus(selected, "accepted"))
         window.location.href = "/admin/sales"
     }
 
     useEffect(() => {
-        dispatch(fetchAdminOrders(1, 5));
-    }, []);
+        // console.log("fetching...");
+        // dispatch(fetchAdminOrders(1, 5));
+        fetchOrders(paginationModel.page + 1, paginationModel.pageSize);
+    }, [paginationModel]);
     
     const columns = [
         { 
-            field: 'id', headerName: 'Order ID', width: 90 
+            field: 'id', headerName: 'Order ID', width: 90, align : "center"
         },
         {
             field: 'first_name',
@@ -77,33 +124,54 @@ function AdminOrders() {
             field: 'action',
             headerName: 'Action',
             width: 110,
-            renderCell : (params) => <IconButton onClick={() => navigate(`/order/${params.row.id}`)} sx={{p: 0}}><AssignmentIcon></AssignmentIcon></IconButton>
+            renderCell : (params) => <IconButton onClick={() => navigate(`/admin/order/${params.id}`)} sx={{p: 0}}><AssignmentIcon></AssignmentIcon></IconButton>
         }
     ];
 
     return (
-    <Box sx={{ height: 400, width: '100%' }}>
-        <DataGrid
-            rows={adminOrdersState.orders}
-            columns={columns}
-            rowCount={adminOrdersState.total}
-            pagination
-            paginationMode="server"
-            paginationModel={paginationModel}
-            onPaginationModelChange={handlePaginationChange}
-            onRowSelectionModelChange={(item) => setSelected(item.ids)}
-            // initialState={{
-            // pagination: {
-            //     paginationModel: {
-            //     pageSize: 5,
-            //     },
-            // },
-            // }}
-            pageSizeOptions={[5, 10]}
-            checkboxSelection
-            disableRowSelectionOnClick
-        />
-        <Button onClick={handleAccept}>Accept Orders</Button>
+    <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+        <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Orders</Typography>
+        <Divider sx={{mt: 1, mb: 2}}/>
+        <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column", flexGrow: 1}}>
+        {/* <Box sx={{ height: 370 , mx: "auto", textAlign: "center"}}> */}
+            <DataGrid
+                sx={{maxWidth: 897, maxHeight: 370}}
+                // rows={adminOrdersState.orders}
+                rows={orders}
+                columns={columns}
+                // rowCount={adminOrdersState.total}
+                rowCount={totalOrders}
+                pagination
+                paginationMode="server"
+                paginationModel={paginationModel}
+                onPaginationModelChange={handlePaginationChange}
+                loading={loading}
+                // onRowSelectionModelChange={(item) => setSelected(item.ids)}
+                onRowSelectionModelChange={handleSelection}
+                // initialState={{
+                // pagination: {
+                //     paginationModel: {
+                //     pageSize: 5,
+                //     },
+                // },
+                // }}
+                pageSizeOptions={[5, 10]}
+                checkboxSelection
+                disableRowSelectionOnClick
+            />
+            <Box sx={{pt: 2}}>
+            {
+                selected.size > 0?
+                <Button disabled={false} variant='contained' onClick={handleAccept}>Accept Orders</Button>
+                :
+                // <Button disabled>Accept Orders</Button>
+                null
+            }
+            </Box>
+        </Box>
+        {error && (
+            <Typography color="error" mt={2}>{error}</Typography>
+        )}
     </Box>
     )
 }

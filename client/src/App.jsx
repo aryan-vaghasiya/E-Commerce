@@ -27,6 +27,9 @@ import AdminNavBar from './components/AdminNavbar'
 import AdminDashboard from './components/AdminDashboard'
 import AdminLogin from './components/AdminLogin'
 import AdminOrders from './components/AdminOrders'
+import AdminOrderPage from './components/AdminOrderPage'
+import AdminProducts from './components/AdminProducts'
+import AdminProductsPage from './components/AdminProductsPage'
 
 function App() {
 
@@ -56,6 +59,9 @@ function App() {
                 <Route path='/admin' element={<AdminLogin />} />
                 <Route path='/admin/dashboard' element={<AdminDashboard />} />
                 <Route path='/admin/sales' element={<AdminOrders />} />
+                <Route path='/admin/order/:orderId' element={<AdminOrderPage />} />
+                <Route path='/admin/products' element={<AdminProducts />} />
+                <Route path='/admin/product/:productId' element={<AdminProductsPage />} />
               </Route>
 
             </Routes>

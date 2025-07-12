@@ -70,7 +70,7 @@ exports.addOrder = async(userId) => {
 }
 
 exports.getOrdersService = async (userId) => {
-    const getOrders = await runQuery(`SELECT 
+    const getOrders = await runQuery(`SELECT
                                         oi.order_id, 
                                         oi.product_id AS id, 
                                         oi.quantity, 
@@ -80,7 +80,8 @@ exports.getOrdersService = async (userId) => {
                                         p.rating, 
                                         p.brand, 
                                         p.thumbnail, 
-                                        o.total AS cartValue 
+                                        o.total AS cartValue,
+                                        o.status
                                     FROM order_item oi 
                                     JOIN products p ON oi.product_id = p.id
                                     JOIN orders o ON oi.order_id = o.id
@@ -89,6 +90,7 @@ exports.getOrdersService = async (userId) => {
         console.error("No Orders Exist");
         return{};
     }
+    // console.log(getOrders);
 
     const grouped = {};
     getOrders.forEach(item => {
@@ -98,6 +100,7 @@ exports.getOrdersService = async (userId) => {
                                         noOfItems: 0,
                                         products: [],
                                         cartValue: item.cartValue,
+                                        status: item.status
                                     }
         }
         grouped[item.order_id].products.push({
@@ -112,5 +115,7 @@ exports.getOrdersService = async (userId) => {
     });
 
     const orders = Object.values(grouped);
+    // console.log(orders);
+    
     return orders;
 }

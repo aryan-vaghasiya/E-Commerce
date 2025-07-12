@@ -40,16 +40,89 @@ exports.getOrders = async (req, res) => {
     }
 }
 
-exports.acceptOrders = async (req, res) => {
-    const {id} = req.body
+exports.orderStatus = async (req, res) => {
+    const {ids} = req.body
+    const {status} = req.body
     // console.log(id);
     
     try{
-        const data = await adminServices.setAcceptOrders(id);
+        const data = await adminServices.setOrderStatus(ids, status);
         res.status(200).json(data);
     }
     catch(err){
         console.error("Error accepting Orders: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleOrder = async (req,res) => {
+    const orderId = req.query.orderId
+    // console.log(orderId);
+    try{
+        const orderData = await adminServices.getOrderData(orderId);
+        res.status(200).json(orderData);
+    }
+    catch(err){
+        console.error(`Error fetching Order ${orderId} : ${ err.message}`);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getProducts = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
+    // console.log(page, limit, offset);
+
+    try{
+        const allProducts = await adminServices.getAllProducts(page, limit, offset)
+        res.status(200).json(allProducts);
+    }
+    catch (err){
+        console.error("Error fetching all products: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleProduct = async (req,res) => {
+    const productId = req.query.productId
+    // console.log(productId);
+    try{
+        const productData = await adminServices.getProductData(productId);
+        res.status(200).json(productData);
+    }
+    catch(err){
+        console.error(`Error fetching Product ${productId} : ${ err.message}`);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.setEditedProduct = async (req, res) => {
+    const {id, title, brand, description, price, stock} = req.body;
+
+    // console.log(req.body);
+    try{
+        await adminServices.setProductData(id, title, brand, description, price, stock);
+        return res.status(200).send("Product Edited Successfully");
+    }
+    catch(err){
+        console.error("Error Editing Product Details: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.uploadProductImages = async (req, res) => {
+    const productId = req.params.id
+    const files = req.files
+    const imagePaths = files.map(file => `/uploads/products/${productId}/${file.filename}`);
+
+    // console.log(productId, files);
+    try{
+        await adminServices.setProductImages(productId, imagePaths);
+        res.status(200).send("Images Added Successfully");
+    }
+    catch(err){
+        console.error("Error Adding Product Images: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

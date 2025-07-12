@@ -5,25 +5,55 @@ import CardContent from '@mui/material/CardContent'
 import CardMedia from '@mui/material/CardMedia'
 import Typography from '@mui/material/Typography'
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router'
 import StarIcon from '@mui/icons-material/Star'
 import Container from '@mui/material/Container'
 import Skeleton from '@mui/material/Skeleton'
+import Stepper from '@mui/material/Stepper'
+import Step from '@mui/material/Step'
+import StepLabel from '@mui/material/StepLabel'
+import { fetchOrders } from '../redux/order/orderActions'
+import { getImageUrl } from '../utils/imageUrl'
 
 function MyOrders() {
 
     const ordersState = useSelector(state => state.orderReducer)
+    const userState = useSelector(state => state.userReducer)
     const navigate = useNavigate()
+    const dispatch = useDispatch()
     const [loading, setLoading] = useState  (true)
+    const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
+    const cancelledSteps = ["Order Placed", "Order Cancelled by Seller"]
+    const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
     useEffect(() => {
+        dispatch(fetchOrders(userState.token))
         const timeOut = setTimeout(() => {
             setLoading(false)
         },1000)
 
         return () => clearInterval(timeOut)
     },[])   
+
+    const getCurrentStatus = (status) => {
+        // if(status === "delivered"){
+        //     const index = allStatus.indexOf(status)
+        //     // console.log(index);
+        //     return index
+        // }
+        // else if(status !== "cancelled" && status !== "delivered"){
+        //     const index = allStatus.indexOf(status)
+        //     // console.log(index);
+        //     return index
+        // }
+        const index = allStatus.indexOf(status)
+        return status === "delivered"? index+1 : status !== "cancelled" ? index : null
+    }
+
+    const isStepFailed = (step) => {
+        return step === 1;
+    };
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
@@ -42,6 +72,10 @@ function MyOrders() {
                     loading? (
                         Array.from(Array(5)).map((_, index) => (
                             <Card key={index} sx={{mx: "auto", bgcolor: "white", width: "80%", my: 2}}>
+                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "start", ml: 3, mt: 2}}>
+                                    <Skeleton variant='text' sx={{fontSize: 18, width: "10%"}} animation="wave"></Skeleton>
+                                    <Skeleton variant='text' sx={{fontSize: 18, width: "13%"}} animation="wave"></Skeleton>
+                                </Box>
                                 <Card sx={{display: "flex", my: 2, mx: 3}} >
                                     <Box sx={{display: "inline-flex", width: "100%", alignItems: "center"}}>
                                         <Skeleton variant='rounded' sx={{minHeight: 200, minWidth: 200}} animation="wave"></Skeleton>
@@ -57,10 +91,6 @@ function MyOrders() {
                                         </Box>
                                     </Box>
                                 </Card>
-                                <Box sx={{display: "flex", flexDirection: "column", alignItems: "end", mr: 3, mb: 2}}>
-                                    <Skeleton variant='text' sx={{fontSize: 18, width: "10%"}} animation="wave"></Skeleton>
-                                    <Skeleton variant='text' sx={{fontSize: 18, width: "13%"}} animation="wave"></Skeleton>
-                                </Box>
                             </Card>
                         ))
                     )
@@ -68,13 +98,16 @@ function MyOrders() {
                     (
                     ordersState.map((order, index) => (
                         <Card key={index} sx={{mx: "auto", bgcolor: "white", width: "80%", my: 2}} >
-                            
+                            <Box sx={{textAlign: "left", pt: 2, px: 3}}>
+                                <Typography>Order Number: {ordersState.length - index}</Typography>
+                                <Typography>Cart Value: ${order.cartValue}</Typography>
+                            </Box>
                             {order.products.map(item => (
                                 <Card key={item.id} sx={{display: "flex",bgcolor: "#EEEEEE", my: 2, mx: 3}} >
                                     <CardMedia
                                         component="img"
                                         sx={{ maxWidth: 200, minHeight: 200}}
-                                        image={item.thumbnail}
+                                        image={getImageUrl(item.thumbnail)}
                                         alt="Product Image"
                                     />
                                     
@@ -95,9 +128,31 @@ function MyOrders() {
                                     </Box>
                                 </Card>
                             ))}
-                            <Box sx={{textAlign: "right", pb: 2, px: 3}}>
-                                <Typography>Order Number: {ordersState.length - index}</Typography>
-                                <Typography>Cart Value: ${order.cartValue}</Typography>
+                            <Box sx={{p: 2, pb: 3}}>
+                            {
+                                order.status === "cancelled"?
+                                <Stepper activeStep={1} alternativeLabel>
+                                    {cancelledSteps.map((label, index) => {
+                                    const labelProps = {};
+                                    if (isStepFailed(index)) {
+                                        labelProps.error = true;
+                                    }
+                                    return (
+                                        <Step key={label}>
+                                        <StepLabel {...labelProps}>{label}</StepLabel>
+                                        </Step>
+                                    );
+                                    })}
+                                </Stepper>
+                                :
+                                <Stepper activeStep={getCurrentStatus(order.status)} alternativeLabel>
+                                {steps.map((label) => (
+                                    <Step key={label}>
+                                    <StepLabel>{label}</StepLabel>
+                                    </Step>
+                                ))}
+                                </Stepper>
+                            }
                             </Box>
                         </Card>
                     ))

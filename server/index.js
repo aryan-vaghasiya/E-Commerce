@@ -9,6 +9,7 @@ const productRoutes = require("./routes/productRoutes")
 const wishlistRoutes = require("./routes/wishlistRoutes")
 const authRoutes = require("./routes/authRoutes")
 const adminRoutes = require("./routes/adminRoutes")
+const path = require("path")
 
 const app = express();
 const port = 3000;
@@ -16,8 +17,11 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+// console.log(__dirname);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/admin", adminRoutes);
 
+app.post("/login", userController.login);
 app.post("/login", userController.login);
 app.post("/signup", userController.signup);
 

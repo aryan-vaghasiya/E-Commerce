@@ -22,6 +22,7 @@ import { addToWishlist, addWishlistDb, removeFromWishlist, removeWishlistDb } fr
 
 import styled from "styled-components";
 import IconButton from '@mui/material/IconButton'
+import { getImageUrl } from '../utils/imageUrl'
 
 export const ButtonBlue = styled.button`
 background-color: ${props => props.$variant === "contained" ? "#1976d2" : "white"};
@@ -101,7 +102,7 @@ function ProductItem({product, loading}) {
                         <CardActionArea>
                             <CardMedia
                                 component="img"
-                                image={product.thumbnail}
+                                image={getImageUrl(product.thumbnail)}
                                 alt="Product Image"
                                 sx={{ minHeight: 300, objectFit: "contain" }}
                             />

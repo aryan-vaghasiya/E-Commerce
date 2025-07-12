@@ -11,6 +11,7 @@ import Container from '@mui/material/Container'
 import DeleteIcon from '@mui/icons-material/Delete'
 import Tooltip from '@mui/material/Tooltip'
 import { removeFromWishlist, removeWishlistDb } from '../redux/wishlist/wishlistActions'
+import { getImageUrl } from '../utils/imageUrl'
 
 function WishlistItem({item}) {
 const dispatch = useDispatch()
@@ -22,7 +23,7 @@ const dispatch = useDispatch()
                 <CardMedia
                     component="img"
                     sx={{ maxWidth: 200}}
-                    image={item.thumbnail}
+                    image={getImageUrl(item.thumbnail)}
                     alt="Product Image"
                 />
                 <Box sx={{p: 1, maxWidth: "70%"}}>

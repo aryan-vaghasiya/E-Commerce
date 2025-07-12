@@ -25,6 +25,7 @@ import styled from 'styled-components'
 import { ButtonBlue } from './ProductItem'
 import { addWishlistDb, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+import { getImageUrl } from '../utils/imageUrl'
 
 const ButtonRed = styled(ButtonBlue)`
 background-color: red;
@@ -142,7 +143,7 @@ function ProductPage() {
                                     <CardMedia
                                         component="img"
                                         sx={{ height: 450, width: 450}}
-                                        image={product.images[imgIndex]}
+                                        image={getImageUrl(product.images[imgIndex])}
                                         alt="Product Image"
                                     />
                                     <IconButton

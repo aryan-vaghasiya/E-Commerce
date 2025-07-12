@@ -19,7 +19,8 @@ const orderReducer = (state=orderInitState, action) => {
                 {
                     noOfItems: order.noOfItems,
                     products: order.products,
-                    cartValue: order.cartValue
+                    cartValue: order.cartValue,
+                    status: order.status
                 }
             ))
             // console.log("State:", OrderData);

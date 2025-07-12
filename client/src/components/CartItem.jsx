@@ -11,6 +11,7 @@ import Container from '@mui/material/Container'
 import Skeleton from '@mui/material/Skeleton'
 import Tooltip from '@mui/material/Tooltip'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { getImageUrl } from '../utils/imageUrl'
 
 
 function CartItem({item}) {
@@ -23,7 +24,7 @@ function CartItem({item}) {
                 <CardMedia
                     component="img"
                     sx={{ maxWidth: 200}}
-                    image={item.thumbnail}
+                    image={getImageUrl(item.thumbnail)}
                     alt="Product Image"
                 />
                 <Box sx={{p: 1}}>

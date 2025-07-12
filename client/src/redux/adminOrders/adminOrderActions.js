@@ -2,7 +2,7 @@ import { FETCH_ADMIN_ORDERS_REQUEST, FETCH_ADMIN_ORDERS_SUCCESS, FETCH_ADMIN_ORD
 
 export const adminOrdersRequest = () => {
     return{
-        type: FETCH_ADMIN_ORDERS_REQUEST
+        type: FETCH_ADMIN_ORDERS_REQUEST 
     }
 }
 
@@ -50,11 +50,18 @@ export const fetchAdminOrders = (page, limit) => {
     }
 }
 
-export const acceptOrders = (id) => {
+export const updateOrderStatus = (ids, status) => {
     return async(dispatch, getState) => {
-        // console.log([...id]);
-        
         const token = getState().userReducer.token
+        const idArray = Array.isArray(ids)
+            ? ids
+            : ids instanceof Set
+            ? Array.from(ids)
+            : [ids];
+
+        // const idArray = Array.from(id) || [id]
+        // console.log(idArray);
+        
         try{
             const response = await fetch(`http://localhost:3000/admin/accept-orders`, {
                 method: "POST",
@@ -63,7 +70,8 @@ export const acceptOrders = (id) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    id: [...id],
+                    ids: idArray,
+                    status
                 })
             })
             if(!response.ok){

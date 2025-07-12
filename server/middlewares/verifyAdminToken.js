@@ -6,7 +6,8 @@ module.exports = (req, res, next) => {
     const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-        return res.status(402).json({ message: "Access Denied. No Token Provided." });
+        // return res.status(402).json({ message: "Access Denied. No Token Provided." });
+        throw new Error ("Access Denied. No Token Provided.")
     }
 
     try{

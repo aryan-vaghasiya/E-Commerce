@@ -10,7 +10,7 @@ const initAdminOrders = {
 
 export const adminOrdersReducer = (state = initAdminOrders, action) => {
     switch(action.type){
-        case FETCH_ADMIN_ORDERS_FAILED:
+        case FETCH_ADMIN_ORDERS_REQUEST:
             return {
                 ...state,
                 isLoading : true
