@@ -1,3 +1,4 @@
+const runQuery = require("../db");
 const adminServices = require("../services/adminServices")
 
 exports.login = async (req, res) => {
@@ -123,6 +124,39 @@ exports.uploadProductImages = async (req, res) => {
     }
     catch(err){
         console.error("Error Adding Product Images: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+exports.uploadProductThumbnail = async (req, res) => {
+    const productId = req.params.id
+    const file = req.file
+    // console.log(productId, file);
+
+    const imagePath = `/uploads/products/${productId}/${file.filename}`
+
+
+    // const thumbnail = imagePath;
+    // await runQuery("UPDATE products SET thumbnail = ? WHERE id = ?", [thumbnail, productId]);
+    try{
+        await adminServices.setThumbnail(productId, imagePath);
+        res.status(200).send("Thumbnail Added Successfully");
+    }
+    catch(err){
+        console.error("Error Adding Thumbnail : ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.removeProductImages = async (req, res) => {
+    const toDelete = req.body;
+    // console.log(toDelete);
+
+    try{
+        await adminServices.removeImages(toDelete);
+        res.status(200).send("Images Deleted Successfully");
+    }
+    catch(err){
+        console.error("Error Deleting Product Images: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

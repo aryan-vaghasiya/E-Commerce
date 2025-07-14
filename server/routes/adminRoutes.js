@@ -14,5 +14,7 @@ router.get("/get-products", verifyAdminToken, adminController.getProducts);
 router.get("/product", verifyAdminToken, adminController.getSingleProduct);
 router.post("/edit-product", verifyAdminToken, adminController.setEditedProduct);
 router.post("/upload/product/:id", verifyAdminToken, upload.array("images", 5), adminController.uploadProductImages);
+router.post("/upload/product-thumbnail/:id", verifyAdminToken, upload.single("thumbnail"), adminController.uploadProductThumbnail);
+router.post("/product/remove-images", verifyAdminToken, adminController.removeProductImages);
 
 module.exports = router;

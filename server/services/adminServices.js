@@ -207,28 +207,23 @@ exports.setProductData = async(id, title, brand, description, price, stock) => {
 }
 
 exports.setProductImages = async(productId, imagePaths) => {
-    // console.log(productId, imagePaths);
-    
-    // for (let i = 1; i < imagePaths.length; i++) {
-    //     console.log(imagePaths[i]);
-        
-    //     await db.execute("INSERT INTO product_images (product_id, image) VALUES (?, ?)", [productId, imagePaths[i]]);
-    // }
-
-    try {
-        console.log(productId, imagePaths);
-
-        for (let i = 0; i < imagePaths.length; i++) {
-            console.log("Inserting:", imagePaths[i]);
-            await runQuery(
-                "INSERT INTO product_images (product_id, image) VALUES (?, ?)",
-                [productId, imagePaths[i]]
-            );
-        }
-
-        console.log("Insert complete");
-    } catch (error) {
-        console.error("Error inserting images:", error);
-        throw error;
+    for (let i = 0; i < imagePaths.length; i++) {
+        const insertImage = await runQuery(
+            `INSERT INTO product_images (product_id, image) VALUES (?, ?)`,
+            [productId, imagePaths[i]]
+        );
+        // if(insertImage.affectedRows === 0){
+        //     throw error;
+        // }
     }
+}
+
+exports.removeImages = async(toDelete) => {
+    for (let i = 0; i < toDelete.length; i++) {
+        await runQuery(`DELETE FROM product_images WHERE image = ?`,[toDelete[i]]);
+    }
+}
+
+exports.setThumbnail = async(productId, imagePath) => {
+    await runQuery("UPDATE products SET thumbnail = ? WHERE id = ?", [imagePath, productId]);
 }

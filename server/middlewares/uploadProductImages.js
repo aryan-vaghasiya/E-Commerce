@@ -4,14 +4,16 @@ const path = require("path")
 
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
+        // console.log(file);
         const productId = req.params.id;
         const dir = path.join(__dirname, '../uploads/products', productId);
         await fs.ensureDir(dir);
         // console.log("mid",productId, dir);
-        
         cb(null, dir);
     },
     filename: (req, file, cb) => {
+        // console.log(file);
+        
         const ext = path.extname(file.originalname);
         const uniqueName = `${Date.now()}-${Math.round(Math.random() * 100)}`;
         cb(null, `${uniqueName}${ext}`);
