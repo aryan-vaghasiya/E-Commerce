@@ -111,8 +111,10 @@ function Login() {
                                 message: "Password is required"
                             },
                             pattern: {
-                                value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,20}$/,
-                                message: "Must be alphanumeric and 5-20 characters long"
+                                value: /^(?=.*[A-Za-z])[A-Za-z]{5,20}$/,
+                                message: "Must be 5-20 characters long"
+                                // value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,20}$/,
+                                // message: "Must be alphanumeric and 5-20 characters long"
                             }
                         })}
                             error={!!errors.password}

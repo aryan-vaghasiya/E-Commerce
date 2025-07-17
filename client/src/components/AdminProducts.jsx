@@ -201,16 +201,16 @@ function AdminProducts() {
         //     editable: false,
         //     renderCell: (params) => <span>${params.value}</span>
         // },
-        {
-            field: 'delete',
-            headerName: 'Delete Product',
-            width: 110,
-            renderCell : (params) => 
-            <IconButton onClick={() => handleClickOpen(params.row.id)} sx={{p: 0}}>
-                <DeleteForeverIcon sx={{fontSize: 30}}></DeleteForeverIcon>
-            </IconButton>,
-            align: "center"
-        },
+        // {
+        //     field: 'delete',
+        //     headerName: 'Delete Product',
+        //     width: 110,
+        //     renderCell : (params) => 
+        //     <IconButton onClick={() => handleClickOpen(params.row.id)} sx={{p: 0}}>
+        //         <DeleteForeverIcon sx={{fontSize: 30}}></DeleteForeverIcon>
+        //     </IconButton>,
+        //     align: "center"
+        // },
         {
             field: 'edit',
             headerName: 'Edit Product',
@@ -249,7 +249,7 @@ function AdminProducts() {
                     <Button variant='contained' onClick={() => navigate("/admin/product/add")}>Add Product</Button>
                 </Box>
                 <DataGrid
-                    sx={{ maxHeight: 630, maxWidth: "90%"}}
+                    sx={{ maxHeight: 630, maxWidth: "90%"}} 
                     // rows={adminOrdersState.orders}
                     // autoHeight={true}
                     rows={products}

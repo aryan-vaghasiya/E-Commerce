@@ -72,7 +72,7 @@ exports.getAllOrders = async(page, limit, offset) => {
                                     LIMIT ?
                                     OFFSET ?`, [limit, offset]);
     if(results.length === 0){
-        throw new Error ("Could not select all products")
+        throw new Error ("Could not select all orders (admin)")
     }
     // console.log(results);
 
@@ -154,7 +154,7 @@ exports.getAllProducts = async(page, limit, offset) => {
                                     LIMIT ?
                                     OFFSET ?`, [limit, offset]);
     if(results.length === 0){
-        throw new Error ("Could not select all products")
+        throw new Error ("Could not select all products (admin)")
     }
     // console.log(results);
 

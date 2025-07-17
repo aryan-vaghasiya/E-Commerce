@@ -19,16 +19,16 @@ const dispatch = useDispatch()
     return (
         <Container>
             <Card sx={{my: 2, width: "90%", mx: "auto"}}>
-            <CardContent sx={{display: "inline-flex", justifyContent: "space-between"}}>
+            <CardContent sx={{display: "inline-flex", justifyContent: "flex-start"}}>
                 <CardMedia
                     component="img"
                     sx={{ maxWidth: 200}}
                     image={getImageUrl(item.thumbnail)}
                     alt="Product Image"
                 />
-                <Box sx={{p: 1, maxWidth: "70%"}}>
-                    <Typography variant='h6'>{item.title}</Typography>
-                    <Typography>{item.description}</Typography>
+                <Box sx={{p: 1, maxWidth: "100%", position: "relative", ml: 1}}>
+                    <Typography variant='h6' sx={{width: "93%"}}>{item.title}</Typography>
+                    <Typography sx={{width: "93%"}}>{item.description}</Typography>
                     <Typography sx={{fontSize: 13}}>Brand: {item.brand}</Typography>
                     <Box sx={{display: "inline-flex", alignItems: "center"}}>
                         <StarIcon sx={{color: "#FF8C00", fontSize: 20}}></StarIcon>
@@ -56,12 +56,12 @@ const dispatch = useDispatch()
                             }} onClick={() => dispatch(addToCart(item))}>+</Button>
                         </Box>
                     </Box> */}
+                    <Tooltip title="Remove from Wishlist">
+                        <Button onClick={() => dispatch(removeWishlistDb(item))} sx={{position: "absolute", right: 2, top: 2}}>
+                            <DeleteIcon sx={{}}></DeleteIcon>
+                        </Button>
+                    </Tooltip>
                 </Box>
-                <Tooltip title="Remove from Wishlist">
-                    <Button onClick={() => dispatch(removeWishlistDb(item))}>
-                        <DeleteIcon sx={{mt: 1, mr: 1}}></DeleteIcon>
-                    </Button>
-                </Tooltip>
                 </CardContent>
             </Card>
         </Container>

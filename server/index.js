@@ -21,7 +21,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/admin", adminRoutes);
 
-app.post("/login", userController.login);
+// app.post("/login", userController.login);
 app.post("/login", userController.login);
 app.post("/signup", userController.signup);
 
