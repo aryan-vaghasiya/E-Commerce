@@ -143,10 +143,10 @@ function MyCart() {
                                     <Box textAlign="center">
                                         <Typography>Cart Value: ${cartValue}</Typography>
                                         {/* {productState.some(item => item.stock === 0)? */}
-                                        {productState.some(item => item.stock < item.quantity)?
+                                        {productState.some(item => item.stock < item.quantity || item.status != "active")?
                                         
                                         <Box>
-                                            <Typography color='error'>Some of the Items in your cart are Out Of Stock, Please remove them to Checkout</Typography>
+                                            <Typography color='error'>Some of the Items in your cart are either Out Of Stock or Unlisted, Please remove them to Checkout</Typography>
                                             <Button variant='contained' disabled onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
                                         </Box>
                                         :

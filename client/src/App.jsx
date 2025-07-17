@@ -30,6 +30,7 @@ import AdminOrders from './components/AdminOrders'
 import AdminOrderPage from './components/AdminOrderPage'
 import AdminProducts from './components/AdminProducts'
 import AdminProductsPage from './components/AdminProductsPage'
+import AdminAddProduct from './components/AdminAddProduct'
 
 function App() {
 
@@ -62,6 +63,7 @@ function App() {
                 <Route path='/admin/order/:orderId' element={<AdminOrderPage />} />
                 <Route path='/admin/products' element={<AdminProducts />} />
                 <Route path='/admin/product/:productId' element={<AdminProductsPage />} />
+                <Route path='/admin/product/add' element={<AdminAddProduct />} />
               </Route>
 
             </Routes>

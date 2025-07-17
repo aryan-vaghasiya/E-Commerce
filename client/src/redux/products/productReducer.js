@@ -20,6 +20,7 @@ const productReducer = (state = productInitState, action) => {
             return {
                 isLoading: false,
                 products: action.payload.products,
+                // products: action.payload.products.map(product => ({...product, price: parseFloat(product.price)})),
                 error: "",
                 total: action.payload.total,
                 pages: action.payload.pages,

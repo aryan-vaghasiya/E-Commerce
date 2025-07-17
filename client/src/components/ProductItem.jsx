@@ -128,7 +128,7 @@ function ProductItem({product, loading}) {
                             {/* <ButtonBlue $variant="outlined" onClick={handleAddToCart}>ADD TO CART</ButtonBlue> */}
 
                             {
-                                product.stock > 0?
+                                product.stock > 0 || product.status !== "active"?
                                 <Button disabled={false} variant='outlined' sx={{width: "75%", mt: 1}}
                                     onClick={handleAddToCart}
                                 >Add to Cart</Button>

@@ -7,7 +7,8 @@ const pool = mysql.createPool({
     database: "e_comm_db",
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    decimalNumbers: true
 })
 
 const runQuery = async (query, values) => {

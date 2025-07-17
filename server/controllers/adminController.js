@@ -77,6 +77,7 @@ exports.getProducts = async (req, res) => {
 
     try{
         const allProducts = await adminServices.getAllProducts(page, limit, offset)
+        // console.log(allProducts);
         res.status(200).json(allProducts);
     }
     catch (err){
@@ -99,11 +100,11 @@ exports.getSingleProduct = async (req,res) => {
 }
 
 exports.setEditedProduct = async (req, res) => {
-    const {id, title, brand, description, price, stock} = req.body;
+    const {id, title, brand, description, price, stock, discount, mrp} = req.body;
 
     // console.log(req.body);
     try{
-        await adminServices.setProductData(id, title, brand, description, price, stock);
+        await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp);
         return res.status(200).send("Product Edited Successfully");
     }
     catch(err){
@@ -119,8 +120,8 @@ exports.uploadProductImages = async (req, res) => {
 
     // console.log(productId, files);
     try{
-        await adminServices.setProductImages(productId, imagePaths);
-        res.status(200).send("Images Added Successfully");
+        const newImages = await adminServices.setProductImages(productId, imagePaths);
+        res.status(200).json(newImages);
     }
     catch(err){
         console.error("Error Adding Product Images: ", err.message);
@@ -148,15 +149,55 @@ exports.uploadProductThumbnail = async (req, res) => {
 }
 
 exports.removeProductImages = async (req, res) => {
-    const toDelete = req.body;
-    // console.log(toDelete);
+    const toDeleteIds = req.body;
+    // console.log(toDeleteIds);
 
     try{
-        await adminServices.removeImages(toDelete);
+        await adminServices.removeImages(toDeleteIds);
         res.status(200).send("Images Deleted Successfully");
     }
     catch(err){
         console.error("Error Deleting Product Images: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.addProductDetails = async(req, res) => {
+    const {title, brand, description, price, status, stock, mrp, discount} = req.body
+
+    try{
+        const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount);
+        return res.status(200).json(productId)
+    }
+    catch(err){
+        console.error("Error Adding Product Details: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.deleteProduct = async (req, res) => {
+    const {productId} = req.body
+    // console.log(productId);
+    
+    try{
+        await adminServices.deleteProductPermanently(productId);
+        return res.status(200).send("Permanently Deleted Product")
+    }
+    catch(err){
+        console.error("Error Deleting Product Permanently", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.updateProductStatus = async (req, res) => {
+    const {newStatus, productId} = req.body;
+
+    try{
+        await adminServices.updateProductStatus(newStatus, productId)
+        res.status(200).send("Product status updated Successfully");
+    }
+    catch(err){
+        console.error("Error updating product status", err.message);
         res.status(500).json({ error: err.message });
     }
 }

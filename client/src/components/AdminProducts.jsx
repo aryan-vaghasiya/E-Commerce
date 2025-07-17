@@ -10,13 +10,22 @@ import IconButton from '@mui/material/IconButton';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import { getImageUrl } from '../utils/imageUrl';
+import Button from '@mui/material/Button';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
 
 function AdminProducts() {
     const [products, setProducts] = useState([]);
     const [totalProducts, setTotalProducts] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
     const [error, setError] = useState(null);
     const token = useSelector(state => state.userReducer.token);
+    const [toDelete, setToDelete] = useState(null)
 
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -24,6 +33,40 @@ function AdminProducts() {
         page: 0,
         pageSize: 8,
     });
+
+    const handleClickOpen = (productId) => {
+        // console.log(productId);
+        setToDelete(productId)
+        setOpen(true);
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        setToDelete(null)
+    };
+
+    const deleteProduct = async () => {
+        const productId = toDelete
+        console.log(productId);
+        handleClose()
+
+        const res = await fetch(`http://localhost:3000/admin/product/delete`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({productId})
+        })
+
+        if(res.ok){
+            fetchProducts(paginationModel.page + 1, paginationModel.pageSize)
+        }
+        else{
+            const error = await res.json()
+            console.error(error)
+        }
+    }
 
     const fetchProducts = async (page, limit) => {
         setLoading(true);
@@ -70,7 +113,7 @@ function AdminProducts() {
     }, [paginationModel]);
 
     const columns = [
-        { 
+        {
             field: 'id', headerName: 'Product ID', width: 90, align : "center"
         },
         {
@@ -84,8 +127,8 @@ function AdminProducts() {
                     src={getImageUrl(params.row.thumbnail)}
                     alt="product"
                     style={{
-                        width: '50px',
-                        height: 'auto',
+                        height: '50px',
+                        width: 'auto',
                         objectFit: 'contain',
                         borderRadius: '4px'
                     }}
@@ -120,14 +163,33 @@ function AdminProducts() {
             editable: false,
         },
         {
-            field: 'rating',
-            headerName: 'Rating',
+            field: 'price',
+            headerName: 'Selling Price',
             width: 110,
             editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography>${params.value}</Typography>
+                </Box>
+            )
         },
         {
             field: 'stock',
             headerName: 'Stock',
+            width: 110,
+            editable: false,
+            align: "center"
+        },
+        {
+            field: 'last_updated',
+            headerName: 'Last Modified',
+            width: 110,
+            editable: false,
+            align: "center"
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
             width: 110,
             editable: false,
             align: "center"
@@ -140,6 +202,16 @@ function AdminProducts() {
         //     renderCell: (params) => <span>${params.value}</span>
         // },
         {
+            field: 'delete',
+            headerName: 'Delete Product',
+            width: 110,
+            renderCell : (params) => 
+            <IconButton onClick={() => handleClickOpen(params.row.id)} sx={{p: 0}}>
+                <DeleteForeverIcon sx={{fontSize: 30}}></DeleteForeverIcon>
+            </IconButton>,
+            align: "center"
+        },
+        {
             field: 'edit',
             headerName: 'Edit Product',
             width: 110,
@@ -150,12 +222,34 @@ function AdminProducts() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                // aria-labelledby="alert-dialog-title"
+                // aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                {"Permanently Delete Product?"}
+                </DialogTitle>
+                <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    This product {toDelete} will be permanently deleted, click Yes if you want to Proceed further.
+                </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                <Button onClick={handleClose} color='error'>No</Button>
+                <Button onClick={deleteProduct} autoFocus>Yes</Button>
+                </DialogActions>
+            </Dialog>
             <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Products</Typography>
             <Divider sx={{mt: 1, mb: 2}}/>
             <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column"}}>
             {/* <Box sx={{ height: 370 , mx: "auto", textAlign: "center"}}> */}
+                <Box sx={{ width: "100%", maxWidth: "90%", mb: 2, display: "flex", justifyContent: "flex-end" }}>
+                    <Button variant='contained' onClick={() => navigate("/admin/product/add")}>Add Product</Button>
+                </Box>
                 <DataGrid
-                    sx={{ maxHeight: 630}}
+                    sx={{ maxHeight: 630, maxWidth: "90%"}}
                     // rows={adminOrdersState.orders}
                     // autoHeight={true}
                     rows={products}
@@ -181,6 +275,8 @@ function AdminProducts() {
                     // checkboxSelection
                     disableRowSelectionOnClick
                 />
+                {/* <Box sx={{ml: "auto"}}> */}
+
             </Box>
             {error && (
                 <Typography color="error" mt={2}>{error}</Typography>

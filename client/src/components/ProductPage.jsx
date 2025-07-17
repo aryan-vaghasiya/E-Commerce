@@ -48,6 +48,7 @@ function ProductPage() {
 
     const [product, setProduct] = useState(null)
     const [snack, setSnack] = useState(false)
+    // console.log(product);
 
     useEffect(() => {
         const timeOut1 = setTimeout(() => {
@@ -175,11 +176,11 @@ function ProductPage() {
                                 </Card>
                                 <Toolbar>
 
-                                    <Button disabled={!product.stock > 0} variant='outlined' sx={{ width: "100%", mt: 1, mr: 2 }}
+                                    <Button disabled={!product.stock > 0 || product.status != "active"} variant='outlined' sx={{ width: "100%", mt: 1, mr: 2 }}
                                         onClick={handleAddToCart}
                                     >Add to Cart</Button>
                                     {/* <ButtonRed onClick={handleAddToCart}>ADD TO CART</ButtonRed> */}
-                                    <Button disabled={!product.stock > 0} variant='outlined' sx={{ width: "100%", mt: 1 }}
+                                    <Button disabled={!product.stock > 0 || product.status != "active"} variant='outlined' sx={{ width: "100%", mt: 1 }}
                                         onClick={handleBuyNow}
                                     >Buy Now</Button>
                                 </Toolbar>
@@ -203,13 +204,15 @@ function ProductPage() {
                                     <Typography variant='h5'>
                                         ${product.price}
                                     </Typography>
-                                    {product.discountPercentage?
+                                    {/* {product.discount > 0? */}
+                                    {product.discount?
                                     <Box sx={{display: "flex", alignItems: "center"}}>
                                         <Typography color='gray' sx={{ ml: 1, }}>
-                                            <s>${parseFloat((product.price + product.price / 100 * product.discountPercentage).toFixed(2))}</s>
+                                            {/* <s>${parseFloat((product.price + product.price / 100 * product.discount).toFixed(2))}</s> */}
+                                            <s>${product.mrp}</s>
                                         </Typography>
                                         <Typography variant='h6' color='success' sx={{ ml: 1 }}>
-                                            {product.discountPercentage}%
+                                            {product.discount}%
                                         </Typography>
                                     </Box>
                                     :
@@ -230,6 +233,10 @@ function ProductPage() {
                                     </Typography>
                                 </Box>
                                 }
+                                <Box sx={{mt: 3}}>
+                                    <Typography sx={{fontSize: 20}}>Description: </Typography>
+                                    <Typography>{product.description}</Typography>
+                                </Box>
 
                                 {/* <Box sx={{mt: 1}}>
                                     <Typography color='info' sx={{fontSize: 14}}>

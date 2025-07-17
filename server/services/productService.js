@@ -1,7 +1,8 @@
 const runQuery = require("../db");
 
 exports.getAllProducts = async(page, limit, offset) => {
-    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id LIMIT ? OFFSET ?", [limit, offset]);
+    const status = "active"
+    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.status = ? LIMIT ? OFFSET ?", ["active", limit, offset]);
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -21,7 +22,8 @@ exports.getAllProducts = async(page, limit, offset) => {
 }
 
 exports.getSearchedProducts = async (page, limit, offset, query) => {
-    const results = await runQuery(`SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%') LIMIT ? OFFSET ?`, [query, query, limit, offset]);
+    const status = "active"
+    const results = await runQuery(`SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%') AND p.status = ? LIMIT ? OFFSET ?`, [query, query,"active", limit, offset]);
     if(results.length === 0){
         // throw new Error ("Could not select searched products")
         return {}

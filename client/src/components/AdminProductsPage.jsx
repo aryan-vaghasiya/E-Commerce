@@ -11,12 +11,13 @@ import { Grid, Stack, width } from '@mui/system';
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router';
+import { replace, useNavigate, useParams } from 'react-router';
 import { getImageUrl } from '../utils/imageUrl';
 import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import IconButton from '@mui/material/IconButton';
 import CancelIcon from '@mui/icons-material/Cancel';
+import Autocomplete from '@mui/material/Autocomplete';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -33,6 +34,7 @@ const VisuallyHiddenInput = styled('input')({
 function AdminProductsPage() {
     const { productId } = useParams()
     const dispatch = useDispatch()
+    const navigate = useNavigate()
     const [data, setData] = useState(null);
     const [showUploaded, setShowUploaded] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -42,10 +44,12 @@ function AdminProductsPage() {
     const token = useSelector(state => state.userReducer.token)
     const userDetails = useSelector(state => state.detailsReducer)
     const [imagePreview, setImagePreview] = useState([])
-    const [localPreview, setLocalPreview] = useState([])
+    // const [localPreview, setLocalPreview] = useState([])
     const [thumbnailPreview, setThumbnailPreview] = useState(null)
+    const [productStatus, setProductStatus] = useState(null)
 
-    const { register, handleSubmit, control, getValues, reset, formState: { errors } } = useForm()
+    const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
+    const [inputMrp, inputPrice] = watch(["mrp", "price"])
 
     const fetchData = async () => {
         try {
@@ -68,9 +72,13 @@ function AdminProductsPage() {
                 title: result.title,
                 brand: result.brand,
                 description: result.description,
+                mrp: result.mrp,
+                discount: result.discount,
                 price: result.price,
                 stock: result.stock,
             });
+            setProductStatus(result.status)
+            // console.log(result.status)
         } 
         catch (err) {
             console.error(err)
@@ -81,6 +89,14 @@ function AdminProductsPage() {
     useEffect(() => {
         fetchData()
     }, [])
+
+    useEffect(() => {
+        // if(inputMrp < inputPrice){
+        //     return setValue("discount", "MRP < Price !!!")
+        // }
+        const percentage = Math.abs((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100)
+        setValue("discount", percentage || 0)
+    }, [inputMrp, inputPrice])
 
     const handleEdit = async (editedData) => {
         // console.log(editedData);
@@ -95,6 +111,10 @@ function AdminProductsPage() {
             },
             body: JSON.stringify({id: data.id, stock: parseInt(editedData.stock), ...editedData})
         })
+
+        if(response.ok){
+            navigate("/admin/products", {replace: true})
+        }
     }
 
     const handleImagePreview = (event) => {
@@ -122,16 +142,18 @@ function AdminProductsPage() {
         const filtered = imagePreview.filter(item => {
             return item.url !== image.url
         })
-        console.log(filtered);
+        // console.log(filtered);
         setImagePreview(filtered)
     }
 
-    const markToRemove = (imagePath) => {
-        setToDelete(prev => [...prev, imagePath])
-        const remove = data.images.filter(item => item !== imagePath)
-        // console.log(remove);
+    const markToRemove = (image) => {
+        // console.log(imagePath);
+        // const remove = data.image.filter(item => item.image === imagePath)
+        setToDelete(prev => [...prev, image])
+        const notRemoved = data.image.filter(item => item.image !== image.image)
+        // console.log(notRemoved);
         
-        setData(prev => ({...prev, images: remove}))
+        setData(prev => ({...prev, image: notRemoved}))
     }
 
     const revertRemoval = () => {
@@ -140,18 +162,34 @@ function AdminProductsPage() {
         setEditable(false)
     }
 
+    const updateStatus = async () => {
+        const newStatus = productStatus === "active" ? "inactive" : "active"
+        setProductStatus(newStatus)
+
+        const res = await fetch(`http://localhost:3000/admin/product/update-status`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({newStatus, productId: data.id})
+            })
+    }
+
     const removeRequest = async () => {
         // console.log(toDelete);
-        
+        const toDeleteIds = toDelete.map(item => item.id)
+        console.log(toDeleteIds);
         const res = await fetch(`http://localhost:3000/admin/product/remove-images`, {
             method: "POST",
-            body: JSON.stringify(toDelete),
+            body: JSON.stringify(toDeleteIds),
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             }})
         if(res.ok){
             console.log("Removed Images Successfully");
+            setToDelete([])
         }
         else{
             console.log("Couldn't Remove Images");
@@ -163,9 +201,8 @@ function AdminProductsPage() {
         const formData = new FormData();
         const file = event.target.files
         formData.append("thumbnail", file[0])
-        const localPreview  = URL.createObjectURL(file[0])
-        // console.log(localPreview);
-        
+        const localThumbnailPreview  = URL.createObjectURL(file[0])
+        // console.log(localThumbnailPreview);
         // console.log(formData);
 
         const res = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
@@ -180,7 +217,7 @@ function AdminProductsPage() {
         if(res.ok){
             console.log("Thumbnail Upload Success");
             // console.log(file[0]);
-            setThumbnailPreview({file, url: localPreview})
+            setThumbnailPreview({file, url: localThumbnailPreview})
         }
         else{
             console.log("Couldn't Upload Thumbnail");
@@ -207,11 +244,17 @@ function AdminProductsPage() {
         })
 
         if(res.ok){
+            const newImages = await res.json()
+            // console.log(newImages);
+            
+            setData(prev => ({...prev, image: [...prev.image, ...newImages]}))
             console.log("Upload Success");
-            setLocalPreview(prev => [...prev, ...imagePreview]);
+            // setLocalPreview(prev => [...prev, ...imagePreview]);
             setImagePreview([])
-            setShowUploaded(true)
+            // setShowUploaded(true)
             setShowPreview(false)
+
+
             // const newImages = imagePreview.map(item => item.url)
             // setData(prev => ({...prev, images: [...prev.images, ...newImages]}))
             // console.log({...data, images: [...data.images, ...newImages]});
@@ -261,12 +304,13 @@ function AdminProductsPage() {
                     <Box sx={{mt: 2}}>
                     <Card sx={{bgcolor: "#EEEEEE"}}>
 
-                    <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES - ({data.images.length + localPreview.length})</Typography>
+                    <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES - ({data.image.length})</Typography>
+                    {/* <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES - ({data.image.length + localPreview.length})</Typography> */}
                     {
-                        data.images.length>0 ?
+                        data.image.length>0 ?
                         <ImageList sx={{ width: 385, maxHeight: 405, height: "auto", p: 1}} cols={2} rowHeight={"auto"} gap={5}>
                             {
-                                data.images.map((item, index) => (
+                                data.image.map((item, index) => (
                                     <ImageListItem key={index}>
                                     <Paper elevation={3}>
                                     {
@@ -283,8 +327,8 @@ function AdminProductsPage() {
                                     <img
                                         // srcSet={`${item}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
                                         // src={`${item}?w=164&h=164&fit=crop&auto=format`}
-                                        src={getImageUrl(item)}
-                                        alt={item}
+                                        src={getImageUrl(item.image)}
+                                        alt={item.image}
                                         style={{height: "100%", width: "100%", objectFit: "cover"}}
                                         loading="lazy"
                                     />
@@ -292,11 +336,22 @@ function AdminProductsPage() {
                                     </ImageListItem>
                                 ))
                             }
-                            {
+                            {/* {
                             showUploaded?
                                     localPreview.map((item, index) => (
                                     <ImageListItem key={index} >
                                     <Paper elevation={3}>
+                                    {
+                                        editable?
+                                        <IconButton 
+                                            // onClick={() => setToDelete(prev => [...prev, item])}
+                                            onClick={() => markToRemove(item)}
+                                            sx={{position: "absolute", top: 0, right: 0}}>
+                                            <CancelIcon></CancelIcon>
+                                        </IconButton>
+                                        :
+                                        null
+                                    }
                                     <img
                                         // srcSet={`${item}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
                                         // src={`${item}?w=164&h=164&fit=crop&auto=format`}
@@ -310,7 +365,7 @@ function AdminProductsPage() {
                                     ))
                                 :
                                 null
-                            }
+                            } */}
                         </ImageList>
                         :
                         <Box sx={{width: 385, height: 50}}>
@@ -345,7 +400,7 @@ function AdminProductsPage() {
                         showPreview && imagePreview.length >0?
                         <Box sx={{ width: 385, height: "auto", py: 1,}}>
                             <Card sx={{p: 1}}>
-                            <Grid 
+                            <Grid
                                 container
                                 spacing={2}
                                 columns={9}
@@ -414,7 +469,15 @@ function AdminProductsPage() {
                     </Box>
                     </Box>
                 </Box>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", bgcolor: "#EEEEEE" }}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", flexDirection: "column"}}>
+                    <Card sx={{width: "100%", mb: 3}}>
+                        <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT STATUS</Typography>
+                        <Box sx={{p: 2}}>
+                            {/* <Typography>Current Status: </Typography> */}
+                            <Typography color={productStatus === "active"? 'success': 'warning'} sx={{fontSize: 30, fontWeight: 500, pb: 1}}>{productStatus.toUpperCase()}</Typography>
+                            <Button variant='contained' sx={{width: "100%"}} onClick={updateStatus}>Mark as {productStatus === "active" ? "Inactive" : "Active"}</Button>
+                        </Box>
+                    </Card>
                     <Card sx={{p: 2}}>
                         <form key={data?.id || "loading"} onSubmit={handleSubmit(handleEdit)} noValidate>
                             <Stack spacing={3} width={{ lg: 600, md: 400 }}>
@@ -459,7 +522,21 @@ function AdminProductsPage() {
                                     helperText={errors.description ? errors.description.message : ""}
                                 />
 
-                                <TextField label="Price (in $)" type='text' {...register("price", {
+                                <TextField label="MRP (in $)" type='text' {...register("mrp", {
+                                    required: {
+                                        value: true,
+                                        message: "MRP is required"
+                                    },
+                                    pattern: {
+                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                        message: "Not a valid price format"
+                                    }
+                                })}
+                                    error={!!errors.mrp}
+                                    helperText={errors.mrp ? errors.mrp.message : ""}
+                                />
+                                <Box sx={{display: "flex"}}>
+                                <TextField label="Selling Price (in $)" type='text' {...register("price", {
                                     required: {
                                         value: true,
                                         message: "Price is required"
@@ -471,23 +548,40 @@ function AdminProductsPage() {
                                 })}
                                     error={!!errors.price}
                                     helperText={errors.price ? errors.price.message : ""}
+                                    sx={{width: "100%", pr: 1}}
                                 />
 
-                                <Box sx={{ display: "inline-flex" }}>
-                                    <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
-                                        required: {
-                                            value: true,
-                                            message: "Price is required"
-                                        },
-                                        pattern: {
-                                            value: /^[0-9]{0,}$/,
-                                            message: "Must have and 5 characters or more"
-                                        }
-                                    })}
-                                        error={!!errors.stock}
-                                        helperText={errors.stock ? errors.stock.message : ""}
-                                    />
+                                <TextField label="Discount Percentage" type = "text" {...register("discount", {
+                                    required: {
+                                        value: true,
+                                        message: "Discount Percentage is required"
+                                    }
+                                })}
+                                // slotProps={{
+                                //     input: {
+                                //     readOnly: true,
+                                //     },
+                                // }}
+                                disabled
+                                >
+
+                                </TextField>
                                 </Box>
+
+                                <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
+                                    required: {
+                                        value: true,
+                                        message: "Stock is required"
+                                    },
+                                    pattern: {
+                                        value: /^[0-9]{0,}$/,
+                                        message: "Stock must be in digits only"
+                                    }
+                                })}
+                                    error={!!errors.stock}
+                                    helperText={errors.stock ? errors.stock.message : ""}
+                                />
+
                                 <Button type='submit' variant="contained">Edit Product</Button>
                             </Stack>
                         </form>

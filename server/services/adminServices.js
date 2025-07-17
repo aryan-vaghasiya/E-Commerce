@@ -2,6 +2,8 @@ const runQuery = require("../db")
 const jwt = require("jsonwebtoken");
 const secretKey = "abcde12345";
 const bcrypt = require("bcrypt")
+const fs = require("fs-extra");
+const path = require("path")
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -137,14 +139,18 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         p.id,
                                         p.title,
                                         p.price,
+                                        p.mrp,
+                                        p.discount,
                                         p.rating,
                                         p.brand,
                                         p.thumbnail,
+                                        p.status,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
-                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated
-                                    FROM products p JOIN product_inventory pin ON p.id = pin.id
+                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as inventory_updated
+                                    FROM products p JOIN product_inventory pin ON p.id = pin.product_id
+                                    ORDER BY p.last_updated DESC
                                     LIMIT ?
                                     OFFSET ?`, [limit, offset]);
     if(results.length === 0){
@@ -172,58 +178,136 @@ exports.getProductData = async (productId) => {
                                         p.title,
                                         p.description,
                                         p.price,
+                                        p.mrp,
+                                        p.discount,
                                         p.rating,
                                         p.brand,
                                         p.thumbnail,
+                                        p.status,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
                                         DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated
-                                    FROM products p JOIN product_inventory pin ON p.id = pin.id
+                                    FROM products p JOIN product_inventory pin ON p.id = pin.product_id
                                     WHERE p.id = ?`, [productId]);
-    const image = await runQuery(`SELECT image FROM product_images WHERE product_id = ?`,[productId])
-    const images = image.map(item => item.image)
+    const image = await runQuery(`SELECT id, image FROM product_images WHERE product_id = ?`,[productId])
+    // const images = image.map(item => item.image)
+    // console.log(images);
 
     // console.log({...result, images});
     // console.log(images);
 
-    return {...result, images}
+    // console.log({...result, image})
+    return {...result, image}
 }
 
-exports.setProductData = async(id, title, brand, description, price, stock) => {
+exports.setProductData = async(id, title, brand, description, price, stock, discount, mrp) => {
     // console.log({id, title, brand, description, price, stock});
     
-    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, price = ? WHERE id = ?`, [title, brand, description, price, id])
+    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, price = ?, discount = ?, mrp = ? WHERE id = ?`, [title, brand, description, price, discount, mrp, id])
 
-    // if(updateProduct.affectedRows === 0){
-    //     throw new Error("Could not Edit Product Details")
-    // }
+    if(updateProduct.affectedRows === 0){
+        throw new Error("Could not Edit Product Details")
+    }
 
     const updateStock = await runQuery(`UPDATE product_inventory SET stock = ? WHERE product_id = ?`, [stock, id])
 
-    // if(updateStock.affectedRows === 0){
-    //     throw new Error("Could not Edit Product Stock")
-    // }
+    if(updateStock.affectedRows === 0){
+        throw new Error("Could not Edit Product Stock")
+    }
 }
 
 exports.setProductImages = async(productId, imagePaths) => {
+    let newImage = [];
     for (let i = 0; i < imagePaths.length; i++) {
         const insertImage = await runQuery(
             `INSERT INTO product_images (product_id, image) VALUES (?, ?)`,
             [productId, imagePaths[i]]
         );
-        // if(insertImage.affectedRows === 0){
-        //     throw error;
-        // }
+        newImage.push({id: insertImage.insertId, image: `${imagePaths[i]}`})
     }
+    // console.log(newImage);
+    return newImage;
 }
 
-exports.removeImages = async(toDelete) => {
-    for (let i = 0; i < toDelete.length; i++) {
-        await runQuery(`DELETE FROM product_images WHERE image = ?`,[toDelete[i]]);
+exports.removeImages = async(toDeleteIds) => {
+    // const paths = []
+    // for (let i = 0; i < toDeleteIds.length; i++) {
+    //     const getPath = await runQuery(`SELECT image FROM product_images WHERE id =?`, [toDeleteIds[i]])
+    //     // console.log(getPath);
+    //     // console.log(getPath[0].image);
+    //     paths.push(getPath[0].image)
+    //     await runQuery(`DELETE FROM product_images WHERE id = ?`,[toDeleteIds[i]]);
+    // }
+    // // console.log(paths);
+    // for (let i = 0; i < toDeleteIds.length; i++) {
+    //     const absolutePath = path.join(__dirname, "..", `${paths[i]}`)
+    //     // console.log(absolutePath);
+    //     await fs.remove(absolutePath)
+    // }
+
+    for (let i = 0; i < toDeleteIds.length; i++) {
+        const getPath = await runQuery(`SELECT image FROM product_images WHERE id =?`, [toDeleteIds[i]])
+        // console.log(getPath);
+        // console.log(getPath[0].image);
+        // paths.push(getPath[0].image)
+        await runQuery(`DELETE FROM product_images WHERE id = ?`,[toDeleteIds[i]]);
+        const absolutePath = path.join(__dirname, "..", `${getPath[0].image}`)
+        await fs.remove(absolutePath)
     }
 }
 
 exports.setThumbnail = async(productId, imagePath) => {
+    const [oldThumbnail] = await runQuery(`SELECT thumbnail FROM products WHERE id = ?`, [productId]) 
     await runQuery("UPDATE products SET thumbnail = ? WHERE id = ?", [imagePath, productId]);
+
+    // console.log(oldThumbnail.thumbnail);
+    const absolutePath = path.join(__dirname, "..", `${oldThumbnail.thumbnail}`)
+    await fs.remove(absolutePath)
+}
+
+exports.addDetails = async (title, brand, description, price, status, stock, mrp, discount) => {
+    const result = await runQuery(`INSERT INTO products (title, brand, description, price, status, rating, mrp, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,[title, brand, description, price, status, 0.00, mrp, discount])
+
+    if(result.length < 0){
+        throw new Error ("Could not add Product Details")
+    }
+
+    const productId = result.insertId
+    // console.log(productId);
+
+    const addStock = await runQuery(`INSERT INTO product_inventory (product_id, stock) VALUES (?, ?)`,[productId, stock])
+
+    return productId
+}
+
+exports.updateProductStatus = async (newStatus, productId) => {
+    await runQuery(`UPDATE products SET status = ? WHERE id = ?`, [newStatus, productId])
+}
+
+exports.deleteProductPermanently = async(productId) => {
+    const productInventory =  await runQuery(`DELETE FROM product_inventory WHERE product_id = ?`,[productId])
+    if(productInventory.affectedRows === 0){
+        throw new Error ("Product Inventory Not Found")
+    }
+    const productImages = await runQuery(`DELETE FROM product_images WHERE product_id = ?`,[productId])
+    if(productImages.affectedRows === 0){
+        throw new Error ("Product Images Not Found")
+    }
+    const removeCartItem = await runQuery(`DELETE FROM cart_item WHERE product_id = ?`, [productId])
+    if(removeCartItem.affectedRows === 0){
+        throw new Error ("Couldn't remove Product from Cart")
+    }
+    const removeOrderItem =  await runQuery(`DELETE FROM order_item WHERE product_id = ?`,[productId])
+    if(removeOrderItem.affectedRows === 0){
+        throw new Error ("Couldn't remove Product from Orders")
+    }
+    const productDetails = await runQuery(`DELETE FROM products WHERE id = ?`,[productId])
+    if(productDetails.affectedRows === 0){
+        throw new Error ("Product Details Not Found")
+    }
+
+    const absolutePath = path.join(__dirname, "../uploads/products", `${productId}`)
+    // console.log(absolutePath);
+    fs.remove(absolutePath)
 }

@@ -16,5 +16,8 @@ router.post("/edit-product", verifyAdminToken, adminController.setEditedProduct)
 router.post("/upload/product/:id", verifyAdminToken, upload.array("images", 5), adminController.uploadProductImages);
 router.post("/upload/product-thumbnail/:id", verifyAdminToken, upload.single("thumbnail"), adminController.uploadProductThumbnail);
 router.post("/product/remove-images", verifyAdminToken, adminController.removeProductImages);
+router.post("/product/add", verifyAdminToken, adminController.addProductDetails);
+router.post("/product/delete", verifyAdminToken, adminController.deleteProduct);
+router.post("/product/update-status", verifyAdminToken, adminController.updateProductStatus);
 
 module.exports = router;
