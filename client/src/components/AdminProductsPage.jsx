@@ -9,7 +9,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { Grid, Stack, width } from '@mui/system';
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { replace, useNavigate, useParams } from 'react-router';
 import { getImageUrl } from '../utils/imageUrl';
@@ -18,6 +18,18 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import IconButton from '@mui/material/IconButton';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Autocomplete from '@mui/material/Autocomplete';
+
+import dayjs from 'dayjs';
+import { DemoContainer, DemoItem } from '@mui/x-date-pickers/internals/demo';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DesktopDateTimePicker, DesktopDateTimePickerLayout } from '@mui/x-date-pickers/DesktopDateTimePicker';
+// import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
+// import { TimeRangePicker } from '@mui/x-date-pickers-pro/TimeRangePicker';
+// import { DateTimeRangePicker } from '@mui/x-date-pickers-pro/DateTimeRangePicker';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -99,9 +111,22 @@ function AdminProductsPage() {
     }, [inputMrp, inputPrice])
 
     const handleEdit = async (editedData) => {
-        // console.log(editedData);
+        // console.log(editedData.start_time);
+
+        
+        const sDate = dayjs(editedData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
+        const eDate = dayjs(editedData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
+        // console.log(sDate);
+        // console.log(eDate);
+        // console.log(dayjs().isBefore(editedData.start_time, "minute"));
+
+        if(!dayjs().isBefore(editedData.start_time, "minute") || !dayjs().isBefore(editedData.end_time, "minute")){
+            return console.error("Start Time or End Time is before current Time");
+        }
         
         // console.log({id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData});
+        // console.log({ ...editedData, id: data.id, start_time: sDate, end_time: eDate});
+        
         
         const response = await fetch("http://localhost:3000/admin/edit-product", {
             method: "POST",
@@ -109,10 +134,15 @@ function AdminProductsPage() {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({id: data.id, stock: parseInt(editedData.stock), ...editedData})
+            body: JSON.stringify({ ...editedData, id: data.id, start_time: sDate, end_time: eDate})
+            // body: JSON.stringify({id: data.id, stock: parseInt(editedData.stock), start_time: sDate, end_time: eDate, ...editedData})
         })
 
         if(response.ok){
+            // setTimeout(function() {
+            //     // console.log("This message appears after 2 seconds.");
+            //     navigate("/admin/products", {replace: true})
+            // }, 500);
             navigate("/admin/products", {replace: true})
         }
     }
@@ -522,6 +552,8 @@ function AdminProductsPage() {
                                     helperText={errors.description ? errors.description.message : ""}
                                 />
 
+
+                                <Box sx={{display: "flex"}}>
                                 <TextField label="MRP (in $)" type='text' {...register("mrp", {
                                     required: {
                                         value: true,
@@ -534,8 +566,8 @@ function AdminProductsPage() {
                                 })}
                                     error={!!errors.mrp}
                                     helperText={errors.mrp ? errors.mrp.message : ""}
+                                    sx={{width: "40%", pr: 1}}
                                 />
-                                <Box sx={{display: "flex"}}>
                                 <TextField label="Selling Price (in $)" type='text' {...register("price", {
                                     required: {
                                         value: true,
@@ -548,7 +580,7 @@ function AdminProductsPage() {
                                 })}
                                     error={!!errors.price}
                                     helperText={errors.price ? errors.price.message : ""}
-                                    sx={{width: "100%", pr: 1}}
+                                    sx={{width: "40%", pr: 1}}
                                 />
 
                                 <TextField label="Discount Percentage" type = "text" {...register("discount", {
@@ -567,6 +599,57 @@ function AdminProductsPage() {
 
                                 </TextField>
                                 </Box>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DemoContainer
+                                    components={[
+                                        'DateTimePicker'
+                                        ]}
+                                    >
+                                    <DemoItem label="Sale Start">
+                                        <Controller
+                                            control={control}
+                                            defaultValue={dayjs()}
+                                            name="start_time"
+                                            rules={{ required: "Start Date is required" }}
+                                            render={({ field }) => (
+                                                <DateTimePicker 
+                                                    // defaultValue={dayjs()}
+                                                    // views={['year', 'month', 'day', 'hours', 'minutes']} 
+                                                    disablePast
+                                                    value={field.value}
+                                                    inputRef={field.ref}
+                                                    onChange={(date) => {
+                                                        field.onChange(date);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </DemoItem>
+                                    <DemoItem label="Sale End">
+                                        <Controller
+                                            control={control}
+                                            defaultValue={dayjs()}
+                                            name="end_time"
+                                            rules={{ required: "End Date is required" }}
+                                            render={({ field }) => (
+                                                <DateTimePicker 
+                                                    // defaultValue={dayjs()}
+                                                    // views={['year', 'month', 'day', 'hours', 'minutes']} 
+                                                    disablePast
+                                                    value={field.value}
+                                                    inputRef={field.ref}
+                                                    onChange={(date) => {
+                                                        field.onChange(date);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </DemoItem>
+                                    </DemoContainer>
+                                </LocalizationProvider>
+                                {/* <DesktopDateTimePickerLayout>
+                                    <DesktopDateTimePicker defaultValue={dayjs('2022-04-17T15:30')} />
+                                </DesktopDateTimePickerLayout> */}
 
                                 <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
                                     required: {

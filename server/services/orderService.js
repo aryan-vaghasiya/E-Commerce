@@ -43,10 +43,17 @@ exports.addOrder = async(userId) => {
 
     const insertItem = await runQuery(`
         INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
-        SELECT ?, ci.product_id, ci.quantity, p.price 
+        SELECT ?, ci.product_id, ci.quantity, pp.price 
         FROM cart_item ci 
-        JOIN products p ON ci.product_id = p.id 
-        WHERE ci.user_id = ? AND ci.cart_id = ?`,[orderId, userId, cartId]);
+        JOIN product_pricing pp ON ci.product_id = pp.product_id
+        WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
+    // const insertItem = await runQuery(`
+    //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
+    //     SELECT ?, ci.product_id, ci.quantity, pp.price 
+    //     FROM cart_item ci 
+    //     JOIN products p ON ci.product_id = p.id
+    //     JOIN product_pricing pp on pp.product_id = p.id
+    //     WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
     if (insertItem.affectedRows === 0) {
         throw new Error("Couldn't insert Order Item");
     }

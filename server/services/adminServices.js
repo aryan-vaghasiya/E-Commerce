@@ -123,12 +123,17 @@ exports.getOrderData = async (orderId) => {
                                     oi.quantity,
                                     oi.purchase_price as price,
                                     p.title,
-                                    p.price,
+                                    pp.price,
+                                    pp.mrp,
+                                    pp.discount,
                                     p.rating,
                                     p.brand,
                                     p.thumbnail
-                                    FROM order_item oi JOIN products p ON oi.product_id = p.id
-                                    WHERE oi.order_id = ?`,[orderId]);
+                                    FROM order_item oi 
+                                    JOIN products p ON oi.product_id = p.id
+                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    WHERE oi.order_id = ? 
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId]);
     result.products = products
     // console.log(result);
     return result;
@@ -138,9 +143,9 @@ exports.getAllProducts = async(page, limit, offset) => {
     const results = await runQuery(`SELECT
                                         p.id,
                                         p.title,
-                                        p.price,
-                                        p.mrp,
-                                        p.discount,
+                                        pp.price,
+                                        pp.mrp,
+                                        pp.discount,
                                         p.rating,
                                         p.brand,
                                         p.thumbnail,
@@ -149,7 +154,10 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
                                         DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as inventory_updated
-                                    FROM products p JOIN product_inventory pin ON p.id = pin.product_id
+                                    FROM products p
+                                    JOIN product_inventory pin ON p.id = pin.product_id
+                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    WHERE NOW() BETWEEN pp.start_time AND pp.end_time
                                     ORDER BY p.last_updated DESC
                                     LIMIT ?
                                     OFFSET ?`, [limit, offset]);
@@ -177,9 +185,9 @@ exports.getProductData = async (productId) => {
                                         p.id,
                                         p.title,
                                         p.description,
-                                        p.price,
-                                        p.mrp,
-                                        p.discount,
+                                        pp.price,
+                                        pp.mrp,
+                                        pp.discount,
                                         p.rating,
                                         p.brand,
                                         p.thumbnail,
@@ -188,8 +196,10 @@ exports.getProductData = async (productId) => {
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
                                         DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated
-                                    FROM products p JOIN product_inventory pin ON p.id = pin.product_id
-                                    WHERE p.id = ?`, [productId]);
+                                    FROM products p 
+                                    JOIN product_inventory pin ON p.id = pin.product_id
+                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    WHERE p.id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`, [productId]);
     const image = await runQuery(`SELECT id, image FROM product_images WHERE product_id = ?`,[productId])
     // const images = image.map(item => item.image)
     // console.log(images);
@@ -201,17 +211,103 @@ exports.getProductData = async (productId) => {
     return {...result, image}
 }
 
-exports.setProductData = async(id, title, brand, description, price, stock, discount, mrp) => {
+exports.setProductData = async(id, title, brand, description, price, stock, discount, mrp, start_time, end_time , tenYearsLater) => {
     // console.log({id, title, brand, description, price, stock});
+    // console.log({start_time, end_time, tenYearsLater});
     
-    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, price = ?, discount = ?, mrp = ? WHERE id = ?`, [title, brand, description, price, discount, mrp, id])
-
+    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ? WHERE id = ?`, [title, brand, description, id])
     if(updateProduct.affectedRows === 0){
         throw new Error("Could not Edit Product Details")
     }
 
-    const updateStock = await runQuery(`UPDATE product_inventory SET stock = ? WHERE product_id = ?`, [stock, id])
+    // const [selectLastEntry] = await runQuery(`SELECT * FROM product_pricing WHERE product_id = ? ORDER BY id DESC`,[id])
+    // // console.log(selectLastEntry.id);
+    // const lastEntry = selectLastEntry.id
+    // const lastPrice = selectLastEntry.price
+    // const lastMrp = selectLastEntry.mrp
+    // const lastDiscount = selectLastEntry.discount
+    // if(!lastEntry){
+    //     throw new Error("Could not Find Pricing Entry")
+    // }
 
+    // const updateOldPricing = await runQuery(`UPDATE product_pricing SET end_time = ? WHERE id = ? AND product_id`,[start_time, lastEntry, id]);
+    // if(updateOldPricing.affectedRows === 0){
+    //     throw new Error("Could not Update Old Pricing")
+    // }
+
+    // const [newOfferStartDate] = await runQuery(`SELECT DATE_ADD(?, INTERVAL 1 SECOND) as new_sTime`, [start_time])
+    // // console.log(start_time);
+    // // console.log(newOfferStartDate.new_time);
+    // const new_sTime = newOfferStartDate.new_sTime
+    
+    // const addNewPricing = await runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [id, new_sTime, end_time, price, mrp, discount])
+    // if(addNewPricing.affectedRows === 0){
+    //     throw new Error("Could not Add New Pricing")
+    // }
+
+    // const [newOfferEndDate] = await runQuery(`SELECT DATE_ADD(?, INTERVAL 1 SECOND) as new_eTime`, [end_time])
+    // const new_eTime = newOfferEndDate.new_eTime
+    // const addLaterPricing = await runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [id, new_eTime, tenYearsLater, lastPrice, lastMrp, lastDiscount])
+
+    // 1. Find currently active pricing for the product
+    const [activePricing] = await runQuery(`
+    SELECT * FROM product_pricing 
+        WHERE product_id = ? AND NOW() BETWEEN start_time AND end_time
+        ORDER BY id DESC LIMIT 1
+    `, [id]);
+
+    if (!activePricing) {
+        throw new Error("No active pricing entry found for this product");
+    }
+
+    const activeId = activePricing.id;
+    const prevPrice = activePricing.price;
+    const prevMrp = activePricing.mrp;
+    const prevDiscount = activePricing.discount;
+
+    // 2. Set end_time of current pricing to new offer's start time
+    const update = await runQuery(
+        `UPDATE product_pricing SET end_time = ? WHERE id = ?`,
+        [start_time, activeId]
+    );
+
+    if (update.affectedRows === 0) {
+        throw new Error("Failed to update previous pricing");
+    }
+
+    // 3. Add the new pricing offer (start_time + 1s to avoid exact overlap)
+    const [{ new_sTime }] = await runQuery(
+        `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_sTime`,
+        [start_time]
+    );
+
+    // You can also use: new Date(new Date(start_time).getTime() + 1000) in JS directly
+    const insertNew = await runQuery(
+        `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
+        [id, new_sTime, end_time, price, mrp, discount]
+    );
+
+    if (insertNew.affectedRows === 0) {
+        throw new Error("Failed to insert new pricing");
+    }
+
+    // 4. Only re-add the "previous" pricing after offer ends if this is a temporary discount
+    // (optional, based on business rule)
+    const reAddTime = await runQuery(
+        `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_eTime`,
+        [end_time]
+    );
+    const new_eTime = reAddTime[0].new_eTime;
+
+    // const defaultEnd = '2035-07-17 12:30:00'; // or calculate tenYearsLater in JS
+
+    const reinstate = await runQuery(
+        `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
+        [id, new_eTime, tenYearsLater, prevPrice, prevMrp, prevDiscount]
+    );
+
+
+    const updateStock = await runQuery(`UPDATE product_inventory SET stock = ? WHERE product_id = ?`, [stock, id])
     if(updateStock.affectedRows === 0){
         throw new Error("Could not Edit Product Stock")
     }
@@ -267,16 +363,26 @@ exports.setThumbnail = async(productId, imagePath) => {
 }
 
 exports.addDetails = async (title, brand, description, price, status, stock, mrp, discount) => {
-    const result = await runQuery(`INSERT INTO products (title, brand, description, price, status, rating, mrp, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,[title, brand, description, price, status, 0.00, mrp, discount])
-
-    if(result.length < 0){
+    const result = await runQuery(`
+        INSERT INTO products (title, brand, description, status, rating) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,[title, brand, description, status, 0.00]
+    )
+    if(result.affectedRows === 0){
         throw new Error ("Could not add Product Details")
     }
 
     const productId = result.insertId
     // console.log(productId);
 
+    const addPricing = runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [productId, start_time, end_time, price, mrp, discount])
+    if(addPricing.affectedRows === 0){
+        throw new Error("Could not Add Pricing")
+    }
+
     const addStock = await runQuery(`INSERT INTO product_inventory (product_id, stock) VALUES (?, ?)`,[productId, stock])
+    if(addStock.affectedRows === 0){
+        throw new Error("Could Add Stock")
+    }
 
     return productId
 }
@@ -285,29 +391,29 @@ exports.updateProductStatus = async (newStatus, productId) => {
     await runQuery(`UPDATE products SET status = ? WHERE id = ?`, [newStatus, productId])
 }
 
-exports.deleteProductPermanently = async(productId) => {
-    const productInventory =  await runQuery(`DELETE FROM product_inventory WHERE product_id = ?`,[productId])
-    if(productInventory.affectedRows === 0){
-        throw new Error ("Product Inventory Not Found")
-    }
-    const productImages = await runQuery(`DELETE FROM product_images WHERE product_id = ?`,[productId])
-    if(productImages.affectedRows === 0){
-        throw new Error ("Product Images Not Found")
-    }
-    const removeCartItem = await runQuery(`DELETE FROM cart_item WHERE product_id = ?`, [productId])
-    if(removeCartItem.affectedRows === 0){
-        throw new Error ("Couldn't remove Product from Cart")
-    }
-    const removeOrderItem =  await runQuery(`DELETE FROM order_item WHERE product_id = ?`,[productId])
-    if(removeOrderItem.affectedRows === 0){
-        throw new Error ("Couldn't remove Product from Orders")
-    }
-    const productDetails = await runQuery(`DELETE FROM products WHERE id = ?`,[productId])
-    if(productDetails.affectedRows === 0){
-        throw new Error ("Product Details Not Found")
-    }
+// exports.deleteProductPermanently = async(productId) => {
+//     const productInventory =  await runQuery(`DELETE FROM product_inventory WHERE product_id = ?`,[productId])
+//     if(productInventory.affectedRows === 0){
+//         throw new Error ("Product Inventory Not Found")
+//     }
+//     const productImages = await runQuery(`DELETE FROM product_images WHERE product_id = ?`,[productId])
+//     if(productImages.affectedRows === 0){
+//         throw new Error ("Product Images Not Found")
+//     }
+//     const removeCartItem = await runQuery(`DELETE FROM cart_item WHERE product_id = ?`, [productId])
+//     if(removeCartItem.affectedRows === 0){
+//         throw new Error ("Couldn't remove Product from Cart")
+//     }
+//     const removeOrderItem =  await runQuery(`DELETE FROM order_item WHERE product_id = ?`,[productId])
+//     if(removeOrderItem.affectedRows === 0){
+//         throw new Error ("Couldn't remove Product from Orders")
+//     }
+//     const productDetails = await runQuery(`DELETE FROM products WHERE id = ?`,[productId])
+//     if(productDetails.affectedRows === 0){
+//         throw new Error ("Product Details Not Found")
+//     }
 
-    const absolutePath = path.join(__dirname, "../uploads/products", `${productId}`)
-    // console.log(absolutePath);
-    fs.remove(absolutePath)
-}
+//     const absolutePath = path.join(__dirname, "../uploads/products", `${productId}`)
+//     // console.log(absolutePath);
+//     fs.remove(absolutePath)
+// }

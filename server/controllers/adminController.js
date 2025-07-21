@@ -102,9 +102,18 @@ exports.getSingleProduct = async (req,res) => {
 exports.setEditedProduct = async (req, res) => {
     const {id, title, brand, description, price, stock, discount, mrp} = req.body;
 
+    const localTime = new Date(new Date().toISOString().slice(0, 19)+"-05:30")
+    const currentTime = localTime.toISOString().slice(0, 19).replace('T', ' ')
+    const tenYearsLater = (parseInt(localTime.toISOString().slice(0,4)) + 10)+ localTime.toISOString().slice(4, 19).replace('T', ' ')
+    const {start_time} = req.body ;
+    const {end_time} = req.body;
+
+    // console.log(start_time, end_time);
+
     // console.log(req.body);
     try{
-        await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp);
+        // await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time ?? currentTime, end_time ?? tenYearsLater);
+        await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time, end_time, tenYearsLater);
         return res.status(200).send("Product Edited Successfully");
     }
     catch(err){

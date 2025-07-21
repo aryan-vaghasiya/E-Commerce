@@ -19,12 +19,14 @@ exports.getWishlistService = async(userId) => {
                                         wi.product_id AS id,
                                         p.title,
                                         p.description,
-                                        p.price,
+                                        pp.price,
                                         p.rating,
                                         p.brand,
                                         p.thumbnail
-                                    FROM wishlist wi JOIN products p ON wi.product_id = p.id
-                                    WHERE wi.user_id = ?
+                                    FROM wishlist wi 
+                                    JOIN products p ON wi.product_id = p.id
+                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    WHERE wi.user_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time
                                     ORDER BY wi.id`, [userId]);
     // console.log(getCart);
     if(getCart.length < 0){

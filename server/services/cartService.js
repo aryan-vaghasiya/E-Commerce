@@ -49,7 +49,9 @@ exports.getCartService = async(userId) => {
                                         ci.quantity,
                                         p.title,
                                         p.description,
-                                        p.price,
+                                        pp.price,
+                                        pp.mrp,
+                                        pp.discount,
                                         p.rating, 
                                         p.status,
                                         pi.stock,
@@ -57,7 +59,8 @@ exports.getCartService = async(userId) => {
                                         p.thumbnail
 									FROM products p JOIN product_inventory pi ON p.id = pi.product_id
                                     JOIN cart_item ci ON p.id = ci.product_id
-                                    WHERE ci.user_id = ?`, [userId]);
+                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    WHERE ci.user_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`, [userId]);
                                     // WHERE ci.user_id = ? AND p.status = ?`, [userId, "active"]);
     // `SELECT 
     //     ci.product_id AS id,

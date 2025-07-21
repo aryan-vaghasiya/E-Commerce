@@ -2,7 +2,13 @@ const runQuery = require("../db");
 
 exports.getAllProducts = async(page, limit, offset) => {
     const status = "active"
-    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.status = ? LIMIT ? OFFSET ?", ["active", limit, offset]);
+    const results = await runQuery(`SELECT p.*, pp.price, pp.mrp, pp.discount, i.stock 
+        FROM products p 
+        JOIN product_inventory i ON p.id = i.product_id
+        JOIN product_pricing pp ON pp.product_id = p.id
+        WHERE p.status = ?
+        AND NOW() BETWEEN pp.start_time AND pp.end_time
+        LIMIT ? OFFSET ?`, ["active", limit, offset]);
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -23,7 +29,7 @@ exports.getAllProducts = async(page, limit, offset) => {
 
 exports.getSearchedProducts = async (page, limit, offset, query) => {
     const status = "active"
-    const results = await runQuery(`SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%') AND p.status = ? LIMIT ? OFFSET ?`, [query, query,"active", limit, offset]);
+    const results = await runQuery(`SELECT p.*, pp.price, pp.mrp, pp.discount, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id JOIN product_pricing pp ON pp.product_id = p.id WHERE p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%') AND p.status = ? AND NOW() BETWEEN pp.start_time AND pp.end_time LIMIT ? OFFSET ?`, [query, query,"active", limit, offset]);
     if(results.length === 0){
         // throw new Error ("Could not select searched products")
         return {}
@@ -45,7 +51,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
 
 
 exports.getSingleProduct = async(productId) => {
-    const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id WHERE p.id = ?", [productId]);
+    const results = await runQuery("SELECT p.*, pp.price, pp.mrp, pp.discount, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id JOIN product_pricing pp ON pp.product_id = p.id WHERE p.id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time", [productId]);
     if(results.length === 0){
         throw new Error ("Failed to fetch product details")
     }

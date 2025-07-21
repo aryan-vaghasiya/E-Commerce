@@ -38,11 +38,11 @@ const dispatch = useDispatch()
                     </Box>
                     <Typography>Price: ${item.price}</Typography>
 
-                    <Typography>Item Value: $
+                    {/* <Typography>Item Value: $
                         {
                             (item.priceValue)
                         }
-                    </Typography>
+                    </Typography> */}
                     
 
                     {/* <Box sx={{display: "flex", justifyContent: "center"}}>
