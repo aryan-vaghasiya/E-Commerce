@@ -137,6 +137,13 @@ function AdminNavBar() {
                             </Typography>
                         )}
                     </NavLink>
+                    <NavLink to={"/admin/coupons"}>
+                        {({isActive}) => (
+                            <Typography sx={getNavClass(isActive)}>
+                            Coupons
+                            </Typography>
+                        )}
+                    </NavLink>
                     <Box sx={{ml: "auto", display: "flex", alignItems: "center"}}>
                         <Typography>Admin</Typography>
                         <Tooltip title="Account settings">

@@ -123,17 +123,33 @@ exports.getOrderData = async (orderId) => {
                                     oi.quantity,
                                     oi.purchase_price as price,
                                     p.title,
-                                    pp.price,
+
+                                    pd.discount_type,
+                                    pd.discount_percentage as offer_discount,
+                                    CASE 
+                                        WHEN pd.discount_percentage IS NOT NULL 
+                                        THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                        ELSE pp.price
+                                    END AS price,
+
                                     pp.mrp,
                                     pp.discount,
                                     p.rating,
                                     p.brand,
                                     p.thumbnail
+
                                     FROM order_item oi 
                                     JOIN products p ON oi.product_id = p.id
                                     JOIN product_pricing pp on pp.product_id = p.id
-                                    WHERE oi.order_id = ? 
-                                    AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId]);
+                                    AND oi.order_id = ? 
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                    
+                                    LEFT JOIN product_discounts pd
+                                    ON pd.product_id = p.id
+                                    AND pd.is_active = 1
+                                    AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                    AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                                    `,[orderId]);
     result.products = products
     // console.log(result);
     return result;
@@ -153,11 +169,21 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
-                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as inventory_updated
+                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as inventory_updated,
+
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount
                                     FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
-                                    JOIN product_pricing pp on pp.product_id = p.id
-                                    WHERE NOW() BETWEEN pp.start_time AND pp.end_time
+                                    JOIN product_pricing pp ON pp.product_id = p.id
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+                                    LEFT JOIN product_discounts pd 
+                                        ON pd.product_id = p.id
+                                        AND pd.is_active = 1
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+
                                     ORDER BY p.last_updated DESC
                                     LIMIT ?
                                     OFFSET ?`, [limit, offset]);
@@ -195,11 +221,29 @@ exports.getProductData = async (productId) => {
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
-                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated
-                                    FROM products p 
+                                        DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated,
+
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount,
+                                        pd.start_time as offer_start_time,
+                                        pd.end_time as offer_end_time,
+                                        CASE 
+                                            WHEN pd.discount_percentage IS NOT NULL 
+                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            ELSE NULL
+                                        END AS offer_price
+                                    FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
-                                    JOIN product_pricing pp on pp.product_id = p.id
-                                    WHERE p.id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`, [productId]);
+                                    JOIN product_pricing pp ON pp.product_id = p.id
+                                    AND p.id = ?
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+                                    LEFT JOIN product_discounts pd 
+                                        ON pd.product_id = p.id
+                                        AND pd.is_active = 1
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                                    `, [productId]);
     const image = await runQuery(`SELECT id, image FROM product_images WHERE product_id = ?`,[productId])
     // const images = image.map(item => item.image)
     // console.log(images);
@@ -211,14 +255,74 @@ exports.getProductData = async (productId) => {
     return {...result, image}
 }
 
-exports.setProductData = async(id, title, brand, description, price, stock, discount, mrp, start_time, end_time , tenYearsLater) => {
+exports.setProductData = async(id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime) => {
     // console.log({id, title, brand, description, price, stock});
     // console.log({start_time, end_time, tenYearsLater});
+    // console.log({id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime});
     
     const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ? WHERE id = ?`, [title, brand, description, id])
     if(updateProduct.affectedRows === 0){
         throw new Error("Could not Edit Product Details")
     }
+
+    const updateStock = await runQuery(`UPDATE product_inventory SET stock = ? WHERE product_id = ?`, [stock, id])
+    if(updateStock.affectedRows === 0){
+        throw new Error("Could not Edit Product Stock")
+    }
+
+    const [current] = await runQuery(`SELECT * FROM product_pricing 
+        WHERE product_id = ? AND start_time <= NOW() AND end_time > NOW() 
+        ORDER BY id DESC LIMIT 1`, [id]
+    );
+    // console.log(current);
+    
+
+    if (
+        current &&
+        parseFloat(current.price) === parseFloat(base_price) &&
+        parseFloat(current.mrp) === parseFloat(base_mrp) &&
+        parseFloat(current.discount) === parseFloat(base_discount)
+    ) {
+    console.log("No base price changes detected.");
+        // return;
+        // return { updated: false };
+    }
+    else{
+        const [newEndDate] = await runQuery(`SELECT DATE_SUB(?, INTERVAL 1 SECOND) as new_eTime`, [currentTime])
+        const new_eTime = newEndDate.new_eTime
+
+        const res = await runQuery(`UPDATE product_pricing SET end_time = ? WHERE id = ?`, [new_eTime, current.id]);
+        if (res.affectedRows === 0) throw new Error("Failed to update old pricing");
+        // if (res[0].affectedRows === 0) throw new Error("Failed to update old pricing");
+
+        const insert = await runQuery(`INSERT INTO product_pricing 
+            (product_id, start_time, end_time, price, mrp, discount)
+            VALUES (?, ?, ?, ?, ?, ?)`, 
+            [id, currentTime, tenYearsLater, base_price, base_mrp, base_discount]
+        );
+
+        if (insert.affectedRows === 0) throw new Error("Failed to insert new pricing");
+        // if (insert[0].affectedRows === 0) throw new Error("Failed to insert new pricing");
+    }
+
+    if (!offer_price || !offer_discount || !start_time || !end_time) return;
+
+    // Deactivate any overlapping time-based discounts
+    await runQuery(
+        `UPDATE product_discounts SET is_active = 0 
+            WHERE product_id = ? AND discount_type = 'time_based'
+            AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))`,
+        [id, start_time, start_time, end_time, end_time]
+    );
+
+    // Insert new time-based discount
+    const insertDiscount = await runQuery(
+        `INSERT INTO product_discounts (product_id, discount_type, discount_percentage, start_time, end_time) VALUES (?, 'time_based', ?, ?, ?)`,
+        [id, offer_discount, start_time, end_time]
+    );
+    if (insertDiscount.affectedRows === 0) throw new Error("Failed to insert discount.");
+
+
 
     // const [selectLastEntry] = await runQuery(`SELECT * FROM product_pricing WHERE product_id = ? ORDER BY id DESC`,[id])
     // // console.log(selectLastEntry.id);
@@ -249,68 +353,65 @@ exports.setProductData = async(id, title, brand, description, price, stock, disc
     // const new_eTime = newOfferEndDate.new_eTime
     // const addLaterPricing = await runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [id, new_eTime, tenYearsLater, lastPrice, lastMrp, lastDiscount])
 
-    // 1. Find currently active pricing for the product
-    const [activePricing] = await runQuery(`
-    SELECT * FROM product_pricing 
-        WHERE product_id = ? AND NOW() BETWEEN start_time AND end_time
-        ORDER BY id DESC LIMIT 1
-    `, [id]);
-
-    if (!activePricing) {
-        throw new Error("No active pricing entry found for this product");
-    }
-
-    const activeId = activePricing.id;
-    const prevPrice = activePricing.price;
-    const prevMrp = activePricing.mrp;
-    const prevDiscount = activePricing.discount;
-
-    // 2. Set end_time of current pricing to new offer's start time
-    const update = await runQuery(
-        `UPDATE product_pricing SET end_time = ? WHERE id = ?`,
-        [start_time, activeId]
-    );
-
-    if (update.affectedRows === 0) {
-        throw new Error("Failed to update previous pricing");
-    }
-
-    // 3. Add the new pricing offer (start_time + 1s to avoid exact overlap)
-    const [{ new_sTime }] = await runQuery(
-        `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_sTime`,
-        [start_time]
-    );
-
-    // You can also use: new Date(new Date(start_time).getTime() + 1000) in JS directly
-    const insertNew = await runQuery(
-        `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
-        [id, new_sTime, end_time, price, mrp, discount]
-    );
-
-    if (insertNew.affectedRows === 0) {
-        throw new Error("Failed to insert new pricing");
-    }
-
-    // 4. Only re-add the "previous" pricing after offer ends if this is a temporary discount
-    // (optional, based on business rule)
-    const reAddTime = await runQuery(
-        `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_eTime`,
-        [end_time]
-    );
-    const new_eTime = reAddTime[0].new_eTime;
-
-    // const defaultEnd = '2035-07-17 12:30:00'; // or calculate tenYearsLater in JS
-
-    const reinstate = await runQuery(
-        `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
-        [id, new_eTime, tenYearsLater, prevPrice, prevMrp, prevDiscount]
-    );
 
 
-    const updateStock = await runQuery(`UPDATE product_inventory SET stock = ? WHERE product_id = ?`, [stock, id])
-    if(updateStock.affectedRows === 0){
-        throw new Error("Could not Edit Product Stock")
-    }
+    // // 1. Find currently active pricing for the product
+    // const [activePricing] = await runQuery(`
+    // SELECT * FROM product_pricing 
+    //     WHERE product_id = ? AND NOW() BETWEEN start_time AND end_time
+    //     ORDER BY id DESC LIMIT 1
+    // `, [id]);
+
+    // if (!activePricing) {
+    //     throw new Error("No active pricing entry found for this product");
+    // }
+
+    // const activeId = activePricing.id;
+    // const prevPrice = activePricing.price;
+    // const prevMrp = activePricing.mrp;
+    // const prevDiscount = activePricing.discount;
+
+    // // 2. Set end_time of current pricing to new offer's start time
+    // const update = await runQuery(
+    //     `UPDATE product_pricing SET end_time = ? WHERE id = ?`,
+    //     [start_time, activeId]
+    // );
+
+    // if (update.affectedRows === 0) {
+    //     throw new Error("Failed to update previous pricing");
+    // }
+
+    // // 3. Add the new pricing offer (start_time + 1s to avoid exact overlap)
+    // const [{ new_sTime }] = await runQuery(
+    //     `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_sTime`,
+    //     [start_time]
+    // );
+
+    // // You can also use: new Date(new Date(start_time).getTime() + 1000) in JS directly
+    // const insertNew = await runQuery(
+    //     `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
+    //     [id, new_sTime, end_time, price, mrp, discount]
+    // );
+
+    // if (insertNew.affectedRows === 0) {
+    //     throw new Error("Failed to insert new pricing");
+    // }
+
+    // // 4. Only re-add the "previous" pricing after offer ends if this is a temporary discount
+    // // (optional, based on business rule)
+    // const reAddTime = await runQuery(
+    //     `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_eTime`,
+    //     [end_time]
+    // );
+    // const new_eTime = reAddTime[0].new_eTime;
+
+    // // const defaultEnd = '2035-07-17 12:30:00'; // or calculate tenYearsLater in JS
+
+    // const reinstate = await runQuery(
+    //     `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
+    //     [id, new_eTime, tenYearsLater, prevPrice, prevMrp, prevDiscount]
+    // );
+
 }
 
 exports.setProductImages = async(productId, imagePaths) => {
@@ -417,3 +518,207 @@ exports.updateProductStatus = async (newStatus, productId) => {
 //     // console.log(absolutePath);
 //     fs.remove(absolutePath)
 // }
+
+exports.getProductForCoupon = async (query, price) => {
+    const result = await runQuery(`SELECT 
+                                    p.id, 
+                                    p.title,
+
+                                    CASE 
+                                        WHEN pd.discount_percentage IS NOT NULL 
+                                        THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                        ELSE pp.price
+                                    END AS price
+
+                                    FROM products p
+                                    JOIN product_pricing pp ON pp.product_id = p.id
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                    LEFT JOIN product_discounts pd ON pd.product_id = p.id
+                                        AND pd.is_active = ?
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+
+                                    WHERE p.status = ? 
+                                        AND p.title LIKE ?
+                                    HAVING price > ? 
+                                    LIMIT ?`,[1, 'active', `%${query}%`, price, 5])
+    // const result = await runQuery(`SELECT 
+    //                                 id, 
+    //                                 title 
+    //                                 FROM products 
+    //                                 WHERE status = ? 
+    //                                 AND title LIKE ? 
+    //                                 LIMIT ?`,['active', `%${query}%`, 5])
+
+    // console.log(result);
+    return result
+}
+
+exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, start_time, end_time, productIds) => {
+
+    const ifActive = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
+    if(ifActive.length > 0) {
+        throw new Error ("This Code is already Active")
+    }
+
+    const result = await runQuery(`INSERT INTO coupons (
+        name, 
+        code, 
+        discount_type, 
+        discount_value, 
+        threshold_amount, 
+        applies_to, 
+        limit_per_user, 
+        min_cart_value,
+        start_time, 
+        end_time, 
+        total_coupons)
+        
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, code, discount_type, discount_value, threshold_amount, applies_to, limit_per_user, min_cart_value, start_time, end_time, total_coupons]
+    );
+
+    if(result.affectedRows === 0){
+        throw new Error ("Could not insert Coupon")
+    }
+    const couponId = result.insertId;
+
+    if (applies_to === 'product' && Array.isArray(productIds)) {
+        const values = productIds.map(pid => [couponId, pid]);
+        const productCoupon = await runQuery(`INSERT INTO coupon_products (coupon_id, product_id) VALUES ?`, [values]);
+
+        if(productCoupon.affectedRows === 0){
+            throw new Error ("Could not add Product coupon")
+        }
+    }
+}
+
+exports.getAllCoupons = async(queryParams) => {
+
+    console.log(queryParams);
+    
+    const {
+        page,
+        limit,
+        offset,
+        search = "",
+        discount_type = "",
+        apply_on = "",
+        is_active = "",
+        start_date = "",
+        end_date = ""
+    } = queryParams;
+
+    let whereClause = ` WHERE 1=1`
+    const params = []
+    const countParams = [];
+
+    if (search) {
+        whereClause += ` AND (name LIKE ? OR code LIKE ?)`;
+        const likeQuery = `%${search}%`;
+        params.push(likeQuery, likeQuery);
+        countParams.push(likeQuery, likeQuery)
+    }
+
+    if (discount_type) {
+        // console.log(discount_type);
+        
+        whereClause += ` AND discount_type = ?`;
+        params.push(discount_type);
+        countParams.push(discount_type)
+    }
+
+    if (apply_on) {
+        whereClause += ` AND applies_to = ?`;
+        params.push(apply_on);
+        countParams.push(apply_on)
+    }
+
+    if (is_active) {
+        whereClause += ` AND is_active = ?`;
+        params.push(parseInt(is_active));
+        countParams.push(parseInt(is_active))
+    }
+
+    if (start_date) {
+        whereClause += ` AND start_time >= ?`;
+        params.push(start_date);
+        countParams.push(start_date)
+    }
+
+    if (end_date) {
+        whereClause += ` AND end_time <= ?`;
+        params.push(end_date);
+        countParams.push(end_date)
+    }
+
+    let dataQuery = `SELECT
+                        id, 
+                        name, 
+                        code, 
+                        discount_type,
+                        discount_value,
+                        threshold_amount, 
+                        applies_to, 
+                        for_new_users_only, 
+                        limit_per_user, 
+                        DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
+                        DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
+                        is_active, 
+                        DATE_FORMAT(created_at, '%d/%m/%Y') as created_at,  
+                        total_coupons, 
+                        times_used
+                    FROM coupons
+                    ${whereClause}
+                    ORDER BY created_at DESC
+                    LIMIT ? OFFSET ?
+                    `;
+
+    params.push(limit, offset);
+
+    // console.log(dataQuery);
+    // console.log(params);
+    
+    const results = await runQuery(dataQuery, params);
+
+    if(results.length === 0){
+        throw new Error ("Could not select all coupons")
+    }
+
+    const [{total}] = await runQuery(`SELECT COUNT(*) as total FROM coupons ${whereClause}`,countParams)
+    if(!total){
+        throw new Error ("Could not count total coupons")
+    }
+
+    const allCoupons = {
+        coupons : results,
+        // currentPage : page,
+        pages: Math.ceil (total / limit),
+        total
+    }
+    // console.log("Data Query:", dataQuery, params);
+    // console.log("Count Query:", `SELECT COUNT(*) as total FROM coupons ${whereClause}`, countParams);
+    return allCoupons
+
+    // const results = await runQuery(`SELECT
+    //                                     id, 
+    //                                     name, 
+    //                                     code, 
+    //                                     discount_type,
+    //                                     discount_value,
+    //                                     threshold_amount, 
+    //                                     applies_to, 
+    //                                     for_new_users_only, 
+    //                                     limit_per_user, 
+    //                                     DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
+    //                                     DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
+    //                                     is_active, 
+    //                                     DATE_FORMAT(created_at, '%d/%m/%Y') as created_at,  
+    //                                     total_coupons, 
+    //                                     times_used
+    //                                 FROM coupons
+
+    //                                 ORDER BY created_at DESC
+    //                                 LIMIT ?
+    //                                 OFFSET ?`, [limit, offset]);
+}

@@ -19,14 +19,28 @@ exports.getWishlistService = async(userId) => {
                                         wi.product_id AS id,
                                         p.title,
                                         p.description,
-                                        pp.price,
+                                        
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount,
+                                        CASE 
+                                            WHEN pd.discount_percentage IS NOT NULL 
+                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            ELSE pp.price
+                                        END AS price,
+
                                         p.rating,
                                         p.brand,
                                         p.thumbnail
                                     FROM wishlist wi 
                                     JOIN products p ON wi.product_id = p.id
                                     JOIN product_pricing pp on pp.product_id = p.id
-                                    WHERE wi.user_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                    AND wi.user_id = ? 
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                            LEFT JOIN product_discounts pd
+                                    ON pd.product_id = p.id
+                                    AND pd.is_active = 1
+                                    AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                    AND (pd.end_time IS NULL OR pd.end_time > NOW())
                                     ORDER BY wi.id`, [userId]);
     // console.log(getCart);
     if(getCart.length < 0){

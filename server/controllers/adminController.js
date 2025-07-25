@@ -100,7 +100,7 @@ exports.getSingleProduct = async (req,res) => {
 }
 
 exports.setEditedProduct = async (req, res) => {
-    const {id, title, brand, description, price, stock, discount, mrp} = req.body;
+    const {id, title, brand, description, base_price, stock, base_discount, base_mrp, offer_price, offer_discount} = req.body;
 
     const localTime = new Date(new Date().toISOString().slice(0, 19)+"-05:30")
     const currentTime = localTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -113,7 +113,7 @@ exports.setEditedProduct = async (req, res) => {
     // console.log(req.body);
     try{
         // await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time ?? currentTime, end_time ?? tenYearsLater);
-        await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time, end_time, tenYearsLater);
+        await adminServices.setProductData(id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time, tenYearsLater, offer_price, offer_discount, currentTime);
         return res.status(200).send("Product Edited Successfully");
     }
     catch(err){
@@ -207,6 +207,64 @@ exports.updateProductStatus = async (req, res) => {
     }
     catch(err){
         console.error("Error updating product status", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.searchProduct = async (req, res) => {
+    const query = req.query.query
+    const price = req.query.price || 0
+    if(!query.trim()) return res.json([])
+
+    try{
+        const products = await adminServices.getProductForCoupon(query, price)
+        res.status(200).json(products);
+    }
+    catch(err){
+        console.error("Error fetching Searched Products: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.addCoupon = async(req, res) => {
+    const {coupon_name : name, coupon_code : code, discount_type, discount_value, discount_limit: threshold_amount, discount_on : applies_to, total_coupons, limit_per_user, start_time, end_time, selected_products, min_cart_value} = req.body
+
+    const productIds = selected_products?.map(product => product.id)
+    // console.log(discount_value);
+
+    try{
+        await adminServices.addCouponData(
+                                            name, code, discount_value, discount_type, applies_to,
+                                            // threshold_amount ?? null, 
+                                            !threshold_amount ? null : threshold_amount, 
+                                            !total_coupons ? null : total_coupons, 
+                                            !limit_per_user ? null : limit_per_user,
+                                            !min_cart_value ? null : min_cart_value,
+                                            start_time, end_time, productIds
+                                        );
+        res.status(200).send("Coupon added Successfully");
+    }
+    catch(err){
+        console.error("Error adding Coupon: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+
+    // console.log(name, code, discount_value, discount_type, applies_to, threshold_amount ?? null, !total_coupons ? null : total_coupons, !limit_per_user ? null : limit_per_user, start_time, end_time, productIds);
+
+}
+
+exports.getCoupons = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
+    const queryParams = {...req.query, page, limit, offset}
+
+    try{
+        const allCoupons = await adminServices.getAllCoupons(queryParams)
+        res.status(200).json(allCoupons);
+    }
+    catch (err){
+        console.error("Error fetching all coupons: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

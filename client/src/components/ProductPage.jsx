@@ -205,15 +205,21 @@ function ProductPage() {
                                         ${product.price}
                                     </Typography>
                                     {/* {product.discount > 0? */}
-                                    {product.discount?
+                                    {product.discount || product.offer_discount?
                                     <Box sx={{display: "flex", alignItems: "center"}}>
                                         <Typography color='gray' sx={{ ml: 1, }}>
                                             {/* <s>${parseFloat((product.price + product.price / 100 * product.discount).toFixed(2))}</s> */}
                                             <s>${product.mrp}</s>
                                         </Typography>
                                         <Typography variant='h6' color='success' sx={{ ml: 1 }}>
-                                            {product.discount}%
+                                            {product.offer_discount ?? product.discount}%
                                         </Typography>
+                                        {
+                                            product.offer_discount?
+                                            <Typography sx={{bgcolor: '#1976D2', color: "white", borderRadius: 1, px: 1, ml: 1, fontSize: 15}}>Limited time deal</Typography>
+                                            :
+                                            null
+                                        }
                                     </Box>
                                     :
                                     null}

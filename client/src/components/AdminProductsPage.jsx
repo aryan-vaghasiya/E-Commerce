@@ -7,8 +7,8 @@ import ImageListItem from '@mui/material/ImageListItem';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Grid, Stack, width } from '@mui/system';
-import React, { useEffect, useState } from 'react'
+import { Grid, Stack} from '@mui/system';
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { replace, useNavigate, useParams } from 'react-router';
@@ -17,7 +17,6 @@ import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import IconButton from '@mui/material/IconButton';
 import CancelIcon from '@mui/icons-material/Cancel';
-import Autocomplete from '@mui/material/Autocomplete';
 
 import dayjs from 'dayjs';
 import { DemoContainer, DemoItem } from '@mui/x-date-pickers/internals/demo';
@@ -27,9 +26,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DesktopDateTimePicker, DesktopDateTimePickerLayout } from '@mui/x-date-pickers/DesktopDateTimePicker';
-// import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
-// import { TimeRangePicker } from '@mui/x-date-pickers-pro/TimeRangePicker';
-// import { DateTimeRangePicker } from '@mui/x-date-pickers-pro/DateTimeRangePicker';
+import Divider from '@mui/material/Divider';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -48,20 +45,28 @@ function AdminProductsPage() {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const [data, setData] = useState(null);
-    const [showUploaded, setShowUploaded] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [editable, setEditable] = useState(false);
     const [toDelete, setToDelete] = useState([]);
-    const [error, setError] = useState(null);
     const token = useSelector(state => state.userReducer.token)
-    const userDetails = useSelector(state => state.detailsReducer)
     const [imagePreview, setImagePreview] = useState([])
-    // const [localPreview, setLocalPreview] = useState([])
     const [thumbnailPreview, setThumbnailPreview] = useState(null)
     const [productStatus, setProductStatus] = useState(null)
 
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
-    const [inputMrp, inputPrice] = watch(["mrp", "price"])
+    // const [inputMrp, inputPrice] = watch(["mrp", "price"])
+
+    const base_mrp = watch('base_mrp');
+    const base_price = watch('base_price');
+
+    // const offer_mrp = watch('offer_mrp');
+    const offer_price = watch('offer_price');
+
+    const calcDiscount = (mrp, price) => {
+        if (!mrp || !price || mrp <= 0) return '';
+        const discount = ((mrp - price) / mrp) * 100;
+        return `${discount.toFixed(2)}`;
+    };
 
     const fetchData = async () => {
         try {
@@ -74,8 +79,7 @@ function AdminProductsPage() {
             if (!response.ok) {
                 const error = await response.json()
                 console.error(error.error);
-                return 
-                // throw new Error(`Error status: ${response.status}`);
+                return
             }
             const result = await response.json();
             // console.log(result);
@@ -84,17 +88,17 @@ function AdminProductsPage() {
                 title: result.title,
                 brand: result.brand,
                 description: result.description,
-                mrp: result.mrp,
-                discount: result.discount,
-                price: result.price,
+                base_mrp: (result.mrp).toFixed(2),
+                // base_mrp: result.mrp,
+                // base_price: (result.price).toFixed(2),
+                base_price: (result.price).toFixed(2),
+                base_discount: result.discount,
                 stock: result.stock,
             });
             setProductStatus(result.status)
-            // console.log(result.status)
         } 
         catch (err) {
             console.error(err)
-            setError(err);
         }
     };
 
@@ -102,40 +106,54 @@ function AdminProductsPage() {
         fetchData()
     }, [])
 
-    useEffect(() => {
-        // if(inputMrp < inputPrice){
-        //     return setValue("discount", "MRP < Price !!!")
-        // }
-        const percentage = Math.abs((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100)
-        setValue("discount", percentage || 0)
-    }, [inputMrp, inputPrice])
+    // useEffect(() => {
+    //     // if(inputMrp < inputPrice){
+    //     //     return setValue("discount", "MRP < Price !!!")
+    //     // }
+    //     const percentage = Math.abs((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100)
+    //     setValue("discount", percentage || 0)
+    // }, [inputMrp, inputPrice])
 
     const handleEdit = async (editedData) => {
-        // console.log(editedData.start_time);
+        // console.log("Editing");
+        // console.log(editedData);
 
-        
-        const sDate = dayjs(editedData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
-        const eDate = dayjs(editedData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
+        let sDate;
+        let eDate;
+
+        if(editedData.start_time && editedData.end_time){
+            sDate = dayjs(editedData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
+            eDate = dayjs(editedData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
+
+            // console.log(sDate);
+            // console.log(eDate);
+            if(!editedData.start_time.isBefore(editedData.end_time, "minute")){
+                return console.error("End Time cannot be before Start Time");
+            }
+            if(!dayjs().isBefore(editedData.start_time, "minute") || !dayjs().isBefore(editedData.end_time, "minute")){
+                return console.error("Start Time or End Time is before current Time");
+            }
+            editedData.start_time = sDate
+            editedData.end_time = eDate
+        }
         // console.log(sDate);
         // console.log(eDate);
         // console.log(dayjs().isBefore(editedData.start_time, "minute"));
 
-        if(!dayjs().isBefore(editedData.start_time, "minute") || !dayjs().isBefore(editedData.end_time, "minute")){
-            return console.error("Start Time or End Time is before current Time");
-        }
+        console.log({ ...editedData, id: data.id, base_discount: calcDiscount(base_mrp, base_price), offer_discount: calcDiscount(base_mrp, offer_price)});
+
+
         
         // console.log({id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData});
-        // console.log({ ...editedData, id: data.id, start_time: sDate, end_time: eDate});
         
-        
+
         const response = await fetch("http://localhost:3000/admin/edit-product", {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ ...editedData, id: data.id, start_time: sDate, end_time: eDate})
-            // body: JSON.stringify({id: data.id, stock: parseInt(editedData.stock), start_time: sDate, end_time: eDate, ...editedData})
+            body: JSON.stringify({ ...editedData, id: data.id, base_discount: calcDiscount(base_mrp, base_price), offer_discount: calcDiscount(base_mrp, offer_price)})
         })
 
         if(response.ok){
@@ -148,13 +166,7 @@ function AdminProductsPage() {
     }
 
     const handleImagePreview = (event) => {
-        // setImagePreview(prev => prev.push(URL.createObjectURL(event.target.files)))
-        // console.log(URL.createObjectURL(event.target.files[0]));
-
         const files = event.target.files;
-        // console.log(event.target.files);
-        
-        // const newFilePreviews = event.target.files.map(file => ({file, url: URL.createObjectURL(file)}))
         const newFilePreviews = []
 
         for (let i = 0; i < files.length; i++) {
@@ -177,11 +189,8 @@ function AdminProductsPage() {
     }
 
     const markToRemove = (image) => {
-        // console.log(imagePath);
-        // const remove = data.image.filter(item => item.image === imagePath)
         setToDelete(prev => [...prev, image])
         const notRemoved = data.image.filter(item => item.image !== image.image)
-        // console.log(notRemoved);
         
         setData(prev => ({...prev, image: notRemoved}))
     }
@@ -254,7 +263,6 @@ function AdminProductsPage() {
         }
     }
     // console.log(thumbnailPreview);
-    
 
     const handleUpload = async (event) => {
         const formData = new FormData();
@@ -283,18 +291,10 @@ function AdminProductsPage() {
             setImagePreview([])
             // setShowUploaded(true)
             setShowPreview(false)
-
-
-            // const newImages = imagePreview.map(item => item.url)
-            // setData(prev => ({...prev, images: [...prev.images, ...newImages]}))
-            // console.log({...data, images: [...data.images, ...newImages]});
         }
         else{
             console.log("Couldn't Upload");
         }
-        // fetchData()
-        // const result = await res.json()
-        // console.log(result);
     }
 
     return (
@@ -324,18 +324,14 @@ function AdminProductsPage() {
                         Change THumbnail
                         <VisuallyHiddenInput
                             type="file"
-                            // onChange={(event) => console.log(event.target.files)}
                             onChange={uploadThumbnail}
                         />
                     </Button>
-                        {/* <Typography>{data.title}</Typography>
-                        <Typography>{data.brand}</Typography> */}
-                    
+
                     <Box sx={{mt: 2}}>
                     <Card sx={{bgcolor: "#EEEEEE"}}>
 
                     <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES - ({data.image.length})</Typography>
-                    {/* <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES - ({data.image.length + localPreview.length})</Typography> */}
                     {
                         data.image.length>0 ?
                         <ImageList sx={{ width: 385, maxHeight: 405, height: "auto", p: 1}} cols={2} rowHeight={"auto"} gap={5}>
@@ -345,8 +341,7 @@ function AdminProductsPage() {
                                     <Paper elevation={3}>
                                     {
                                         editable?
-                                        <IconButton 
-                                            // onClick={() => setToDelete(prev => [...prev, item])}
+                                        <IconButton
                                             onClick={() => markToRemove(item)}
                                             sx={{position: "absolute", top: 0, right: 0}}>
                                             <CancelIcon></CancelIcon>
@@ -355,8 +350,6 @@ function AdminProductsPage() {
                                         null
                                     }
                                     <img
-                                        // srcSet={`${item}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                                        // src={`${item}?w=164&h=164&fit=crop&auto=format`}
                                         src={getImageUrl(item.image)}
                                         alt={item.image}
                                         style={{height: "100%", width: "100%", objectFit: "cover"}}
@@ -366,64 +359,11 @@ function AdminProductsPage() {
                                     </ImageListItem>
                                 ))
                             }
-                            {/* {
-                            showUploaded?
-                                    localPreview.map((item, index) => (
-                                    <ImageListItem key={index} >
-                                    <Paper elevation={3}>
-                                    {
-                                        editable?
-                                        <IconButton 
-                                            // onClick={() => setToDelete(prev => [...prev, item])}
-                                            onClick={() => markToRemove(item)}
-                                            sx={{position: "absolute", top: 0, right: 0}}>
-                                            <CancelIcon></CancelIcon>
-                                        </IconButton>
-                                        :
-                                        null
-                                    }
-                                    <img
-                                        // srcSet={`${item}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                                        // src={`${item}?w=164&h=164&fit=crop&auto=format`}
-                                        src={item.url}
-                                        alt={item}
-                                        style={{height: "100%", width: "100%", objectFit: "cover"}}
-                                        loading="lazy"
-                                    />
-                                    </Paper>
-                                    </ImageListItem>
-                                    ))
-                                :
-                                null
-                            } */}
                         </ImageList>
                         :
                         <Box sx={{width: 385, height: 50}}>
                             <Typography >No Images for this Product</Typography>
                         </Box>
-                        
-                        // <Card>
-                        // <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT IMAGES</Typography>
-                        // <Box sx={{position: "relative"}}>
-                        // {
-                        //     editable?
-                        //     <IconButton 
-                        //         // onClick={() => setToDelete(prev => [...prev, item])}
-                        //         onClick={() => markToRemove(data.images[0])}
-                        //         sx={{position: "absolute", top: 10, right: 10}}>
-                        //         <CancelIcon></CancelIcon>
-                        //     </IconButton>
-                        //     :
-                        //     null
-                        // }
-                        // <CardMedia
-                        //     component="img"
-                        //     sx={{ width: 385, height: 405, objectFit: "contain"}}
-                        //     image={getImageUrl(data.images)}
-                        //     alt="Product Image"
-                        // />
-                        // </Box>
-                        // </Card>
                     }
                     </Card>
                     {
@@ -468,7 +408,6 @@ function AdminProductsPage() {
                             Upload Images
                             <VisuallyHiddenInput
                                 type="file"
-                                // onChange={(event) => console.log(event.target.files)}
                                 onChange={handleImagePreview}
                                 multiple
                             />
@@ -490,7 +429,6 @@ function AdminProductsPage() {
                     {
                         editable?
                         <Box>
-                            {/* <Button onClick={() => setEditable(false)} variant='contained' color='error'>Cancel</Button> */}
                             <Button onClick={revertRemoval} variant='contained' color='error' sx={{mr: 2}}>Cancel</Button>
                             <Button onClick={removeRequest} variant='contained'>Confirm</Button>
                         </Box>
@@ -503,7 +441,6 @@ function AdminProductsPage() {
                     <Card sx={{width: "100%", mb: 3}}>
                         <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>PRODUCT STATUS</Typography>
                         <Box sx={{p: 2}}>
-                            {/* <Typography>Current Status: </Typography> */}
                             <Typography color={productStatus === "active"? 'success': 'warning'} sx={{fontSize: 30, fontWeight: 500, pb: 1}}>{productStatus.toUpperCase()}</Typography>
                             <Button variant='contained' sx={{width: "100%"}} onClick={updateStatus}>Mark as {productStatus === "active" ? "Inactive" : "Active"}</Button>
                         </Box>
@@ -552,105 +489,6 @@ function AdminProductsPage() {
                                     helperText={errors.description ? errors.description.message : ""}
                                 />
 
-
-                                <Box sx={{display: "flex"}}>
-                                <TextField label="MRP (in $)" type='text' {...register("mrp", {
-                                    required: {
-                                        value: true,
-                                        message: "MRP is required"
-                                    },
-                                    pattern: {
-                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                        message: "Not a valid price format"
-                                    }
-                                })}
-                                    error={!!errors.mrp}
-                                    helperText={errors.mrp ? errors.mrp.message : ""}
-                                    sx={{width: "40%", pr: 1}}
-                                />
-                                <TextField label="Selling Price (in $)" type='text' {...register("price", {
-                                    required: {
-                                        value: true,
-                                        message: "Price is required"
-                                    },
-                                    pattern: {
-                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                        message: "Not a valid price format"
-                                    }
-                                })}
-                                    error={!!errors.price}
-                                    helperText={errors.price ? errors.price.message : ""}
-                                    sx={{width: "40%", pr: 1}}
-                                />
-
-                                <TextField label="Discount Percentage" type = "text" {...register("discount", {
-                                    required: {
-                                        value: true,
-                                        message: "Discount Percentage is required"
-                                    }
-                                })}
-                                // slotProps={{
-                                //     input: {
-                                //     readOnly: true,
-                                //     },
-                                // }}
-                                disabled
-                                >
-
-                                </TextField>
-                                </Box>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DemoContainer
-                                    components={[
-                                        'DateTimePicker'
-                                        ]}
-                                    >
-                                    <DemoItem label="Sale Start">
-                                        <Controller
-                                            control={control}
-                                            defaultValue={dayjs()}
-                                            name="start_time"
-                                            rules={{ required: "Start Date is required" }}
-                                            render={({ field }) => (
-                                                <DateTimePicker 
-                                                    // defaultValue={dayjs()}
-                                                    // views={['year', 'month', 'day', 'hours', 'minutes']} 
-                                                    disablePast
-                                                    value={field.value}
-                                                    inputRef={field.ref}
-                                                    onChange={(date) => {
-                                                        field.onChange(date);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </DemoItem>
-                                    <DemoItem label="Sale End">
-                                        <Controller
-                                            control={control}
-                                            defaultValue={dayjs()}
-                                            name="end_time"
-                                            rules={{ required: "End Date is required" }}
-                                            render={({ field }) => (
-                                                <DateTimePicker 
-                                                    // defaultValue={dayjs()}
-                                                    // views={['year', 'month', 'day', 'hours', 'minutes']} 
-                                                    disablePast
-                                                    value={field.value}
-                                                    inputRef={field.ref}
-                                                    onChange={(date) => {
-                                                        field.onChange(date);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </DemoItem>
-                                    </DemoContainer>
-                                </LocalizationProvider>
-                                {/* <DesktopDateTimePickerLayout>
-                                    <DesktopDateTimePicker defaultValue={dayjs('2022-04-17T15:30')} />
-                                </DesktopDateTimePickerLayout> */}
-
                                 <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
                                     required: {
                                         value: true,
@@ -665,7 +503,171 @@ function AdminProductsPage() {
                                     helperText={errors.stock ? errors.stock.message : ""}
                                 />
 
-                                <Button type='submit' variant="contained">Edit Product</Button>
+                                <Typography variant="h6" gutterBottom>Base Pricing</Typography>
+                                <Box sx={{display: "flex"}}>
+                                    {/* <Divider sx={{ mb: 2 }} /> */}
+
+                                    {/* <Stack spacing={2}> */}
+                                    <TextField
+                                        label="Base MRP ($)"
+                                        type="text"
+                                        {...register("base_mrp", {
+                                            required: {
+                                                value: true,
+                                                message: "Base MRP is required"
+                                            },
+                                            pattern: {
+                                                value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                                message: "Not a valid price format"
+                                            }
+                                        })}
+                                        error={!!errors.base_mrp}
+                                        helperText={errors.base_mrp ? errors.base_mrp.message : ""}
+                                        sx={{width: "40%", pr: 1}}
+                                    />
+
+                                    <TextField
+                                        label="Base Selling Price ($)"
+                                        type="text"
+                                        {...register("base_price", {
+                                            required: {
+                                                value: true,
+                                                message: "Base Selling Price is required"
+                                            },
+                                            pattern: {
+                                                value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                                message: "Not a valid price format"
+                                            }
+                                        })}
+                                        error={!!errors.base_price}
+                                        helperText={errors.base_price ? errors.base_price.message : ""}
+                                        sx={{width: "40%", pr: 1}}
+                                    />
+
+                                    <TextField
+                                        label="Base Discount (%)"
+                                        type='text'
+                                        // {...register("base_discount", {
+                                        //     required: {
+                                        //         value: true,
+                                        //         message: "Base Discount (%) is required"
+                                        //     }
+                                        // })}
+                                        value={calcDiscount(base_mrp, base_price)}
+                                        disabled
+                                    />
+                                    {/* </Stack> */}
+                                </Box>
+
+                                {
+                                    data.offer_discount? 
+                                    <Box>
+                                        <Typography variant="h6">Current Offer</Typography>
+                                        <Typography>Price: ${data.offer_price}</Typography>
+                                        <Typography>Discount: {data.offer_discount}%</Typography>
+                                        <Typography>Start Time: {dayjs(data.offer_start_time).format('DD/MM/YYYY h:mm:ss A')}</Typography>
+                                        <Typography>End Time: {dayjs(data.offer_end_time).format('DD/MM/YYYY h:mm:ss A')}</Typography>
+                                    </Box>
+                                    :
+                                    null
+                                }
+                                <Typography variant="h6" gutterBottom mt={4}>Add Offer Pricing (Optional)</Typography>
+                                <Box sx={{display: "flex"}}>
+
+                                {/* <TextField label="Offer MRP ($)" type='text' {...register("offer_mrp", {
+                                    // required: {
+                                    //     value: true,
+                                    //     message: "Offer MRP is required"
+                                    // },
+                                    pattern: {
+                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                        message: "Not a valid price format"
+                                    }
+                                })}
+                                    error={!!errors.offer_mrp}
+                                    helperText={errors.offer_mrp ? errors.offer_mrp.message : ""}
+                                    sx={{width: "40%", pr: 1}}
+                                /> */}
+                                <TextField label="Offer Selling Price ($)" type='text' {...register("offer_price", {
+                                    // required: {
+                                    //     value: true,
+                                    //     message: "Offer Selling Price is required"
+                                    // },
+                                    pattern: {
+                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                        message: "Not a valid price format"
+                                    }
+                                })}
+                                    error={!!errors.offer_price}
+                                    helperText={errors.offer_price ? errors.offer_price.message : ""}
+                                    sx={{width: "60%", pr: 1}}
+                                />
+
+                                <TextField label="Offer Discount (%)" type = "text" 
+                                // {...register("offer_discount", {
+                                //     required: {
+                                //         value: true,
+                                //         message: "Offer Discount (%) is required"
+                                //     }
+                                // })}
+                                value={calcDiscount(base_mrp, offer_price)}
+                                // slotProps={{
+                                //     input: {
+                                //     readOnly: true,
+                                //     },
+                                // }}
+                                disabled
+                                sx={{width: "40%"}}
+                                >
+
+                                </TextField>
+                                </Box>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                    <DemoContainer
+                                    components={[
+                                        'DateTimePicker'
+                                        ]}
+                                    >
+                                    <DemoItem label="Sale Start">
+                                        <Controller
+                                            control={control}
+                                            // defaultValue={dayjs()}
+                                            name="start_time"
+                                            // rules={{ required: "Start Date is required" }}
+                                            render={({ field }) => (
+                                                <DateTimePicker
+                                                    disablePast
+                                                    // value={field.value}
+                                                    inputRef={field.ref}
+                                                    onChange={(date) => {
+                                                        field.onChange(date);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </DemoItem>
+                                    <DemoItem label="Sale End">
+                                        <Controller
+                                            control={control}
+                                            // defaultValue={dayjs().add(1, 'day')}
+                                            name="end_time"
+                                            // rules={{ required: "End Date is required" }}
+                                            render={({ field }) => (
+                                                <DateTimePicker
+                                                    disablePast
+                                                    // value={field.value}
+                                                    inputRef={field.ref}
+                                                    onChange={(date) => {
+                                                        field.onChange(date);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </DemoItem>
+                                    </DemoContainer>
+                                </LocalizationProvider>
+
+                                <Button type='submit' variant="contained">Save Changes</Button>
                             </Stack>
                         </form>
                     </Card>

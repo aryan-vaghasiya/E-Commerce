@@ -49,7 +49,14 @@ exports.getCartService = async(userId) => {
                                         ci.quantity,
                                         p.title,
                                         p.description,
-                                        pp.price,
+                                        
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount,
+                                        CASE 
+                                            WHEN pd.discount_percentage IS NOT NULL 
+                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            ELSE pp.price
+                                        END AS price,
                                         pp.mrp,
                                         pp.discount,
                                         p.rating, 
@@ -58,9 +65,17 @@ exports.getCartService = async(userId) => {
                                         p.brand,
                                         p.thumbnail
 									FROM products p JOIN product_inventory pi ON p.id = pi.product_id
-                                    JOIN cart_item ci ON p.id = ci.product_id
-                                    JOIN product_pricing pp on pp.product_id = p.id
-                                    WHERE ci.user_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`, [userId]);
+                                    JOIN cart_item ci 
+                                        ON p.id = ci.product_id
+                                    JOIN product_pricing pp 
+                                        ON pp.product_id = p.id
+                                        AND ci.user_id = ? 
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                    LEFT JOIN product_discounts pd ON pd.product_id = p.id
+                                        AND pd.is_active = 1
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                                    `, [userId]);
                                     // WHERE ci.user_id = ? AND p.status = ?`, [userId, "active"]);
     // `SELECT 
     //     ci.product_id AS id,

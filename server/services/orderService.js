@@ -43,10 +43,41 @@ exports.addOrder = async(userId) => {
 
     const insertItem = await runQuery(`
         INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
-        SELECT ?, ci.product_id, ci.quantity, pp.price 
+        SELECT 
+            ?, 
+            ci.product_id, 
+            ci.quantity, 
+            CASE 
+                WHEN pd.discount_percentage IS NOT NULL 
+                THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                ELSE pp.price
+            END AS purchase_price
+
         FROM cart_item ci 
-        JOIN product_pricing pp ON ci.product_id = pp.product_id
-        WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
+        JOIN product_pricing pp 
+            ON ci.product_id = pp.product_id
+            AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+        LEFT JOIN product_discounts pd
+            ON pd.product_id = ci.product_id
+            AND pd.is_active = 1
+            AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+            AND (pd.end_time IS NULL OR pd.end_time > NOW())
+        WHERE ci.user_id = ? AND ci.cart_id = ?
+        `,[orderId, userId, cartId]);
+
+    // const insertItem = await runQuery(`
+    //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
+    //     SELECT 
+    //     ?, 
+    //     ci.product_id, 
+    //     ci.quantity, 
+    //     pp.price
+
+    //     FROM cart_item ci 
+    //     JOIN product_pricing pp ON ci.product_id = pp.product_id
+    //     WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
+
     // const insertItem = await runQuery(`
     //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
     //     SELECT ?, ci.product_id, ci.quantity, pp.price 
@@ -81,7 +112,7 @@ exports.getOrdersService = async (userId) => {
                                         oi.order_id, 
                                         oi.product_id AS id, 
                                         oi.quantity, 
-                                        oi.purchase_price AS price, 
+                                        oi.purchase_price AS price,
                                         p.title, 
                                         p.description, 
                                         p.rating, 
@@ -116,7 +147,8 @@ exports.getOrdersService = async (userId) => {
             price: item.price,
             title: item.title,
             brand: item.brand,
-            thumbnail: item.thumbnail
+            thumbnail: item.thumbnail,
+            rating: item.rating
         });
         grouped[item.order_id].noOfItems += item.quantity;
     });

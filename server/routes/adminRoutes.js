@@ -22,4 +22,8 @@ router.post("/product/add", verifyAdminToken, adminController.addProductDetails)
 router.post("/product/delete", verifyAdminToken, adminController.deleteProduct);
 router.post("/product/update-status", verifyAdminToken, adminController.updateProductStatus);
 
+router.get("/coupons/search-product", verifyAdminToken, adminController.searchProduct);
+router.post("/coupons/add", verifyAdminToken, adminController.addCoupon);
+router.get("/get-coupons", verifyAdminToken, adminController.getCoupons);
+
 module.exports = router;

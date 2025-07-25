@@ -119,7 +119,19 @@ function ProductItem({product, loading}) {
                                     {product.rating}
                                 </Typography>
                             </Box>
+                            {/* <Typography sx={{fontSize: 16}}>${product.offer_price ?? product.price}</Typography> */}
+                            <Box sx={{display: "flex", alignItems: "center"}}>
                             <Typography sx={{fontSize: 16}}>${product.price}</Typography>
+                            {
+                                product.offer_discount?
+                                <Typography 
+                                    sx={{bgcolor: '#1976D2', color: "white", borderRadius: 1, px: 1, ml: 1, fontSize: 13,}}>
+                                    Limited time deal
+                                </Typography>
+                                :
+                                null
+                            }
+                            </Box>
                             {/* <Typography sx={{fontSize: 16}}>{product.stock}</Typography> */}
                         </CardActionArea>
                         </Link>

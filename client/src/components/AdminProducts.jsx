@@ -88,7 +88,14 @@ function AdminProducts() {
             const result = await response.json();
             // console.log(result);
             
-            setProducts(result.products);
+            const withDiscount = result.products.map(product => ({...product, price: product.offer_discount ? 
+                                                            (product.mrp - (product.mrp * product.offer_discount / 100)).toFixed(2) 
+                                                            : (product.price).toFixed(2)}))
+            // console.log(withDiscount);
+            
+            // const price = result.offer_discount ? result.price * (1 - result.offer_discount / 100) : result.price
+            // setProducts([...result.products, price ]);
+            setProducts(withDiscount);
             setTotalProducts(result.total);
         } catch (err) {
             console.error(err.message)

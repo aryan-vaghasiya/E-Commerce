@@ -14,7 +14,7 @@ export const fetchDashboard = (token) => {
             const res = await fetch("http://localhost:3000/admin/get-dashboard", {
                 headers: {
                 Authorization: `Bearer ${token}`,
-                },
+                }, 
             });
             if(!res.ok){
                 const error = await res.json()
