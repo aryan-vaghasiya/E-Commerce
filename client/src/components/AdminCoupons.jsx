@@ -22,7 +22,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import Modal from '@mui/material/Modal';
 import Chip from '@mui/material/Chip';
-import { maxHeight } from '@mui/system';
+import { maxHeight, maxWidth } from '@mui/system';
 
 function AdminCoupons() {
     const { register, handleSubmit, control, reset, watch, resetField, setValue } = useForm();
@@ -57,7 +57,7 @@ function AdminCoupons() {
         top: '2%',
         left: '50%',
         transform: 'translate(-50%, 0%)',
-        width: 550,
+        maxWidth: 550,
         maxHeight: 720,
         overflowY: "auto",
         scrollbarWidth: 'none',
@@ -277,7 +277,7 @@ function AdminCoupons() {
                 onClose={handleClose}
             >
                 <Box sx={style}>
-                <Card>
+                <Card sx={{width: "auto"}}>
                     <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>FILTER COUPONS</Typography>
                     <Box sx={{p: 2}}>
                         
@@ -354,8 +354,8 @@ function AdminCoupons() {
                             </FormGroup>
                         </FormControl>
 
-                        <Box>
-                            <FormGroup row>
+                        <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                            <FormGroup row sx={{width: "100%"}}>
                                 <Controller
                                     name="start_date"
                                     control={control}
@@ -363,7 +363,8 @@ function AdminCoupons() {
                                         <TextField
                                             label="Start Date"
                                             type="date"
-                                            InputLabelProps={{ shrink: true }}
+                                            // InputLabelProps={{ shrink: true }}
+                                            slotProps={{inputLabel: {shrink: true}}}
                                             {...field}
                                             sx={{ mr: 2 , width: "48%"}}
                                             // fullWidth
@@ -378,9 +379,10 @@ function AdminCoupons() {
                                         <TextField
                                             label="End Date"
                                             type="date"
-                                            InputLabelProps={{ shrink: true }}
+                                            // InputLabelProps={{ shrink: true }}
+                                            slotProps={{inputLabel: {shrink: true}}}
                                             {...field}
-                                            sx={{width: "47%"}}
+                                            sx={{width: "48%"}}
                                             // fullWidth
                                         />
                                     )}
