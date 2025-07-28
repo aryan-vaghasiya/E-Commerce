@@ -24,7 +24,8 @@ export const addOrders = (orders) => {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`
-                }
+                },
+                body: JSON.stringify({orders})
             })
             if(!response.ok){
                 const error = await response.json();

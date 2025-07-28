@@ -22,7 +22,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import Modal from '@mui/material/Modal';
 import Chip from '@mui/material/Chip';
-import { maxHeight, maxWidth } from '@mui/system';
+import { alignItems, getValue, maxHeight, maxWidth } from '@mui/system';
 
 function AdminCoupons() {
     const { register, handleSubmit, control, reset, watch, resetField, setValue } = useForm();
@@ -39,9 +39,15 @@ function AdminCoupons() {
         page: 0,
         pageSize: 10,
     });
+    const [hasFilter, setHasFilter] = useState(false);
     const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
+    const handleClose = (event, reason) => {
+        if (reason === "backdropClick") {
+            handleSubmit(handleFilter)();
+        }
+        setOpen(false);
+    }
     const watchAllFields = watch()
 
     const discountTypeFixed = watch("discount_type_fixed");
@@ -52,6 +58,7 @@ function AdminCoupons() {
     const statusInactive = watch("status_inactive");
     // console.log(watchAllFields);
     
+
     const style = {
         position: 'absolute',
         top: '2%',
@@ -72,7 +79,6 @@ function AdminCoupons() {
     };
 
     const getLabel = (key, value) => {
-        // console.log(key, value);
         
         switch (key) {
             case "discount_type_fixed":
@@ -98,10 +104,25 @@ function AdminCoupons() {
         }
     };
 
-    const fetchCoupons = async (page, limit, filters = {}) => {
+    const clearFilters = () => {
+        reset()
+        setHasFilter(false)
+        handleFilter()
+    }
 
+    const fetchCoupons = async (page, limit, filters = {}) => {
+        // console.log(filters);
         setLoading(true);
         setError(null);
+
+        setHasFilter(Object.values(filters).length > 0 ? true : false)
+
+        // if(Object.values(filters).length > 0) {
+        //     setHasFilter(true)
+        // }
+        // else {
+        //     setHasFilter(false)
+        // }
         try {
             const params = new URLSearchParams({page, limit, ...filters})
             // console.log(params.toString());
@@ -136,9 +157,40 @@ function AdminCoupons() {
         }
     };
 
+    const handleFilter = (data = {}) => {
+        console.log(data);
+        const params = new URLSearchParams();
+
+        if (data.search) params.set("search", data.search);
+
+        if (data.discount_type_fixed && !data.discount_type_percentage)
+            params.set("discount_type", "fixed");
+        else if (data.discount_type_percentage && !data.discount_type_fixed)
+            params.set("discount_type", "percent");
+
+        if (data.apply_on_product && !data.apply_on_cart)
+            params.set("apply_on", "product");
+        else if (data.apply_on_cart && !data.apply_on_product)
+            params.set("apply_on", "all");
+
+        if (data.status_active && !data.status_inactive)
+            params.set("is_active", 1);
+        else if (data.status_inactive && !data.status_active)
+            params.set("is_active", 0);
+
+        if (data.start_date) params.set("start_date", dayjs(data.start_date).format("YYYY-MM-DD"));
+        if (data.end_date) params.set("end_date", dayjs(data.end_date).format("YYYY-MM-DD"));
+
+        // console.log(Object.fromEntries(params));
+        // console.log(params.toString());
+
+        fetchCoupons(paginationModel.page + 1, paginationModel.pageSize, Object.fromEntries(params))
+    }
+
     useEffect(() => {
         // console.log("fetching...");
-        fetchCoupons(paginationModel.page + 1, paginationModel.pageSize);
+        // fetchCoupons(paginationModel.page + 1, paginationModel.pageSize);
+        handleFilter(watchAllFields)
     }, [paginationModel]);
 
     const handlePaginationChange = (newModel) => {
@@ -155,13 +207,19 @@ function AdminCoupons() {
         {
             field: 'name',
             headerName: 'Coupon Name',
-            width: 200,
+            width: 180,
+            editable: false,
+        },
+        {
+            field: 'code',
+            headerName: 'Coupon Code',
+            width: 110,
             editable: false,
         },
         {
             field: 'discount_type',
             headerName: 'Discount Type',
-            width: 120,
+            width: 110,
             editable: false,
         },
         {
@@ -225,51 +283,6 @@ function AdminCoupons() {
         }
     ];
 
-    const handleFilter = (data) => {
-        // console.log(data);
-        const params = new URLSearchParams();
-
-        if (data.search) params.set("search", data.search);
-
-        // if (!(!data.discount_type_fixed && !data.discount_type_percentage || data.discount_type_fixed && data.discount_type_percentage)){
-        //     if (data.discount_type_fixed) params.append("discount_type", "fixed");
-        //     if (data.discount_type_percentage) params.append("discount_type", "percentage");
-        // }
-
-        // if (!(!data.apply_on_product && !data.apply_on_cart || data.apply_on_product && data.apply_on_cart)){
-        //     if (data.apply_on_product) params.append("apply_on", "product");
-        //     if (data.apply_on_cart) params.append("apply_on", "cart");
-        // }
-
-        // if (!(!data.status_active && !data.status_inactive || data.status_active && data.status_inactive)){
-        //     if (data.status_active) params.append("status", "active");
-        //     if (data.status_inactive) params.append("status", "inactive");
-        // }
-
-        if (data.discount_type_fixed && !data.discount_type_percentage)
-            params.set("discount_type", "fixed");
-        else if (data.discount_type_percentage && !data.discount_type_fixed)
-            params.set("discount_type", "percent");
-
-        if (data.apply_on_product && !data.apply_on_cart)
-            params.set("apply_on", "product");
-        else if (data.apply_on_cart && !data.apply_on_product)
-            params.set("apply_on", "all");
-
-        if (data.status_active && !data.status_inactive)
-            params.set("is_active", 1);
-        else if (data.status_inactive && !data.status_active)
-            params.set("is_active", 0);
-
-        if (data.start_date) params.set("start_date", dayjs(data.start_date).format("YYYY-MM-DD"));
-        if (data.end_date) params.set("end_date", dayjs(data.end_date).format("YYYY-MM-DD"));
-
-        // console.log(Object.fromEntries(params));
-        // console.log(params.toString());
-
-        fetchCoupons(1, paginationModel.pageSize, Object.fromEntries(params))
-    }
-
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
             <Modal
@@ -281,7 +294,7 @@ function AdminCoupons() {
                     <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>FILTER COUPONS</Typography>
                     <Box sx={{p: 2}}>
                         
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                        {/* <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
                             
                             {Object.entries(watchAllFields).map(([key, value]) => {
                             if (!value) return null;
@@ -299,8 +312,7 @@ function AdminCoupons() {
                                 />
                             );
                             })}
-                            {/* <Button>Clear All</Button> */}
-                        </Box>
+                        </Box> */}
                     <Box component="form" onSubmit={handleSubmit(handleFilter)} sx={{display: "flex", justifyContent: "center"}}>
                     {/* <form onSubmit={handleSubmit(handleFilter)} noValidate> */}
                         <Stack spacing={2} width={{ lg: 500}}>
@@ -417,9 +429,37 @@ function AdminCoupons() {
             </Box>
             <Divider sx={{mt: 1, mb: 2}}/>
             <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column"}}>
+                {
+                    hasFilter ?
+                    <Box sx={{display: "flex", justifyContent: "space-between", width: "100%", alignItems: "flex-start"}}>
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                            {Object.entries(watchAllFields).map(([key, value]) => {
+                                if (!value) return null;
+                                return (
+                                    <Chip
+                                        key={key}
+                                        label={getLabel(key, value)}
+                                        onDelete={() => {
+                                            setValue(key, "")
+                                            handleSubmit(handleFilter)()
+                                        }}
+                                        // deleteIcon={<CloseIcon />}
+                                        color="primary"
+                                        variant="outlined"
+                                    />
+                                )
+                            })}
+                        </Box>
+                        <Button variant="outlined" color="primary" onClick={clearFilters} sx={{mr: 1}}>
+                            Clear All
+                        </Button>
+                    </Box>  
+                    :
+                    null
+                }
             {/* <Box sx={{display: "flex", justifyContent: "space-between", width: "100%"}}> */}
             <DataGrid
-                sx={{ maxHeight: 690, maxWidth: 1100, mr: 1.5}}
+                sx={{ maxHeight: 690, maxWidth: "100%", mr: 1.5}}
                 rows={coupons}
                 columns={columns}
                 rowCount={totalCoupons}

@@ -158,3 +158,109 @@ exports.getOrdersService = async (userId) => {
     
     return orders;
 }
+
+
+exports.checkCouponCode = async (userId, code) => {
+    // console.log(code);
+
+    let productIds = []
+    const [coupon] = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
+
+    if(!coupon){
+        throw new Error("Coupon Code not Found")
+    }
+
+    if(coupon.applies_to === "product"){
+        const products = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
+        productIds = products.map(product => product.product_id)
+    }
+
+    const couponData = {...coupon, products : [...productIds]}
+
+    const [checkActiveCart] = await runQuery(`SELECT * FROM cart WHERE user_id = ? AND status = ?`, [userId, 'active'])
+    if(!checkActiveCart){
+        throw new Error(`No active cart Found for user ${userId}`)
+    }
+    const cartId = checkActiveCart.id
+
+    const getCart = await runQuery(`SELECT * FROM cart_item WHERE cart_id = ? AND user_id = ?`, [cartId, userId])
+    // console.log(getCart);
+    const products = await getCart.map(product => ({id: product.product_id, quantity: product.quantity}))
+    // console.log(products);
+
+    const getProducts = await runQuery(`SELECT 
+                                            p.*,
+                                            ci.quantity,
+                                            pp.mrp, 
+                                            pp.discount, 
+                                            i.stock,
+                                            pd.discount_type,
+                                            pd.discount_percentage AS offer_discount,
+                                            CASE
+                                                WHEN pd.discount_percentage IS NOT NULL 
+                                                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                                ELSE pp.price
+                                            END AS price,
+                                            CASE
+                                                WHEN pd.discount_percentage IS NOT NULL 
+                                                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                                ELSE pp.price
+                                            END * ci.quantity AS priceValue
+                                        FROM cart_item ci
+                                        JOIN products p
+                                            ON ci.product_id = p.id
+                                        JOIN product_inventory i 
+                                            ON p.id = i.product_id 
+                                        JOIN product_pricing pp 
+                                            ON pp.product_id = p.id 
+                                            AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                        LEFT JOIN product_discounts pd 
+                                            ON pd.product_id = p.id
+                                            AND pd.is_active = 1
+                                            AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                            AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                                        WHERE ci.cart_id = ?
+                                            AND ci.user_id = ?`, [cartId, userId]);
+    // console.log(getProducts);
+    const noOfItems = getProducts.reduce((accumulator, currentValue) => accumulator + currentValue.quantity, 0,)
+    const cartValue = getProducts.reduce((accumulator, currentValue) => accumulator + currentValue.price * currentValue.quantity, 0,)
+    const cart = {items : getProducts, noOfItems, cartValue: parseFloat((cartValue).toFixed(2))}
+    // console.log(cart);
+
+    let discountValue = 0;
+
+    switch (coupon.applies_to) {
+        case 'all':
+            if (cart.cartValue >= coupon.min_cart_value) {
+                discountValue = coupon.discount_type === 'percent'
+                ? cart.cartValue * (coupon.discount_value / 100)
+                : coupon.discount_value;
+            }
+            break;
+
+        case 'product':
+            cart.items.forEach((item) => {
+                if (coupon.product_ids.includes(item.product_id)) {
+                discountValue += coupon.discount_type === 'percentage'
+                    ? item.price * item.quantity * (coupon.discount_percentage / 100)
+                    : coupon.discount_amount * item.quantity;
+                }
+            });
+            break;
+
+        default:
+            throw new Error('Unsupported coupon type');
+    }
+
+    if (coupon.threshold_amount && discountValue > coupon.threshold_amount) {
+        discountValue = coupon.threshold_amount;
+    }
+
+    // console.log(discountValue);
+    // console.log(cart.cartValue - discountValue);
+
+    const newCart = {...cart, discountValue: parseFloat((discountValue).toFixed(2)), newCartValue: parseFloat((cart.cartValue - discountValue).toFixed(2))}
+    // console.log(newCart);
+
+    return {newCart, couponData}
+}

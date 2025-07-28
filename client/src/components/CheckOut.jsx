@@ -14,15 +14,25 @@ import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import Toolbar from '@mui/material/Toolbar'
 import StarIcon from '@mui/icons-material/Star'
-import { showSnack } from '../redux/snackbar/snackbarActions'
+import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { getImageUrl } from '../utils/imageUrl'
+import { useState } from 'react'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
 
 function CheckOut() {
     const cartItems = useSelector(state => state.cartReducer)
     const userDetails = useSelector(state => state.detailsReducer)
+    const snackbarState = useSelector(state => state.snackbarReducer)
     const userState = useSelector(state => state.userReducer)
     const dispatch = useDispatch()
     const navigate = useNavigate()
+    const [couponQuery, setCouponQuery] = useState("")
+    const [couponData, setCouponData] = useState(null)
+    const [finalTotal, setFinalTotal] = useState(cartItems.cartValue)
+    const [newCart, setNewCart] = useState(null)
+    const [isCouponApplied, setIsCouponApplied] = useState(false)
+
 
     const { register, handleSubmit, control, getValues, formState: { errors } } = useForm({
         defaultValues: {
@@ -38,8 +48,43 @@ function CheckOut() {
         }
     })
 
+    const handleCouponQuery = async () => {
+        console.log(couponQuery);
+
+        const response = await fetch("http://localhost:3000/orders/check-coupon", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${userState.token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({code: couponQuery})
+        })
+
+        if(!response.ok && couponQuery){
+            setIsCouponApplied(false)
+            dispatch(showSnack({message: "Invalid Coupon Code", severity: "warning"}))
+        }
+
+        const couponRes = await response.json()
+        setCouponData(couponRes.couponData)
+        setNewCart(couponRes.newCart)
+        setIsCouponApplied(true)
+        // console.log(couponRes)
+
+        // checkCouponCode(couponRes)
+    }
+
+    const removeCoupon = () => {
+        setCouponData(null)
+        setNewCart(null)
+        setIsCouponApplied(false)
+        setCouponQuery("")
+    }
+
     const handleCheckout = async (data) => {
-        // console.log(data)
+        console.log(data)
+        // console.log(coupon);
+        
         // console.log(getValues())
         
         const response = await fetch("http://localhost:3000/checkout", {
@@ -51,7 +96,7 @@ function CheckOut() {
             body: JSON.stringify({username: userState.userName, ...data})
         })
         if (response.status === 200){
-            const added = await dispatch(addOrders(cartItems))
+            const added = await dispatch(addOrders(isCouponApplied ? cartItems : newCart))
             // console.log(added);
             if(!added){
                 dispatch(showSnack({message: "Some Products went Out Of Stock", severity: "warning"}))
@@ -70,9 +115,23 @@ function CheckOut() {
         <Box sx={{ display: { sm: "flex", xs: "block" }, justifyContent: "center", py: 3, bgcolor: "#EEEEEE" }}>
             {/* <div className='pt-16 pb-6 flex justify-center bg-gray-100 font-[Inter] min-h-screen '> */}
 
+            <Snackbar
+                open={snackbarState.show}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={2000}
+                onClose={() => dispatch(hideSnack())}
+                sx={{
+                    '&.MuiSnackbar-root': { top: '70px' },
+                }}
+            >
+                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                    {snackbarState.message}
+                </Alert>
+            </Snackbar>
+
             <Card sx={{ bgcolor: "white", p: 5, mr: 3 , mb: "auto"}}>
                 <form onSubmit={handleSubmit(handleCheckout)} noValidate>
-                    <Stack spacing={3} width={{ lg: 600, md: 400 }}>
+                    <Stack spacing={3} width={{ md: 500, xs: 350}}>
                         <Typography>Ship To </Typography>
 
                         <Box sx={{ display: "inline-flex" }}>
@@ -193,37 +252,94 @@ function CheckOut() {
                 </form>
             </Card>
 
-            <Card sx={{ textAlign: "center", mb: "auto" , maxWidth: "400px", maxHeight: "690px", overflowY: "scroll"}}>
-                <Typography sx={{ mt: 3, mb: 1 }}>Order Summary</Typography>
-                <Divider variant='middle' flexItem />
-                {
-                    cartItems.products.map(item =>
-                        <Box key={item.id}>
-                        <Toolbar sx={{my: 1}} >
-                            <Box >
-                                <img src={getImageUrl(item.thumbnail)} alt="Product Image" className='max-w-30' />
-                            </Box>
-                            <Box sx={{ textAlign: "left", width: "100%" }}>
+            <Box sx={{width: "400px"}}>
+                <Card sx={{ textAlign: "center", mb: "auto" , maxWidth: "100%", maxHeight: "500px", overflowY: "auto"}}>
+                    <Typography sx={{ mt: 3, mb: 1 }}>Order Summary</Typography>
+                    <Divider variant='middle' flexItem />
+                    {
+                        cartItems.products.map(item =>
+                            <Box key={item.id}>
+                                <Toolbar sx={{my: 1}} >
+                                    <Box >
+                                        <img src={getImageUrl(item.thumbnail)} alt="Product Image" className='max-w-30' />
+                                    </Box>
+                                    <Box sx={{ textAlign: "left", width: "100%" }}>
 
-                                <Typography variant='subtitle1' sx={{ fontWeight: "bold" }}>{item.title}</Typography>
-                                <Typography sx={{ fontSize: 12 }}>Brand: {item.brand}</Typography>
-                                <Box sx={{ display: "inline-flex", alignItems: "center" }}>
-                                    <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
-                                    <Typography sx={{ fontSize: 14, pt: 0.3, pr: 0.2 }}>
-                                        {item.rating}
-                                    </Typography>
-                                </Box>
-                                <Typography sx={{ fontSize: 14, display: "flex" }}>Price: <span style={{ marginLeft: "auto" }}>${item.price}</span> </Typography>
-                                <Typography sx={{ fontSize: 14, display: "flex" }}>Quantity: <span style={{ marginLeft: "auto" }}>{item.quantity}</span></Typography>
-                                <Typography sx={{ fontSize: 14, display: "flex" }}>Total: <span style={{ marginLeft: "auto" }}>${item.priceValue}</span></Typography>
+                                        <Typography variant='subtitle1' sx={{ fontWeight: "bold" }}>{item.title}</Typography>
+                                        <Typography sx={{ fontSize: 12 }}>Brand: {item.brand}</Typography>
+                                        <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+                                            <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
+                                            <Typography sx={{ fontSize: 14, pt: 0.3, pr: 0.2 }}>
+                                                {item.rating}
+                                            </Typography>
+                                        </Box>
+                                        <Typography sx={{ fontSize: 14, display: "flex" }}>Price: <span style={{ marginLeft: "auto" }}>${item.price}</span> </Typography>
+                                        <Typography sx={{ fontSize: 14, display: "flex" }}>Quantity: <span style={{ marginLeft: "auto" }}>{item.quantity}</span></Typography>
+                                        <Typography sx={{ fontSize: 14, display: "flex" }}>Total: <span style={{ marginLeft: "auto" }}>${item.priceValue}</span></Typography>
+                                    </Box>
+                                </Toolbar>
+                                <Divider variant='middle'/>
                             </Box>
-                        </Toolbar>
+                        )
+                    }
+                    <Divider variant='middle'/>
+                    <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
+                        {isCouponApplied ? "Sub" : "Order"} Total: 
+                        <span style={{ marginLeft: "auto" }}>
+                            {/* ${cartItems.products.reduce((accumulator, currentvalue) => accumulator + currentvalue.priceValue, 0)} */}
+                            ${cartItems.cartValue}
+                        </span>
+                    </Typography>
+                    {
+                        isCouponApplied ? 
+                        <Box>
+                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
+                            Coupon Discount: 
+                            <span style={{ marginLeft: "auto" }}>
+                                - ${newCart.discountValue}
+                            </span>
+                        </Typography>
                         <Divider variant='middle'/>
+                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
+                            Order Total: 
+                            <span style={{ marginLeft: "auto" }}>
+                                ${newCart.newCartValue}
+                            </span>
+                        </Typography>
                         </Box>
-                        
-                    )
-                }
-            </Card>
+                        :
+                        null
+                    }
+                </Card>
+                <Card sx={{mt: 2}}>
+                    <Typography sx={{ p: 1, fontSize: "14px", bgcolor: "#3B92CA", color: "white"}}>APPLY COUPON</Typography>
+                    <Box sx={{display: "flex", flexDirection: "column", p: 2}}>
+                        <Stack spacing={2}>
+                            <TextField
+                                label="Coupon Code"
+                                value={couponQuery}
+                                onChange={(event) => setCouponQuery(event.target.value)}
+                            />
+                            {
+                                isCouponApplied ?
+                                <Button variant='contained' onClick={removeCoupon} color='error'>Remove Coupon</Button>
+                                :
+                                <Button variant='contained' onClick={handleCouponQuery}>Apply</Button>
+                            }
+                            {/* <Button variant='contained' onClick={handleCouponQuery}>Apply</Button> */}
+                        </Stack>
+                        {/* <TextField label="Coupon Code" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_code", {
+                            pattern: {
+                                value: /^.{5,}$/,
+                                message: "Coupon Code must be 5 or more characters"
+                            },
+                        })}
+                            error={!!errors.coupon_code}
+                            helperText={errors.coupon_code ? errors.coupon_code.message : ""}
+                        /> */}
+                    </Box>
+                </Card>
+            </Box>
             {/* <DevTool control={control} /> */}
 
 

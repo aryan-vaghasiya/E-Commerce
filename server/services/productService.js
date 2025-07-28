@@ -104,7 +104,7 @@ exports.getSingleProduct = async(productId) => {
                                         pd.discount_percentage as offer_discount,
                                         CASE 
                                             WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                                THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
                                             ELSE pp.price
                                         END AS price
                                     FROM products p 

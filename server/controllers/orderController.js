@@ -12,8 +12,26 @@ exports.getOrders = async (req, res) => {
     }
 }
 
+exports.checkCoupon = async (req, res) => {
+    const userId = req.user.id;
+    const code = req.body.code.toLowerCase();
+
+    // console.log(code);
+    // console.log(userId);
+    try{
+        const result = await orderService.checkCouponCode(userId, code)
+        return res.status(200).json(result);
+    }
+    catch(err){
+        console.error("Error in checkCoupon:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 exports.addToOrders = async (req, res) => {
     const userId = req.user.id;
+    console.log(req.body);
+
     try{
         await orderService.addOrder(userId);
         res.status(200).json({ message: "Order placed successfully"});

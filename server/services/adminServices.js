@@ -595,7 +595,7 @@ exports.addCouponData = async(name, code, discount_value, discount_type, applies
 
 exports.getAllCoupons = async(queryParams) => {
 
-    console.log(queryParams);
+    // console.log(queryParams);
     
     const {
         page,
@@ -665,7 +665,7 @@ exports.getAllCoupons = async(queryParams) => {
                         DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
                         DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
                         is_active, 
-                        DATE_FORMAT(created_at, '%d/%m/%Y') as created_at,  
+                        created_at,  
                         total_coupons, 
                         times_used
                     FROM coupons
@@ -680,6 +680,7 @@ exports.getAllCoupons = async(queryParams) => {
     // console.log(params);
     
     const results = await runQuery(dataQuery, params);
+    // console.log(results);
 
     if(results.length === 0){
         throw new Error ("Could not select all coupons")
@@ -696,8 +697,6 @@ exports.getAllCoupons = async(queryParams) => {
         pages: Math.ceil (total / limit),
         total
     }
-    // console.log("Data Query:", dataQuery, params);
-    // console.log("Count Query:", `SELECT COUNT(*) as total FROM coupons ${whereClause}`, countParams);
     return allCoupons
 
     // const results = await runQuery(`SELECT

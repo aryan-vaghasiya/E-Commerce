@@ -234,7 +234,7 @@ exports.addCoupon = async(req, res) => {
 
     try{
         await adminServices.addCouponData(
-                                            name, code, discount_value, discount_type, applies_to,
+                                            name, code.toLowerCase(), discount_value, discount_type, applies_to,
                                             // threshold_amount ?? null, 
                                             !threshold_amount ? null : threshold_amount, 
                                             !total_coupons ? null : total_coupons, 

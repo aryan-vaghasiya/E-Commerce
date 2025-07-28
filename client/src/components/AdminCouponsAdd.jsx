@@ -360,7 +360,7 @@ function AdminCouponsAdd() {
                                     </Box>
                                     :
                                     <Box>
-                                        <TextField label="Minumum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
+                                        <TextField label="Minimum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
                                             required: {
                                                 value: true,
                                                 message: "Cart Value is required"
