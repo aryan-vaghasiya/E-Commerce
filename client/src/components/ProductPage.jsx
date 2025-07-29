@@ -239,7 +239,7 @@ function ProductPage() {
                                     </Typography>
                                 </Box>
                                 }
-                                <Box sx={{mt: 3}}>
+                                <Box sx={{mt: 3, maxWidth: "550px"}}>
                                     <Typography sx={{fontSize: 20}}>Description: </Typography>
                                     <Typography>{product.description}</Typography>
                                 </Box>

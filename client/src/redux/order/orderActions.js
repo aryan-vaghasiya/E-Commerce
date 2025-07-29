@@ -14,7 +14,9 @@ export const ordersFromDb = (orderItems) => {
     }
 }
 
-export const addOrders = (orders) => {
+export const addOrders = (order, coupon) => {
+    // console.log(order);
+    
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
         // console.log(token);
@@ -23,16 +25,17 @@ export const addOrders = (orders) => {
             const response = await fetch("http://localhost:3000/orders/add-order", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
                 },
-                body: JSON.stringify({orders})
+                body: JSON.stringify({order, coupon})
             })
             if(!response.ok){
                 const error = await response.json();
                 console.error("Order can't be placed:", error.error)
                 return false
             }
-            dispatch({type: ADD_ORDERS, payload: orders})
+            dispatch({type: ADD_ORDERS, payload: order})
             return true
         }
         catch(err){

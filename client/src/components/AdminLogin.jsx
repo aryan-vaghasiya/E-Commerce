@@ -67,8 +67,9 @@ function AdminLogin() {
             // dispatch(fetchAdminOrders(1, 5))
             // dispatch(fetchDashboard(token))
             // dispatch(fetchOrders(token))
-            // dispatch(fetchDetails(token))
-            // dispatch(getFullWishlist(token))
+            dispatch(fetchCart(token))
+            dispatch(fetchDetails(token))
+            dispatch(getFullWishlist(token))
             navigate("/admin/dashboard", { replace: true })
         }
         else{

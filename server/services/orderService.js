@@ -1,6 +1,6 @@
 const runQuery = require("../db")
 
-exports.addOrder = async(userId) => {
+exports.addOrder = async(userId, order, coupon) => {
     const checkCart = await runQuery("SELECT * FROM cart WHERE user_id = ? AND status = 'active'", [userId]);
     if (checkCart.length === 0) {
         throw new Error("No active cart found");
@@ -41,30 +41,100 @@ exports.addOrder = async(userId) => {
     }
     const orderId = insert.insertId;
 
-    const insertItem = await runQuery(`
-        INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
-        SELECT 
-            ?, 
-            ci.product_id, 
-            ci.quantity, 
-            CASE 
-                WHEN pd.discount_percentage IS NOT NULL 
-                THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
-                ELSE pp.price
-            END AS purchase_price
 
-        FROM cart_item ci 
-        JOIN product_pricing pp 
-            ON ci.product_id = pp.product_id
-            AND NOW() BETWEEN pp.start_time AND pp.end_time
 
-        LEFT JOIN product_discounts pd
-            ON pd.product_id = ci.product_id
-            AND pd.is_active = 1
-            AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-            AND (pd.end_time IS NULL OR pd.end_time > NOW())
-        WHERE ci.user_id = ? AND ci.cart_id = ?
-        `,[orderId, userId, cartId]);
+
+    // console.log(coupon);
+    let orderItems = []
+    if(coupon.code){
+        const {newCart, couponData} = await this.checkCouponCode(userId, coupon.code)
+
+        // console.log(newCart);
+        orderItems = newCart.items.map(item => {
+            if(item.coupon_discount && item.coupon_discount > 0){
+                const item_price = item.price - (item.coupon_discount/item.quantity)
+                return {product_id: item.id, quantity: item.quantity, purchase_price: parseFloat((item_price).toFixed(2))}
+            }
+            else{
+                return {product_id: item.id, quantity: item.quantity, purchase_price: item.price}
+            }
+        })
+
+        for(let i = 0; i < orderItems.length; i++){
+            // console.log(orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price);
+            
+            await runQuery(`INSERT INTO order_item (order_id, product_id, quantity, purchase_price) VALUES (?, ?, ?, ?)`, [orderId,orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price])
+        }
+        // console.log(orderItems);
+
+        const updateDiscount = await runQuery(`UPDATE orders SET 
+                                                    total = ?,
+                                                    coupon_id = ?, 
+                                                    coupon_code = ?,
+                                                    discount_amount = ?
+                                                    WHERE id = ?`,
+            [newCart.cartValue, couponData.id, couponData.code, newCart.discountValue, orderId]);
+        if (updateDiscount.affectedRows === 0) {
+            throw new Error("Couldn't update Total");
+        }
+
+        const couponUsage = await runQuery(`INSERT INTO coupon_usages (coupon_id, user_id, order_id) VALUES (?, ?, ?)`, [couponData.id, userId, orderId])
+
+        const couponUsed = await runQuery(`UPDATE coupons SET times_used = times_used + ? WHERE id = ?`, [1, couponData.id])
+    }
+
+    else{
+        const insertItem = await runQuery(`
+            INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
+            SELECT 
+                ?, 
+                ci.product_id, 
+                ci.quantity, 
+                CASE 
+                    WHEN pd.discount_percentage IS NOT NULL 
+                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                    ELSE pp.price
+                END AS purchase_price
+
+            FROM cart_item ci 
+            JOIN product_pricing pp 
+                ON ci.product_id = pp.product_id
+                AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+            LEFT JOIN product_discounts pd
+                ON pd.product_id = ci.product_id
+                AND pd.is_active = 1
+                AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                AND (pd.end_time IS NULL OR pd.end_time > NOW())
+            WHERE ci.user_id = ? AND ci.cart_id = ?
+            `,[orderId, userId, cartId]);
+
+        if (insertItem.affectedRows === 0) {
+            throw new Error("Couldn't insert Order Item");
+        }
+
+        const setTotal = await runQuery(`UPDATE orders
+                SET total = (
+                    SELECT SUM(quantity * purchase_price)
+                    FROM order_item
+                    WHERE order_id = ?
+                )
+                WHERE id = ?`,
+            [orderId, orderId]);
+        if (setTotal.affectedRows === 0) {
+            throw new Error("Couldn't update Total");
+        }
+    }
+
+
+
+    const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
+    if (emptyCart.affectedRows === 0) {
+        throw new Error("Couldn't empty Cart");
+    }
+
+
+
 
     // const insertItem = await runQuery(`
     //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
@@ -85,26 +155,6 @@ exports.addOrder = async(userId) => {
     //     JOIN products p ON ci.product_id = p.id
     //     JOIN product_pricing pp on pp.product_id = p.id
     //     WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
-    if (insertItem.affectedRows === 0) {
-        throw new Error("Couldn't insert Order Item");
-    }
-
-    const setTotal = await runQuery(`UPDATE orders
-            SET total = (
-                SELECT SUM(quantity * purchase_price)
-                FROM order_item
-                WHERE order_id = ?
-            )
-            WHERE id = ?`,
-        [orderId, orderId]);
-    if (setTotal.affectedRows === 0) {
-        throw new Error("Couldn't update Total");
-    }
-
-    const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
-    if (emptyCart.affectedRows === 0) {
-        throw new Error("Couldn't empty Cart");
-    }
 }
 
 exports.getOrdersService = async (userId) => {
@@ -170,9 +220,16 @@ exports.checkCouponCode = async (userId, code) => {
         throw new Error("Coupon Code not Found")
     }
 
+    // console.log(coupon.coupons_left);
+    if(coupon.coupons_left && coupon.coupons_left <= 0){
+        throw new Error(`Coupons finished`)
+    }
+
     if(coupon.applies_to === "product"){
         const products = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
         productIds = products.map(product => product.product_id)
+        // console.log(products);
+        // console.log(productIds);
     }
 
     const couponData = {...coupon, products : [...productIds]}
@@ -214,7 +271,7 @@ exports.checkCouponCode = async (userId, code) => {
                                         JOIN product_pricing pp 
                                             ON pp.product_id = p.id 
                                             AND NOW() BETWEEN pp.start_time AND pp.end_time
-                                        LEFT JOIN product_discounts pd 
+                                        LEFT JOIN product_discounts pd
                                             ON pd.product_id = p.id
                                             AND pd.is_active = 1
                                             AND (pd.start_time IS NULL OR pd.start_time <= NOW())
@@ -229,21 +286,27 @@ exports.checkCouponCode = async (userId, code) => {
 
     let discountValue = 0;
 
-    switch (coupon.applies_to) {
+    switch (couponData.applies_to) {
         case 'all':
-            if (cart.cartValue >= coupon.min_cart_value) {
-                discountValue = coupon.discount_type === 'percent'
-                ? cart.cartValue * (coupon.discount_value / 100)
-                : coupon.discount_value;
+            if (cart.cartValue >= couponData.min_cart_value) {
+                discountValue = couponData.discount_type === 'percent'
+                    ? cart.cartValue * (couponData.discount_value / 100)
+                    : couponData.discount_value;
             }
             break;
 
         case 'product':
+            // console.log("I ran")
             cart.items.forEach((item) => {
-                if (coupon.product_ids.includes(item.product_id)) {
-                discountValue += coupon.discount_type === 'percentage'
-                    ? item.price * item.quantity * (coupon.discount_percentage / 100)
-                    : coupon.discount_amount * item.quantity;
+                // console.log(item);
+                // console.log(item.id);
+                if (couponData.products.includes(item.id)) {
+                    // console.log("ran")
+                    const productDiscount = couponData.discount_type === 'percent'
+                        ? item.price * item.quantity * (couponData.discount_value / 100)
+                        : couponData.discount_value * item.quantity;
+                    discountValue += productDiscount
+                    item.coupon_discount = parseFloat((productDiscount).toFixed(2))
                 }
             });
             break;
@@ -252,8 +315,8 @@ exports.checkCouponCode = async (userId, code) => {
             throw new Error('Unsupported coupon type');
     }
 
-    if (coupon.threshold_amount && discountValue > coupon.threshold_amount) {
-        discountValue = coupon.threshold_amount;
+    if (couponData.threshold_amount && discountValue > couponData.threshold_amount) {
+        discountValue = couponData.threshold_amount;
     }
 
     // console.log(discountValue);

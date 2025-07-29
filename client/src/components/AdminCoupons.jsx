@@ -158,7 +158,7 @@ function AdminCoupons() {
     };
 
     const handleFilter = (data = {}) => {
-        console.log(data);
+        // console.log(data);
         const params = new URLSearchParams();
 
         if (data.search) params.set("search", data.search);

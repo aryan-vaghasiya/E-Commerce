@@ -1,3 +1,4 @@
+import { act } from "react";
 import { ADD_ORDERS, ORDERS_FROM_DB } from "./orderTypes";
 
 const orderInitState = []
@@ -8,7 +9,7 @@ const orderReducer = (state=orderInitState, action) => {
             return[
                 {
                     noOfItems: action.payload.noOfItems,
-                    products: action.payload.products,
+                    products: action.payload.products || action.payload.items,
                     cartValue: action.payload.cartValue
                 },
                 ...state

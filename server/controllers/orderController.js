@@ -30,10 +30,14 @@ exports.checkCoupon = async (req, res) => {
 
 exports.addToOrders = async (req, res) => {
     const userId = req.user.id;
-    console.log(req.body);
+    const {order} = req.body;
+    const {coupon} = req.body;
+    // console.log(coupon);
+    
+    // console.log(req.body);
 
     try{
-        await orderService.addOrder(userId);
+        await orderService.addOrder(userId, order, coupon);
         res.status(200).json({ message: "Order placed successfully"});
     }
     catch(err){
