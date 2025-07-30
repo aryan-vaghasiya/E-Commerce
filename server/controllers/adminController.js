@@ -227,7 +227,7 @@ exports.searchProduct = async (req, res) => {
 }
 
 exports.addCoupon = async(req, res) => {
-    const {coupon_name : name, coupon_code : code, discount_type, discount_value, discount_limit: threshold_amount, discount_on : applies_to, total_coupons, limit_per_user, start_time, end_time, selected_products, min_cart_value} = req.body
+    const {coupon_name : name, coupon_code : code, discount_type, discount_value, discount_limit: threshold_amount, discount_on : applies_to, total_coupons, limit_per_user, start_time, end_time, selected_products, min_cart_value, for_new_users_only} = req.body
 
     const productIds = selected_products?.map(product => product.id)
     // console.log(discount_value);
@@ -240,7 +240,10 @@ exports.addCoupon = async(req, res) => {
                                             !total_coupons ? null : total_coupons, 
                                             !limit_per_user ? null : limit_per_user,
                                             !min_cart_value ? null : min_cart_value,
-                                            start_time, end_time, productIds
+                                            !for_new_users_only ? 0 : 1,
+                                            start_time, 
+                                            end_time, 
+                                            productIds
                                         );
         res.status(200).send("Coupon added Successfully");
     }
@@ -265,6 +268,8 @@ exports.getCoupons = async (req, res) => {
     }
     catch (err){
         console.error("Error fetching all coupons: ", err.message);
+        // console.log(err.message);
+        
         res.status(500).json({ error: err.message });
     }
 }

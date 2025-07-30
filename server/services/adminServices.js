@@ -36,7 +36,7 @@ exports.loginAdmin = async(username, password) => {
 exports.getDashboard = async() => {
     const [products] = await runQuery("SELECT COUNT(*) as products FROM products")
     const [orders] = await runQuery("SELECT COUNT(*) as orders FROM orders")
-    const [sales] = await runQuery("SELECT SUM(total) as sales FROM orders")
+    const [sales] = await runQuery("SELECT SUM(final_total) as sales FROM orders")
     const [customers] = await runQuery("SELECT COUNT(*) as customers FROM users")
     const recentOrders = await runQuery(`SELECT 
                                             o.id,
@@ -44,7 +44,8 @@ exports.getDashboard = async() => {
                                             u.last_name,
                                             o.status,
                                             DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
-                                            o.total
+                                            o.total,
+                                            o.final_total
                                         FROM orders o JOIN users u on o.user_id = u.id
                                         ORDER BY o.order_date DESC
                                         LIMIT 5`);
@@ -66,7 +67,8 @@ exports.getAllOrders = async(page, limit, offset) => {
                                         u.last_name,
                                         o.status,
                                         DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
-                                        o.total
+                                        o.total,
+                                        o.final_total
                                     FROM orders o JOIN users u on o.user_id = u.id
                                     ORDER BY o.order_date DESC
                                     LIMIT ?
@@ -106,6 +108,8 @@ exports.getOrderData = async (orderId) => {
                                     DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
                                     DATE_FORMAT(o.order_date, '%H:%i:%s') as order_time,
                                     o.total,
+                                    o.discount_amount,
+                                    o.final_total,
 
                                     u.first_name,
                                     u.last_name,
@@ -554,7 +558,7 @@ exports.getProductForCoupon = async (query, price) => {
     return result
 }
 
-exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, start_time, end_time, productIds) => {
+exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, for_new_users_only, start_time, end_time, productIds) => {
 
     const ifActive = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
     if(ifActive.length > 0) {
@@ -570,12 +574,13 @@ exports.addCouponData = async(name, code, discount_value, discount_type, applies
         applies_to, 
         limit_per_user, 
         min_cart_value,
+        for_new_users_only,
         start_time, 
         end_time, 
         total_coupons)
         
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, code, discount_type, discount_value, threshold_amount, applies_to, limit_per_user, min_cart_value, start_time, end_time, total_coupons]
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, code, discount_type, discount_value, threshold_amount, applies_to, limit_per_user, min_cart_value, for_new_users_only, start_time, end_time, total_coupons]
     );
 
     if(result.affectedRows === 0){
@@ -667,6 +672,7 @@ exports.getAllCoupons = async(queryParams) => {
                         is_active, 
                         created_at,  
                         total_coupons, 
+                        coupons_left, 
                         times_used
                     FROM coupons
                     ${whereClause}

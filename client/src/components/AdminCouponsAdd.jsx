@@ -19,22 +19,29 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import dayjs from "dayjs"
 import React, { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useNavigate } from "react-router"
 import CloseIcon from '@mui/icons-material/Close';
 import Chip from "@mui/material/Chip"
+import Snackbar from "@mui/material/Snackbar"
+import Alert from "@mui/material/Alert"
+import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions"
+import FormControlLabel from "@mui/material/FormControlLabel"
+import Checkbox from "@mui/material/Checkbox"
 
 function AdminCouponsAdd() {
 
+    const snackbarState = useSelector(state => state.snackbarReducer)
     const token = useSelector(state => state.userReducer.token);
     const { register, handleSubmit, control, getValues, reset, watch, setValue, trigger, formState: { errors } } = useForm({
         mode: "onChange",
         reValidateMode: "onChange"
     })
     const navigate = useNavigate()
+    const dispatch = useDispatch()
 
     const [query, setQuery] = useState("");
     const [options, setOptions] = useState([]);
@@ -131,6 +138,7 @@ function AdminCouponsAdd() {
             const error = await response.json()
             console.log(error.error);
             if(error.error === "This Code is already Active"){
+                dispatch(showSnack({message: "This Code is already Active", severity: "warning"}))
                 setCurrentStep(1)
             }
         }
@@ -141,6 +149,19 @@ function AdminCouponsAdd() {
 
     return (
         <Box sx={{ py: 6, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh",}}>
+            <Snackbar
+                open={snackbarState.show}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={2000}
+                onClose={() => dispatch(hideSnack())}
+                sx={{
+                    '&.MuiSnackbar-root': { top: '70px' },
+                }}
+            >
+                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                    {snackbarState.message}
+                </Alert>
+            </Snackbar>
             <Card sx={{ display: "flex", justifyContent: "center", p: 2, width: "80%", maxWidth: 750, mx: "auto", py: 7}}>
                 <form onSubmit={handleSubmit(addCoupon)} noValidate>
                     <Stack spacing={3} width={{ lg: 600, md: 500, xs: 300}}>
@@ -370,8 +391,8 @@ function AdminCouponsAdd() {
                                                 message: "Cart Value must be in digits only"
                                             },
                                             validate: (value) => {
-                                                if (discount_type === "fixed" && parseFloat(value) <= parseFloat(discount_value)) {
-                                                    return "Minimum cart value must be greater than the discount amount";
+                                                if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
+                                                    return "Minimum cart value must be atleas double than the discount amount";
                                                 }
                                                 return true;
                                             }
@@ -464,6 +485,11 @@ function AdminCouponsAdd() {
                                 })}
                                     error={!!errors.limit_per_user}
                                     helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
+                                />
+
+                                <FormControlLabel
+                                    control={<Checkbox {...register("for_new_users_only")}/>}
+                                    label="For New Users Only"
                                 />
 
                                 <Box sx={{display: "flex", justifyContent: "space-between"}}>

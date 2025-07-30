@@ -148,9 +148,35 @@ function AdminOrderPage() {
                             </Box>
                         </Card>
                     ))}
-                    <Box sx={{textAlign: "right", pb: 2, px: 3, pr: 7}}>
+                    <Box sx={{textAlign: "right", pb: 2, px: 3}}>
                         {/* <Typography>Order Number: {ordersState.length - index}</Typography> */}
-                        <Typography fontSize={16} fontWeight={500}>ORDER TOTAL: <Typography variant='span' color='success' fontSize={26} fontWeight={500}>${data.total}</Typography> </Typography>
+                        {
+                            data.discount_amount && data.discount_amount > 0 ?
+                            <Box>
+                                <Typography fontSize={16} fontWeight={500} sx={{display: "flex", alignItems: "center"}}>
+                                    CART TOTAL: 
+                                    <Typography variant='span' fontSize={20} fontWeight={500} sx={{ml: "auto"}}>
+                                        ${data.total}
+                                    </Typography> 
+                                </Typography>
+                                <Typography fontSize={16} fontWeight={500} sx={{display: "flex", alignItems: "center"}}>
+                                    COUPON: 
+                                    <Typography color='error' variant='span' fontSize={20} fontWeight={500} sx={{ml: "auto"}}>
+                                        -${data.discount_amount}
+                                    </Typography> 
+                                </Typography>
+
+                                <Typography fontSize={16} fontWeight={500} sx={{display: "flex", alignItems: "center"}}>
+                                    ORDER TOTAL: 
+                                    <Typography color='success' variant='span' fontSize={20} fontWeight={500} sx={{ml: "auto"}}>
+                                        ${data.final_total}
+                                    </Typography> 
+                                </Typography>
+                            </Box>
+                            :
+                            <Typography fontSize={16} fontWeight={500}>ORDER TOTAL: <Typography variant='span' color='success' fontSize={26} fontWeight={500}>${data.total}</Typography> </Typography>
+
+                        }
                     </Box>
                 </Card>
                 }

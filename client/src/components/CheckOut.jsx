@@ -50,7 +50,9 @@ function CheckOut() {
     })
 
     const handleCouponQuery = async () => {
-        console.log(couponQuery);
+        // console.log(couponQuery);
+
+        if(!couponQuery) return
 
         const response = await fetch("http://localhost:3000/orders/check-coupon", {
             method: "POST",
@@ -62,43 +64,48 @@ function CheckOut() {
         })
 
         if(!response.ok && couponQuery){
-            dispatch(showSnack({message: "Invalid Coupon Code", severity: "warning"}))
+            // dispatch(showSnack({message: "Invalid Coupon Code", severity: "warning"}))
             setIsCouponApplied(false)
             setCouponQuery("")
+
+            const error = await response.json()
+
+            if(response.status === 501){
+                console.log(error.error);
+                dispatch(showSnack({message: error.error, severity: "warning"}))
+            }
+            else{
+                console.error(error.error);
+                dispatch(showSnack({message: "Server error! Pleasy try again", severity: "error"}))
+            }
+
             return
         }
 
         const couponRes = await response.json()
 
-        // console.log(couponRes.couponData.min_cart_value);
-        // console.log(cartReducer.cartValue);
-        if(couponRes.couponData?.min_cart_value > cartReducer.cartValue){
-            dispatch(showSnack({message: "Insufficient Cart value", severity: "warning"}))
-            setIsCouponApplied(false)
-            setCouponQuery("")
-            return
-        }
-
-        const discountProductsInCart = cartReducer.products.filter(item => couponRes.couponData.products.includes(item.id))
-        console.log(discountProductsInCart);
-        
-
-        if(couponRes.couponData.applies_to === "product" && discountProductsInCart.length < 1){
-            dispatch(showSnack({message: "Coupon not applicable", severity: "warning"}))
-            setIsCouponApplied(false)
-            setCouponQuery("")
-            return
-        }
-
-        // else{
-            
-            setCouponData(couponRes.couponData)
-            setNewCart(couponRes.newCart)
-            setIsCouponApplied(true)
-            console.log(couponRes)
+        // if(couponRes.couponData?.min_cart_value > cartReducer.cartValue){
+        //     dispatch(showSnack({message: "Insufficient Cart value", severity: "warning"}))
+        //     setIsCouponApplied(false)
+        //     setCouponQuery("")
+        //     return
         // }
 
-        // checkCouponCode(couponRes)
+        // const discountProductsInCart = cartReducer.products.filter(item => couponRes.couponData.products.includes(item.id))
+        // console.log(discountProductsInCart);
+        
+
+        // if(couponRes.couponData.applies_to === "product" && discountProductsInCart.length < 1){
+        //     dispatch(showSnack({message: "Coupon not applicable", severity: "warning"}))
+        //     setIsCouponApplied(false)
+        //     setCouponQuery("")
+        //     return
+        // }
+
+        setCouponData(couponRes.couponData)
+        setNewCart(couponRes.newCart)
+        setIsCouponApplied(true)
+        console.log(couponRes)
     }
 
     const removeCoupon = () => {
@@ -147,7 +154,7 @@ function CheckOut() {
             <Snackbar
                 open={snackbarState.show}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                autoHideDuration={2000}
+                autoHideDuration={5000}
                 onClose={() => dispatch(hideSnack())}
                 sx={{
                     '&.MuiSnackbar-root': { top: '70px' },
@@ -302,15 +309,20 @@ function CheckOut() {
                                                 {item.rating}
                                             </Typography>
                                         </Box>
-                                        <Typography sx={{ fontSize: 14, display: "flex" }}>{item.quantity} x <span style={{ marginLeft: "auto" }}>${item.price}</span> </Typography>
+                                        <Typography sx={{ fontSize: 14, display: "flex" }}>{item.quantity} x <span style={{ marginLeft: "auto" }}>${(item.price).toFixed(2)}</span> </Typography>
                                         <Divider variant='fullWidth' sx={{pt: 0.5}}/>
-                                        <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${item.priceValue}</span> </Typography>
+                                        <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue).toFixed(2)}</span> </Typography>
                                         {
                                             item.coupon_discount ? 
                                             <Box>
-                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}} color='success'>Coupon Discount: <span style={{ marginLeft: "auto" }}>- ${item.coupon_discount}</span> </Typography>
+                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5, fontWeight: 500}} color='success'>
+                                                    Coupon Discount: 
+                                                    <span style={{ marginLeft: "auto" }}>
+                                                        - ${(item.coupon_discount).toFixed(2)}
+                                                    </span> 
+                                                </Typography>
                                                 <Divider variant='fullWidth' sx={{pt: 0.5}}/>
-                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${item.priceValue - item.coupon_discount}</span> </Typography>
+                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue - item.coupon_discount).toFixed(2)}</span> </Typography>
                                             </Box>
                                             :
                                             null
@@ -325,26 +337,27 @@ function CheckOut() {
                     }
                     <Divider variant='middle'/>
                     <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
-                        {isCouponApplied ? "Sub" : "Order"} Total: 
+                        {isCouponApplied && couponData.applies_to === "all" ? "Sub" : "Order"} Total: 
                         <span style={{ marginLeft: "auto" }}>
                             {/* ${cartReducer.products.reduce((accumulator, currentvalue) => accumulator + currentvalue.priceValue, 0)} */}
-                            ${cartReducer.cartValue}
+                            {/* ${(cartReducer.cartValue).toFixed(2)} */}
+                            ${isCouponApplied && couponData.applies_to === "product" ? (newCart?.newCartValue).toFixed(2) : (cartReducer.cartValue).toFixed(2)}
                         </span>
                     </Typography>
                     {
-                        isCouponApplied ? 
+                        isCouponApplied && couponData.applies_to === "all" ? 
                         <Box>
                         <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
                             Coupon Discount: 
                             <span style={{ marginLeft: "auto" }}>
-                                - ${newCart?.discountValue}
+                                - ${(newCart?.discountValue).toFixed(2)}
                             </span>
                         </Typography>
                         <Divider variant='middle'/>
                         <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
                             Order Total: 
                             <span style={{ marginLeft: "auto" }}>
-                                ${newCart?.newCartValue}
+                                ${(newCart?.newCartValue).toFixed(2)}
                             </span>
                         </Typography>
                         </Box>

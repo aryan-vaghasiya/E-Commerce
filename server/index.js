@@ -23,6 +23,7 @@ cron.schedule('*/10 * * * *', async () => {
     try{
         console.log('Updating coupon status, every 10 minutes');
         await runQuery(`UPDATE coupons SET is_active = ? WHERE end_time > NOW()`, [1])
+        await runQuery(`UPDATE coupons SET is_active = ? WHERE coupons_left <= 0`, [0])
         await runQuery(`UPDATE coupons SET is_active = ? WHERE end_time <= NOW() AND is_active = ?`, [0, 1])
         console.log('Updating product discount status, every 10 minutes');
         await runQuery(`UPDATE product_discounts SET is_active = ? WHERE end_time > NOW()`, [1])

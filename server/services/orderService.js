@@ -35,12 +35,6 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
-    const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
-    if (insert.affectedRows === 0) {
-        throw new Error("Couldn't insert Order");
-    }
-    const orderId = insert.insertId;
-
 
 
 
@@ -48,6 +42,12 @@ exports.addOrder = async(userId, order, coupon) => {
     let orderItems = []
     if(coupon.code){
         const {newCart, couponData} = await this.checkCouponCode(userId, coupon.code)
+
+        const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
+        if (insert.affectedRows === 0) {
+            throw new Error("Couldn't insert Order");
+        }
+        const orderId = insert.insertId;
 
         // console.log(newCart);
         orderItems = newCart.items.map(item => {
@@ -84,6 +84,13 @@ exports.addOrder = async(userId, order, coupon) => {
     }
 
     else{
+
+        const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
+        if (insert.affectedRows === 0) {
+            throw new Error("Couldn't insert Order");
+        }
+        const orderId = insert.insertId;
+
         const insertItem = await runQuery(`
             INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
             SELECT 
@@ -159,8 +166,8 @@ exports.addOrder = async(userId, order, coupon) => {
 
 exports.getOrdersService = async (userId) => {
     const getOrders = await runQuery(`SELECT
-                                        oi.order_id, 
-                                        oi.product_id AS id, 
+                                        oi.order_id,
+                                        oi.product_id AS id,
                                         oi.quantity, 
                                         oi.purchase_price AS price,
                                         p.title, 
@@ -168,7 +175,9 @@ exports.getOrdersService = async (userId) => {
                                         p.rating, 
                                         p.brand, 
                                         p.thumbnail, 
-                                        o.total AS cartValue,
+                                        o.total,
+                                        o.discount_amount,
+                                        o.final_total,
                                         o.status
                                     FROM order_item oi 
                                     JOIN products p ON oi.product_id = p.id
@@ -187,7 +196,9 @@ exports.getOrdersService = async (userId) => {
                                         order_id: item.order_id,
                                         noOfItems: 0,
                                         products: [],
-                                        cartValue: item.cartValue,
+                                        final_total: item.final_total,
+                                        cartValue: item.total,
+                                        discount: item.discount_amount,
                                         status: item.status
                                     }
         }
@@ -217,33 +228,50 @@ exports.checkCouponCode = async (userId, code) => {
     const [coupon] = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
 
     if(!coupon){
-        throw new Error("Coupon Code not Found")
+        throw new Error("This coupon does not exist")
     }
 
-    // console.log(coupon.coupons_left);
-    if(coupon.coupons_left && coupon.coupons_left <= 0){
-        throw new Error(`Coupons finished`)
+    if(coupon.coupons_left !== null && coupon.coupons_left <= 0){
+        throw new Error("This coupon has reached its usage limit and is no longer valid")
     }
+
+    if(coupon.for_new_users_only){
+        const checkOrders = await runQuery(`SELECT * FROM orders WHERE user_id = ?`, [userId])
+        // console.log(checkOrders.length);
+        if(checkOrders.length > 0){
+            throw new Error("Coupon applicable for First Order only")
+        }
+    }
+
+    const checkUsage = await runQuery(`SELECT * FROM coupon_usages WHERE coupon_id = ? AND user_id = ?`, [coupon.id, userId])
+    // console.log(checkUsage.length);
+    if(coupon.limit_per_user && checkUsage.length >= coupon.limit_per_user){
+        throw new Error("You've already used this coupon the maximum number of times")
+    }
+
+    const [checkActiveCart] = await runQuery(`SELECT * FROM cart WHERE user_id = ? AND status = ?`, [userId, 'active'])
+
+    if(!checkActiveCart){
+        throw new Error("Your cart seems to be empty or inactive. Please add items and try again")
+    }
+    const cartId = checkActiveCart.id
 
     if(coupon.applies_to === "product"){
-        const products = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
-        productIds = products.map(product => product.product_id)
-        // console.log(products);
-        // console.log(productIds);
+        const getCouponProducts = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
+        productIds = getCouponProducts.map(product => product.product_id)
+
+        const getCartProducts = await runQuery(`SELECT * FROM cart_item WHERE cart_id = ? AND user_id = ?`, [cartId, userId])
+        const products = getCartProducts.map(product => product.product_id)
+
+        const applicableProducts = productIds.filter(id => products.includes(id))
+
+        if(applicableProducts.length < 1){
+            throw new Error("This coupon is not applicable to any of the products in your cart");
+        }
     }
 
     const couponData = {...coupon, products : [...productIds]}
 
-    const [checkActiveCart] = await runQuery(`SELECT * FROM cart WHERE user_id = ? AND status = ?`, [userId, 'active'])
-    if(!checkActiveCart){
-        throw new Error(`No active cart Found for user ${userId}`)
-    }
-    const cartId = checkActiveCart.id
-
-    const getCart = await runQuery(`SELECT * FROM cart_item WHERE cart_id = ? AND user_id = ?`, [cartId, userId])
-    // console.log(getCart);
-    const products = await getCart.map(product => ({id: product.product_id, quantity: product.quantity}))
-    // console.log(products);
 
     const getProducts = await runQuery(`SELECT 
                                             p.*,
@@ -278,11 +306,14 @@ exports.checkCouponCode = async (userId, code) => {
                                             AND (pd.end_time IS NULL OR pd.end_time > NOW())
                                         WHERE ci.cart_id = ?
                                             AND ci.user_id = ?`, [cartId, userId]);
-    // console.log(getProducts);
+
+    if(getProducts.length <= 0){
+        throw new Error("Your cart seems to be empty or inactive. Please add items and try again")
+    }
+
     const noOfItems = getProducts.reduce((accumulator, currentValue) => accumulator + currentValue.quantity, 0,)
     const cartValue = getProducts.reduce((accumulator, currentValue) => accumulator + currentValue.price * currentValue.quantity, 0,)
     const cart = {items : getProducts, noOfItems, cartValue: parseFloat((cartValue).toFixed(2))}
-    // console.log(cart);
 
     let discountValue = 0;
 
@@ -292,6 +323,9 @@ exports.checkCouponCode = async (userId, code) => {
                 discountValue = couponData.discount_type === 'percent'
                     ? cart.cartValue * (couponData.discount_value / 100)
                     : couponData.discount_value;
+            }
+            else{
+                throw new Error("Insufficiant Cart Value")
             }
             break;
 
@@ -324,6 +358,10 @@ exports.checkCouponCode = async (userId, code) => {
 
     const newCart = {...cart, discountValue: parseFloat((discountValue).toFixed(2)), newCartValue: parseFloat((cart.cartValue - discountValue).toFixed(2))}
     // console.log(newCart);
+
+    if(newCart.discountValue >= newCart.cartValue || newCart.newCartValue <= 0){
+        throw new Error("Insufficiant Cart Value")
+    }
 
     return {newCart, couponData}
 }

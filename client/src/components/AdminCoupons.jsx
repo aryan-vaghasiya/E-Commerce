@@ -251,8 +251,8 @@ function AdminCoupons() {
         //     align: "center"
         // },
         {
-            field: 'total_coupons',
-            headerName: 'Total Coupons',
+            field: 'coupons_left',
+            headerName: 'Coupons Left',
             width: 110,
             editable: false,
             align: "center",
@@ -267,13 +267,13 @@ function AdminCoupons() {
                 </Box>
             )
         },
-        {
-            field: 'times_used',
-            headerName: 'Coupons Used',
-            width: 110,
-            editable: false,
-            align: "center"
-        },
+        // {
+        //     field: 'times_used',
+        //     headerName: 'Coupons Used',
+        //     width: 110,
+        //     editable: false,
+        //     align: "center"
+        // },
         {
             field: 'edit',
             headerName: 'Edit Product',

@@ -23,8 +23,19 @@ exports.checkCoupon = async (req, res) => {
         return res.status(200).json(result);
     }
     catch(err){
+        const errorsToShow = ["This coupon does not exist", 
+                                "This coupon has reached its usage limit and is no longer valid", 
+                                "You've already used this coupon the maximum number of times",
+                                "Your cart seems to be empty or inactive. Please add items and try again",
+                                "This coupon is not applicable to any of the products in your cart",
+                                "Insufficiant Cart Value",
+                                "Coupon applicable for First Order only"
+                            ]
         console.error("Error in checkCoupon:", err.message);
-        res.status(500).json({ error: err.message });
+        if(errorsToShow.includes(err.message)){
+            return res.status(501).json({ error: err.message });
+        }
+        return res.status(500).json({ error: err.message });
     }
 }
 

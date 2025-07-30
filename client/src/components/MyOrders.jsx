@@ -99,8 +99,17 @@ function MyOrders() {
                     ordersState.map((order, index) => (
                         <Card key={index} sx={{mx: "auto", bgcolor: "white", width: "80%", my: 2}} >
                             <Box sx={{textAlign: "left", pt: 2, px: 3}}>
-                                <Typography>Order Number: {ordersState.length - index}</Typography>
-                                <Typography>Cart Value: ${order.cartValue}</Typography>
+                                {/* <Typography>Order Number: {ordersState.length - index}</Typography> */}
+                                <Typography>Order Value: ${order.cartValue}</Typography>
+                                {
+                                    order.final_total && order.discount > 0?
+                                    <Box>
+                                        <Typography color='success' sx={{fontWeight: 500}}>Coupon: -${order.discount}</Typography>
+                                        <Typography>Order Total: ${order.final_total}</Typography>
+                                    </Box>
+                                    :
+                                    null
+                                }
                             </Box>
                             {order.products.map(item => (
                                 <Card key={item.id} sx={{display: "flex",bgcolor: "#EEEEEE", my: 2, mx: 3}} >
