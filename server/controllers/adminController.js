@@ -274,9 +274,6 @@ exports.getCoupons = async (req, res) => {
 
 exports.getSingleCouponDetails = async (req, res) => {
     const couponId = req.params.couponId
-    // console.log(req.params);
-    // console.log(req.params.couponId);
-    // console.log(couponId);
 
     try{
         const coupon = await adminServices.getSingleCoupon(couponId)
@@ -294,14 +291,28 @@ exports.getSingleCouponUsages = async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = (page - 1) * limit
 
-    // console.log(couponId, limit, offset);
-
     try{
         const usages = await adminServices.getCouponUsages(couponId, limit, offset)
         res.status(200).json(usages);
     }
     catch (err){
-        console.error("Error fetching all coupons: ", err.message);
+        console.error("Error fetching coupon usages: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleCouponProducts = async (req, res) => {
+    const couponId = req.params.couponId
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
+
+    try{
+        const usages = await adminServices.getCouponProducts(couponId, limit, offset)
+        res.status(200).json(usages);
+    }
+    catch (err){
+        console.error("Error fetching coupon products: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

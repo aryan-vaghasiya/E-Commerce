@@ -27,18 +27,29 @@ function AdminCouponDetails() {
 
     const { couponId } = useParams()
     const token = useSelector(state => state.userReducer.token);
-    const [data, setData] = useState()
+
+    const [data, setData] = useState(null)
+
     const [usages, setUsages] = useState([])
     const [totalUsages, setTotalUsages] = useState(0);
-    const [loading, setLoading] = useState(false)
+    const [totalLoss, setTotalLoss] = useState(0);
+    const [loadingUsages, setLoadingUsages] = useState(false)
 
-    // const [pageSize, setPageSize] = useState(5);
-    const [paginationModel, setPaginationModel] = useState({
+    const [products, setProducts] = useState([])
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [loadingProducts, setLoadingProducts] = useState(false)
+
+    const [usagesPaginationModel, setUsagesPaginationModel] = useState({
+        page: 0,
+        pageSize: 5,
+    });
+    const [productsPaginationModel, setProductsPaginationModel] = useState({
         page: 0,
         pageSize: 5,
     });
 
-    const columns = [
+
+    const usageColumns = [
         { field: "id", headerName: "ID", width: 120 },
         { field: "user_id", headerName: "User ID", width: 120 },
         { field: "order_id", headerName: "Order ID", width: 120 },
@@ -46,19 +57,32 @@ function AdminCouponDetails() {
             field: "total", 
             headerName: "Cart Value", 
             width: 140,
-            renderCell: (params) => `$${params.value}`
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
         },
         { 
             field: "discount_amount", 
             headerName: "Discount Amount", 
             width: 140,
-            renderCell: (params) => `$${params.value}`
+            align: "center",
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography color='error'>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
         },
         { 
             field: "final_total", 
             headerName: "Final Total", 
             width: 140,
-            renderCell: (params) => `$${params.value}`
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography color='success'>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
         },
         { 
             field: "used_at", 
@@ -68,8 +92,75 @@ function AdminCouponDetails() {
         }
     ];
 
-    const fetchUsages = async (page, limit) => {
-        setLoading(true)
+    const productColumns = [
+        {
+            field: 'id', headerName: 'Product ID', width: 90, align : "center"
+        },
+        {
+            field: 'title',
+            headerName: 'Title',
+            width: 350,
+            editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", alignItems: "center", pt: 0.7}}>
+                    <img
+                    src={getImageUrl(params.row.thumbnail)}
+                    alt="product"
+                    style={{
+                        height: '50px',
+                        width: 'auto',
+                        objectFit: 'contain',
+                        borderRadius: '4px'
+                    }}
+                    />
+                    <Typography sx={{pl: 1}}>{params.value}</Typography>
+                </Box>
+            ),
+        },
+        {
+            field: 'price',
+            headerName: 'Selling Price',
+            width: 110,
+            editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
+        },
+        {
+            field: 'coupon_discount_amount',
+            headerName: 'Coupon Discount',
+            width: 130,
+            editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography color='error'>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
+        },
+        {
+            field: 'final_price',
+            headerName: 'Final Price',
+            width: 110,
+            editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography color='success'>${(params.value).toFixed(2)}</Typography>
+                </Box>
+            )
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            width: 110,
+            editable: false,
+            align: "center"
+        }
+    ];
+
+    const fetchCouponUsages = async (page, limit) => {
+        setLoadingUsages(true)
         try{
             const response = await fetch(`http://localhost:3000/admin/coupons/usages/${couponId}?page=${page}&limit=${limit}`, {
                 headers: {
@@ -79,13 +170,38 @@ function AdminCouponDetails() {
 
             if(!response.ok){
                 const error = await response.json()
-                console.log(error);
+                return console.log(error);
             }
             const result = await response.json()
-            console.log(result);
+            // console.log(result);
             setUsages(result.usages)
             setTotalUsages(result.totalUsages)
-            setLoading(false)
+            setLoadingUsages(false)
+        }
+        catch(err){
+            console.error(err.message)
+        }
+    }
+
+    const fetchCouponProducts = async (page, limit) => {
+        setLoadingProducts(true)
+        try{
+            const response = await fetch(`http://localhost:3000/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
+                headers: {
+                    Authorization : `Bearer ${token}`
+                }
+            })
+
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error);
+            }
+
+            const result = await response.json()
+            // console.log(result);
+            setProducts(result.products)
+            setTotalProducts(result.totalProducts)
+            setLoadingProducts(false)
         }
         catch(err){
             console.error(err.message)
@@ -100,35 +216,48 @@ function AdminCouponDetails() {
                 }
             })
 
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error);
+            }
+
             const result = await response.json()
-            console.log(result);
+            // console.log(result);
             setData(result)
+            setTotalLoss(result.totalLoss)
         }
         catch(err){
             console.error(err.message)
         }
     }
 
-    const handlePaginationChange = (newModel) => {
+    const handleUsagePaginationChange = (newModel) => {
         // console.log(newModel);
-        
-        setPaginationModel(newModel);
-        fetchUsages(newModel.page + 1, newModel.pageSize);
-    };
+        setUsagesPaginationModel(newModel);
+        fetchCouponUsages(newModel.page + 1, newModel.pageSize);
+    }
+    const handleProductPaginationChange = (newModel) => {
+        // console.log(newModel);
+        setProductsPaginationModel(newModel);
+        fetchCouponProducts(newModel.page + 1, newModel.pageSize);
+    }
 
     useEffect(() => {
-        console.log("I ran");
-        
         fetchCoupon()
     },[])
+
     useEffect(() => {
-        fetchUsages(paginationModel.page + 1, paginationModel.pageSize);
-    },[paginationModel])
+        fetchCouponUsages(usagesPaginationModel.page + 1, usagesPaginationModel.pageSize);
+    },[usagesPaginationModel])
+
+    useEffect(() => {
+        fetchCouponProducts(productsPaginationModel.page + 1, productsPaginationModel.pageSize);
+    },[productsPaginationModel])
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
             {
-                data ?
+                data && usages && products ?
                 <Box>
                     <Stack spacing={3}>
                         <Card>
@@ -142,12 +271,10 @@ function AdminCouponDetails() {
                                     </Box>
                                 </Box>
                                 {
-                                    data.usages.length > 0 ?
+                                    totalLoss > 0 ?
                                     <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
                                         <Typography color='error' sx={{fontSize: 35}}>
-
-                                            {(data.usages.reduce((accumulator, value) => accumulator + value.discount_amount, 0)).toFixed(2)}
-
+                                            {(totalLoss).toFixed(2)}
                                             <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
                                         </Typography>
                                         <Typography sx={{ml: "auto"}}>Total Discounts</Typography>
@@ -159,7 +286,7 @@ function AdminCouponDetails() {
                             <Divider sx={{ my: 2 }} />
                             <Typography>
                                 <Typography component={'span'} sx={{fontWeight: 700}}>Discount: </Typography>
-                                {data.discount_type === "percent" ? `${data.discount_value}%` : `$${data.discount_value}`}
+                                {data.discount_type === "percent" ? `${data.discount_value}%` : `$${(data.discount_value).toFixed(2)}`}
                                 {data.threshold_amount ? ` (upto $${data.threshold_amount})` : null}
                             </Typography>
                             <Typography>
@@ -168,7 +295,7 @@ function AdminCouponDetails() {
                             </Typography>
                             <Typography>
                                 <Typography component={'span'} sx={{fontWeight: 700}}>Min. Cart Value: </Typography>
-                                {data.min_cart_value ?? "No minimum value needed"}
+                                {data.min_cart_value ? `$${(data.min_cart_value).toFixed(2)}` : "No minimum value needed"}
                             </Typography>
                             <Typography>
                                 <Typography component={'span'} sx={{fontWeight: 700}}>Limit per user: </Typography>
@@ -187,6 +314,43 @@ function AdminCouponDetails() {
                         </Card>
 
                         <Card>
+                            <CardContent>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Applicable Products
+                                </Typography>
+                                {products.length > 0 ? (
+                                    <Box sx={{ maxHeight: 400, width: "100%" }}>
+                                        <DataGrid
+                                            sx={{ maxHeight: 400, maxWidth: "100%", mr: 1.5}}
+                                            rows={products}
+                                            // rows={
+                                            //     usages.map((usage, index) => ({
+                                            //         id: index + 1,
+                                            //         ...usage
+                                            //     }))}
+                                            columns={productColumns}
+                                            rowCount={totalProducts}
+                                            // onRowClick={handleRowClick}
+                                            pagination
+                                            paginationMode="server"
+                                            paginationModel={productsPaginationModel}
+                                            onPaginationModelChange={handleProductPaginationChange}
+                                            loading={loadingProducts}
+                                            rowHeight={58}
+                                            pageSizeOptions={[5, 8, 10, 20]}
+                                            disableRowSelectionOnClick
+                                        />
+                                    </Box>
+                                    ) 
+                                    : 
+                                    (
+                                    <Typography>No products attached to this coupon.</Typography>
+                                    )
+                                }
+                            </CardContent>
+                        </Card>
+
+                        {/* <Card>
                             <CardContent>
                                 <Typography variant="h6" sx={{ mb: 2 }}>Applicable Products</Typography>
                                 {data.products.length > 0 ? 
@@ -237,44 +401,6 @@ function AdminCouponDetails() {
                                     )
                                 }
                         </CardContent>
-                    </Card>
-
-                    {/* <Card>
-                    <CardContent>
-                        <Typography variant="h6" sx={{ mb: 2 }}>Coupon Usages</Typography>
-                        {data.usages.length > 0 ? (
-                        <TableContainer component={Paper}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>User ID</TableCell>
-                                        <TableCell>Order ID</TableCell>
-                                        <TableCell>Total</TableCell>
-                                        <TableCell>Discount</TableCell>
-                                        <TableCell>Final Total</TableCell>
-                                        <TableCell>Used At</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {data.usages.map((u, idx) => (
-                                        <TableRow key={idx}>
-                                            <TableCell>{u.user_id}</TableCell>
-                                            <TableCell>{u.order_id}</TableCell>
-                                            <TableCell>₹{u.total}</TableCell>
-                                            <TableCell>₹{u.discount_amount}</TableCell>
-                                            <TableCell>₹{u.final_total}</TableCell>
-                                            <TableCell>{dayjs(u.used_at).format("DD MMM YYYY, HH:mm")}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        ) 
-                        : 
-                        (
-                        <Typography>No usage records found.</Typography>
-                        )}
-                    </CardContent>
                     </Card> */}
 
                         <Card>
@@ -282,36 +408,19 @@ function AdminCouponDetails() {
                                 <Typography variant="h6" sx={{ mb: 2 }}>
                                     Coupon Usages
                                 </Typography>
-                                {data.usages.length > 0 ? (
+                                {usages.length > 0 ? (
                                     <Box sx={{ maxHeight: 400, width: "100%" }}>
-                                        {/* <DataGrid
-                                            rows={data.usages.map((usage, index) => ({
-                                                id: index + 1,
-                                                ...usage
-                                            }))}
-                                            columns={columns}
-                                            pageSize={pageSize}
-                                            onPageSizeChange={(newSize) => setPageSize(newSize)}
-                                            rowsPerPageOptions={[5, 10, 20]}
-                                            pagination
-                                            disableRowSelectionOnClick
-                                        /> */}
                                         <DataGrid
                                             sx={{ maxHeight: 400, maxWidth: "100%", mr: 1.5}}
                                             rows={usages}
-                                            // rows={
-                                            //     usages.map((usage, index) => ({
-                                            //         id: index + 1,
-                                            //         ...usage
-                                            //     }))}
-                                            columns={columns}
+                                            columns={usageColumns}
                                             rowCount={totalUsages}
                                             // onRowClick={handleRowClick}
                                             pagination
                                             paginationMode="server"
-                                            paginationModel={paginationModel}
-                                            onPaginationModelChange={handlePaginationChange}
-                                            loading={loading}
+                                            paginationModel={usagesPaginationModel}
+                                            onPaginationModelChange={handleUsagePaginationChange}
+                                            loading={loadingUsages}
                                             rowHeight={58}
                                             pageSizeOptions={[5, 8, 10, 20]}
                                             // checkboxSelection
