@@ -187,6 +187,11 @@ function AdminCoupons() {
         fetchCoupons(paginationModel.page + 1, paginationModel.pageSize, Object.fromEntries(params))
     }
 
+    const handleRowClick = (event) => {
+        console.log(event.row.id);
+        navigate(`/admin/coupons/${event.row.id}`)
+    }
+
     useEffect(() => {
         // console.log("fetching...");
         // fetchCoupons(paginationModel.page + 1, paginationModel.pageSize);
@@ -463,6 +468,7 @@ function AdminCoupons() {
                 rows={coupons}
                 columns={columns}
                 rowCount={totalCoupons}
+                onRowClick={handleRowClick}
                 pagination
                 paginationMode="server"
                 paginationModel={paginationModel}

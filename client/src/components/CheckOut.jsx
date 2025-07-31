@@ -76,7 +76,7 @@ function CheckOut() {
             }
             else{
                 console.error(error.error);
-                dispatch(showSnack({message: "Server error! Pleasy try again", severity: "error"}))
+                dispatch(showSnack({message: "Server error! Please try again", severity: "error"}))
             }
 
             return

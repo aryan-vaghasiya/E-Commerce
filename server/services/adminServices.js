@@ -3,11 +3,12 @@ const jwt = require("jsonwebtoken");
 const secretKey = "abcde12345";
 const bcrypt = require("bcrypt")
 const fs = require("fs-extra");
-const path = require("path")
+const path = require("path");
+const { off } = require("process");
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
-        throw new Error ("You do not have Admin Privilages")
+        throw new Error ("You do not have Admin Privileges")
     }
     const result = await runQuery("SELECT * FROM users WHERE username = 'admin'")
     if (result.length === 0) {
@@ -239,8 +240,8 @@ exports.getProductData = async (productId) => {
                                     FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
                                     JOIN product_pricing pp ON pp.product_id = p.id
-                                    AND p.id = ?
-                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                        AND p.id = ?
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
 
                                     LEFT JOIN product_discounts pd 
                                         ON pd.product_id = p.id
@@ -726,4 +727,121 @@ exports.getAllCoupons = async(queryParams) => {
     //                                 ORDER BY created_at DESC
     //                                 LIMIT ?
     //                                 OFFSET ?`, [limit, offset]);
+}
+
+exports.getSingleCoupon = async (couponId) => {
+    let [coupon] = await runQuery(`SELECT * FROM coupons WHERE id = ?`, [couponId])
+
+    if(!coupon){
+        throw new Error("Coupon Does not exist")
+    }
+
+    let products = []
+    if(coupon.applies_to === "product"){
+        const getCouponProducts = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
+        const productIds = getCouponProducts.map(product => product.product_id)
+
+        products = await runQuery(`SELECT 
+                                        p.id,
+                                        p.title,
+                                        p.description,
+                                        p.rating,
+                                        p.brand,
+                                        p.thumbnail,
+                                        p.status,
+                                        DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
+                                        DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
+
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount,
+                                        pd.start_time as offer_start_time,
+                                        pd.end_time as offer_end_time,
+                                        CASE 
+                                            WHEN pd.discount_percentage IS NOT NULL 
+                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            ELSE pp.price
+                                        END AS price
+                                    FROM products p
+                                    JOIN product_pricing pp ON pp.product_id = p.id
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+                                    LEFT JOIN product_discounts pd 
+                                        ON pd.product_id = p.id
+                                        AND pd.is_active = 1
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                                    WHERE p.id IN ?`
+                                , [[productIds]]);
+
+        products = products.map(item => {
+            let coupon_discount_amount = 0;
+            if(coupon.discount_type === "fixed"){
+                coupon_discount_amount = coupon.discount_value
+            }
+            else{
+                coupon_discount_amount = (item.price/100) * coupon.discount_value
+            }
+            if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
+                coupon_discount_amount = coupon.threshold_amount 
+            }
+            return {...item, coupon_discount_amount, final_price: item.price - coupon_discount_amount}
+        })
+    }
+
+    const usages = await runQuery(`SELECT 
+                                        u.user_id,
+                                        u.used_at,
+                                        o.id as order_id,
+                                        o.total,
+                                        o.discount_amount,
+                                        o.final_total
+
+                                        FROM coupon_usages u
+                                    JOIN orders o ON o.id = u.order_id
+                                        WHERE u.coupon_id = ?
+                                        ORDER BY u.used_at DESC`
+                                , [couponId]);
+
+    coupon = {...coupon, products, usages}
+    return(coupon)
+}
+
+exports.getCouponUsages = async (couponId, limit, offset) => {
+
+    const [totalUsages] = await runQuery(`SELECT COUNT(*) AS totalUsages FROM coupon_usages WHERE coupon_id = ?`, [couponId])
+    // console.log(totalUsages.totalUsages);
+    
+
+    const usages = await runQuery(`SELECT 
+                                    u.id,
+                                    u.user_id,
+                                    u.used_at,
+                                    o.id as order_id,
+                                    o.total,
+                                    o.discount_amount,
+                                    o.final_total
+
+                                    FROM coupon_usages u
+                                JOIN orders o ON o.id = u.order_id
+                                    WHERE u.coupon_id = ?
+                                ORDER BY u.used_at DESC
+                                LIMIT ?
+                                OFFSET ?`
+                            , [couponId, limit, offset]);
+
+    // console.log(usages);
+
+    const allUsages = {
+        usages,
+        // currentPage : page,
+        pages: Math.ceil (totalUsages.totalUsages / limit),
+        totalUsages: totalUsages.totalUsages
+    }
+
+    // console.log(allUsages);
+    
+    return allUsages
+    // console.log([...usages, {totalUsages: totalUsages.totalUsages}]);
+    
+    // return [{...usages, totalUsages: totalUsages.totalUsages}]
 }

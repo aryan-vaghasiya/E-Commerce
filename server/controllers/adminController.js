@@ -268,8 +268,40 @@ exports.getCoupons = async (req, res) => {
     }
     catch (err){
         console.error("Error fetching all coupons: ", err.message);
-        // console.log(err.message);
-        
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleCouponDetails = async (req, res) => {
+    const couponId = req.params.couponId
+    // console.log(req.params);
+    // console.log(req.params.couponId);
+    // console.log(couponId);
+
+    try{
+        const coupon = await adminServices.getSingleCoupon(couponId)
+        res.status(200).json(coupon);
+    }
+    catch(err){
+        console.error("Error fetching single coupon: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleCouponUsages = async (req, res) => {
+    const couponId = req.params.couponId
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
+
+    // console.log(couponId, limit, offset);
+
+    try{
+        const usages = await adminServices.getCouponUsages(couponId, limit, offset)
+        res.status(200).json(usages);
+    }
+    catch (err){
+        console.error("Error fetching all coupons: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

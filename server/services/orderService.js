@@ -336,10 +336,14 @@ exports.checkCouponCode = async (userId, code) => {
                 // console.log(item.id);
                 if (couponData.products.includes(item.id)) {
                     // console.log("ran")
-                    const productDiscount = couponData.discount_type === 'percent'
+                    let productDiscount = couponData.discount_type === 'percent'
                         ? item.price * item.quantity * (couponData.discount_value / 100)
                         : couponData.discount_value * item.quantity;
                     discountValue += productDiscount
+                    if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
+                        // console.log("i ran");
+                        productDiscount = couponData.threshold_amount;
+                    }
                     item.coupon_discount = parseFloat((productDiscount).toFixed(2))
                 }
             });
@@ -349,11 +353,15 @@ exports.checkCouponCode = async (userId, code) => {
             throw new Error('Unsupported coupon type');
     }
 
+    // console.log(couponData.threshold_amount);
+    // console.log(discountValue);
+
     if (couponData.threshold_amount && discountValue > couponData.threshold_amount) {
+        // console.log("i ran");
         discountValue = couponData.threshold_amount;
     }
 
-    // console.log(discountValue);
+    console.log(discountValue);
     // console.log(cart.cartValue - discountValue);
 
     const newCart = {...cart, discountValue: parseFloat((discountValue).toFixed(2)), newCartValue: parseFloat((cart.cartValue - discountValue).toFixed(2))}

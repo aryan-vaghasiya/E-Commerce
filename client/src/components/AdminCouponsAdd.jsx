@@ -382,21 +382,21 @@ function AdminCouponsAdd() {
                                     :
                                     <Box>
                                         <TextField label="Minimum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
-                                            required: {
-                                                value: true,
-                                                message: "Cart Value is required"
-                                            },
-                                            pattern: {
-                                                value: /^[0-9]+$/,
-                                                message: "Cart Value must be in digits only"
-                                            },
-                                            validate: (value) => {
-                                                if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
-                                                    return "Minimum cart value must be atleas double than the discount amount";
+                                                required: {
+                                                    value: true,
+                                                    message: "Cart Value is required"
+                                                },
+                                                pattern: {
+                                                    value: /^[0-9]+$/,
+                                                    message: "Cart Value must be in digits only"
+                                                },
+                                                validate: (value) => {
+                                                    if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
+                                                        return "Minimum cart value must be at least double than the discount amount";
+                                                    }
+                                                    return true;
                                                 }
-                                                return true;
-                                            }
-                                        })}
+                                            })}
                                             error={!!errors.min_cart_value}
                                             helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
                                         />
