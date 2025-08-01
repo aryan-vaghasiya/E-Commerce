@@ -737,8 +737,9 @@ exports.getSingleCoupon = async (couponId) => {
     }
 
     const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ?`, [couponId])
+    const [{totalSales}] = await runQuery(`SELECT SUM(final_total) as totalSales FROM orders WHERE coupon_id = ?`, [couponId])
 
-    coupon = {...coupon, totalLoss}
+    coupon = {...coupon, totalLoss, totalSales}
     return(coupon)
 }
 
@@ -763,9 +764,9 @@ exports.getCouponUsages = async (couponId, limit, offset) => {
                                 OFFSET ?`
                             , [couponId, limit, offset]);
 
-    if (usages.length === 0) {
-        return {usages: [], pages: 0, totalUsages: 0};
-    }
+    // if (usages.length === 0) {
+    //     return {usages: [], pages: 0, totalUsages: 0};
+    // }
 
     const allUsages = {
         // usages: usages.map(item => (
@@ -849,8 +850,7 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
                 coupon_discount_amount = coupon.threshold_amount 
             }
             return {
-                    ...item, 
-                    price: item.price, 
+                    ...item,
                     coupon_discount_amount: coupon_discount_amount, 
                     final_price: item.price - coupon_discount_amount
                 }

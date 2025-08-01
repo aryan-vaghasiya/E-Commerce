@@ -34,6 +34,7 @@ import AdminAddProduct from './components/AdminAddProduct'
 import AdminCoupons from './components/AdminCoupons'
 import AdminCouponsAdd from './components/AdminCouponsAdd'
 import AdminCouponDetails from './components/AdminCouponDetails'
+import AdminCouponEdit from './components/AdminCouponEdit'
 
 function App() {
 
@@ -69,7 +70,12 @@ function App() {
                 <Route path='/admin/product/add' element={<AdminAddProduct />} />
                 <Route path='/admin/coupons' element={<AdminCoupons />} />
                 <Route path='/admin/coupons/add' element={<AdminCouponsAdd />} />
-                <Route path='/admin/coupons/:couponId' element={<AdminCouponDetails />} />
+                {/* <Route path='/admin/coupons/:couponId/edit' element={<AdminCouponEdit />} />
+                <Route path='/admin/coupons/:couponId' element={<AdminCouponDetails />} /> */}
+                <Route path='/admin/coupons/:couponId'>
+                  <Route index element={<AdminCouponDetails />} />
+                  <Route path='edit' element={<AdminCouponEdit />} />
+                </Route>
               </Route>
 
             </Routes>

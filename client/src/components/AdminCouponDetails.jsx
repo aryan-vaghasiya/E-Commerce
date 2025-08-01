@@ -29,10 +29,11 @@ function AdminCouponDetails() {
     const token = useSelector(state => state.userReducer.token);
 
     const [data, setData] = useState(null)
+    const [totalLoss, setTotalLoss] = useState(0);
+    const [totalSales, setTotalSales] = useState(0);
 
     const [usages, setUsages] = useState([])
     const [totalUsages, setTotalUsages] = useState(0);
-    const [totalLoss, setTotalLoss] = useState(0);
     const [loadingUsages, setLoadingUsages] = useState(false)
 
     const [products, setProducts] = useState([])
@@ -170,7 +171,8 @@ function AdminCouponDetails() {
 
             if(!response.ok){
                 const error = await response.json()
-                return console.log(error);
+                setLoadingProducts(false)
+                return console.log(error)
             }
             const result = await response.json()
             // console.log(result);
@@ -194,7 +196,8 @@ function AdminCouponDetails() {
 
             if(!response.ok){
                 const error = await response.json()
-                return console.log(error);
+                setLoadingProducts(false)
+                return console.log(error)
             }
 
             const result = await response.json()
@@ -225,6 +228,7 @@ function AdminCouponDetails() {
             // console.log(result);
             setData(result)
             setTotalLoss(result.totalLoss)
+            setTotalSales(result.totalSales)
         }
         catch(err){
             console.error(err.message)
@@ -271,17 +275,34 @@ function AdminCouponDetails() {
                                     </Box>
                                 </Box>
                                 {
-                                    totalLoss > 0 ?
-                                    <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
-                                        <Typography color='error' sx={{fontSize: 35}}>
-                                            {(totalLoss).toFixed(2)}
-                                            <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
-                                        </Typography>
-                                        <Typography sx={{ml: "auto"}}>Total Discounts</Typography>
+                                    totalLoss > 0 && totalSales > 0?
+                                    <Box sx={{display: "flex", gap: 2}}>
+                                        <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
+                                            <Typography color='error' sx={{fontSize: 35}}>
+                                                {(totalLoss).toFixed(2)}
+                                                <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
+                                            </Typography>
+                                            <Typography sx={{ml: "auto"}}>Total Discounts</Typography>
+                                        </Box>
+                                        <Divider variant='middle' orientation='vertical' flexItem/>
+                                        <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
+                                            <Typography color='success' sx={{fontSize: 35}}>
+                                                {(totalSales).toFixed(2)}
+                                                <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
+                                            </Typography>
+                                            <Typography sx={{ml: "auto"}}>Total Sales</Typography>
+                                        </Box>
                                     </Box>
                                     :
                                     null
                                 }
+                                {/* {
+                                    totalSales > 0 ?
+                                    
+                                    :
+                                    null
+                                } */}
+                                
                             </Box>
                             <Divider sx={{ my: 2 }} />
                             <Typography>

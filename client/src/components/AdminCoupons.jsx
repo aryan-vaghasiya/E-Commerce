@@ -188,7 +188,7 @@ function AdminCoupons() {
     }
 
     const handleRowClick = (event) => {
-        console.log(event.row.id);
+        // console.log(event.row.id);
         navigate(`/admin/coupons/${event.row.id}`)
     }
 
@@ -256,6 +256,13 @@ function AdminCoupons() {
         //     align: "center"
         // },
         {
+            field: 'times_used',
+            headerName: 'Coupons Used',
+            width: 110,
+            editable: false,
+            align: "center"
+        },
+        {
             field: 'coupons_left',
             headerName: 'Coupons Left',
             width: 110,
@@ -272,18 +279,14 @@ function AdminCoupons() {
                 </Box>
             )
         },
-        // {
-        //     field: 'times_used',
-        //     headerName: 'Coupons Used',
-        //     width: 110,
-        //     editable: false,
-        //     align: "center"
-        // },
         {
             field: 'edit',
             headerName: 'Edit Product',
             width: 110,
-            renderCell : (params) => <IconButton onClick={() => navigate(`/admin/coupons/${params.id}`)} sx={{p: 0}}><EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon></IconButton>,
+            renderCell : (params) => <IconButton onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/admin/coupons/${params.id}/edit`)
+            }} sx={{p: 0}}><EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon></IconButton>,
             align: "center"
         }
     ];
