@@ -121,7 +121,7 @@ function AdminCouponDetails() {
         {
             field: 'price',
             headerName: 'Selling Price',
-            width: 110,
+            width: 100,
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
@@ -152,12 +152,41 @@ function AdminCouponDetails() {
             )
         },
         {
-            field: 'status',
-            headerName: 'Status',
+            field: 'total_quantity',
+            headerName: 'Units Sold',
+            width: 100,
+            editable: false,
+            align: "center",
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography>{params.row.total_quantity > 0 ? params.row.total_quantity : `-` }</Typography>
+                </Box>
+            )
+        },
+        {
+            field: 'total_product_discount',
+            headerName: 'Discounts Given',
+            width: 125,
+            editable: false,
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    <Typography color='error'>{params.value > 0 ? `$${(params.value).toFixed(2)}` : "-" }</Typography>
+                    {/* <Typography color='error'>{params.row.total_quantity > 0 ? `$${(params.row.total_quantity * params.row.coupon_discount_amount).toFixed(2)}` : "-" }</Typography> */}
+                </Box>
+            )
+        },
+        {
+            field: 'total_purchase_price',
+            headerName: 'Total Sales',
             width: 110,
             editable: false,
-            align: "center"
-        }
+            renderCell: (params) => (
+                <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
+                    {/* <Typography color='success'>{params.value}</Typography> */}
+                    <Typography color='success'>{params.value > 0 ? `$${(params.value).toFixed(2)}` : "-" }</Typography>
+                </Box>
+            )
+        },
     ];
 
     const fetchCouponUsages = async (page, limit) => {
@@ -201,7 +230,7 @@ function AdminCouponDetails() {
             }
 
             const result = await response.json()
-            // console.log(result);
+            console.log(result);
             setProducts(result.products)
             setTotalProducts(result.totalProducts)
             setLoadingProducts(false)

@@ -316,3 +316,31 @@ exports.getSingleCouponProducts = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
+exports.editCoupon = async (req, res) => {
+    // console.log(req.body);
+    const {end_time, total_coupons, limit_per_user, id} = req.body;
+
+    try{
+        await adminServices.updateCouponData(end_time, total_coupons, limit_per_user, id)
+        res.status(200).send("Coupon edited Successfully");
+    }
+    catch(err){
+        console.error("Error editing Coupon: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.deactivateCoupon = async (req, res) => {
+    const {couponId} = req.body;
+    // console.log(couponId);
+
+    try{
+        await adminServices.endCoupon(couponId)
+        res.status(200).send("Coupon deactivated Successfully");
+    }
+    catch(err){
+        console.error("Error deactivating Coupon: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}

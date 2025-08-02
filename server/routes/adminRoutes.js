@@ -28,5 +28,7 @@ router.get("/get-coupons", verifyAdminToken, adminController.getCoupons);
 router.get("/coupons/:couponId", verifyAdminToken, adminController.getSingleCouponDetails);
 router.get("/coupons/usages/:couponId", verifyAdminToken, adminController.getSingleCouponUsages);
 router.get("/coupons/products/:couponId", verifyAdminToken, adminController.getSingleCouponProducts);
+router.post("/coupons/edit", verifyAdminToken, adminController.editCoupon);
+router.post("/coupons/deactivate", verifyAdminToken, adminController.deactivateCoupon);
 
 module.exports = router;

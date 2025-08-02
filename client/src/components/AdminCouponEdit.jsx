@@ -4,6 +4,11 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
@@ -21,17 +26,20 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 function AdminCouponEdit() {
 
     const { couponId } = useParams()
+    const navigate = useNavigate()
     const token = useSelector(state => state.userReducer.token);
-    const [data, setData] = useState(null)
+    const [originalData, setOriginalData] = useState(null)
+    const [editedData, setEditedData] = useState(null)
     const [isActive, setIsActive] = useState(null)
     const [selectedProducts, setSelectedProducts] = useState([])
     const [options, setOptions] = useState([])
     const [query, setQuery] = useState("")
+    const [open, setOpen] = useState(false)
 
     const { register, handleSubmit, control, getValues, reset, watch, setValue, trigger, formState: { errors } } = useForm()
 
@@ -59,7 +67,8 @@ function AdminCouponEdit() {
             }
 
             console.log(result);
-            setData(result)
+            setOriginalData(result)
+            setEditedData(result)
 
             reset({
                 coupon_name: result.name,
@@ -70,9 +79,9 @@ function AdminCouponEdit() {
                 discount_on: result.applies_to,
                 min_cart_value: result.min_cart_value,
                 start_time: dayjs(result.start_time),
-                end_time: dayjs(result.start_time),
-                total_coupons: result.total_coupons,
-                limit_per_user: result.limit_per_user,
+                end_time: dayjs(result.end_time),
+                total_coupons: result.total_coupons ?? "",
+                limit_per_user: result.limit_per_user ?? "",
                 // for_new_users_only: true
                 for_new_users_only: result.for_new_users_only === 1 ? true : false
             });
@@ -138,14 +147,78 @@ function AdminCouponEdit() {
         }
     }
 
-    const editCoupon = (formData) => {
-
-        if(formData.end_time < dayjs()){
-            console.error("End date cant be today");
+    const editCoupon = async (formData) => {
+        // if(formData.end_time < dayjs()){
+        //     console.error("End date cant be today");
             
-        }
-        console.log(formData);
+        // }
+        // console.log(dayjs(formData.end_time) > dayjs(originalData.end_time));
+
+        const sTime = dayjs(formData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
+        const eTime = dayjs(formData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
         
+        formData.start_time = sTime
+        formData.end_time = eTime
+        console.log(formData);
+
+        try{
+            const response = await fetch("http://localhost:3000/admin/coupons/edit", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({...formData, id: originalData.id})
+            })
+    
+            if(!response.ok){
+                const error = await response.json()
+                console.log(error.error);
+            }
+            if(response.ok){
+                navigate("/admin/coupons")
+            }
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
+
+    const handleClickOpen = () => {
+        // console.log(productId);
+        // setToDelete(productId)
+        setOpen(true);
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        // setToDelete(null)
+    };
+
+    const deactivateCoupon = async () => {
+        console.log("I ran");
+
+        try{
+            const response = await fetch("http://localhost:3000/admin/coupons/deactivate", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({couponId: originalData.id})
+            })
+    
+            if(!response.ok){
+                const error = await response.json()
+                console.log(error.error);
+            }
+            if(response.ok){
+                navigate("/admin/coupons")
+            }
+        }
+        catch(err){
+            console.error(err);
+        }
     }
 
     useEffect(() => {
@@ -159,7 +232,6 @@ function AdminCouponEdit() {
             searchProduct()
             // console.log(selectedProducts);            
         }, 1000);
-
         return () => clearTimeout(searchDelay);
     }, [query]);
 
@@ -170,8 +242,27 @@ function AdminCouponEdit() {
                 <Typography>Can't edit, coupon is currently active</Typography>
                 : */}
                 <Box>
+                    <Dialog
+                        open={open}
+                        onClose={handleClose}
+                        // aria-labelledby="alert-dialog-title"
+                        // aria-describedby="alert-dialog-description"
+                    >
+                        <DialogTitle id="alert-dialog-title">
+                        {"Deactivate Coupon ?"}
+                        </DialogTitle>
+                        <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            This coupon offer will be ended now, and could no longer be edited.
+                        </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleClose} color='error'>No</Button>
+                            <Button onClick={deactivateCoupon} autoFocus>Yes</Button>
+                        </DialogActions>
+                    </Dialog>
                 <Card sx={{ display: "flex", justifyContent: "center", p: 2, width: "80%", maxWidth: 750, mx: "auto", py: 7}}>
-                    <form key={data?.id || "loading"} onSubmit={handleSubmit(editCoupon)} noValidate>
+                    <form key={editedData?.id || "loading"} onSubmit={handleSubmit(editCoupon)} noValidate>
                         <Stack spacing={3} width={{ lg: 600, md: 500, xs: 300}}>
                             <TextField label="Coupon Name" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_name", {
                                 required: {
@@ -185,6 +276,7 @@ function AdminCouponEdit() {
                                 })}
                                 error={!!errors.coupon_name}
                                 helperText={errors.coupon_name ? errors.coupon_name.message : ""}
+                                disabled={true}
                             />
                             <TextField label="Coupon Code" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_code", {
                                 required: {
@@ -198,6 +290,7 @@ function AdminCouponEdit() {
                                 })}
                                 error={!!errors.coupon_code}
                                 helperText={errors.coupon_code ? errors.coupon_code.message : ""}
+                                disabled={true}
                             />
 
                             <FormControl fullWidth error={!!errors.discount_type}>
@@ -212,6 +305,7 @@ function AdminCouponEdit() {
                                             labelId="discount_type"
                                             label="Discount Type"
                                             value={field.value ?? ""}
+                                            disabled={true}
                                         >
                                             <MenuItem value={"percent"}>Percentage</MenuItem>
                                             <MenuItem value={"fixed"}>Fixed Amount</MenuItem>
@@ -234,6 +328,7 @@ function AdminCouponEdit() {
                                 error={!!errors.discount_value}
                                 helperText={errors.discount_value ? errors.discount_value.message : ""}
                                 onChange={() => setSelectedProducts([])}
+                                disabled={true}
                             />
                             <TextField label="Discount Limit ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("discount_limit", {
                                 pattern: {
@@ -243,6 +338,7 @@ function AdminCouponEdit() {
                             })}
                                 error={!!errors.discount_limit}
                                 helperText={errors.discount_limit ? errors.discount_limit.message : "Leave Empty for no limit"}
+                                disabled={true}
                             />
 
                             <FormControl fullWidth error={!!errors.discount_on}>
@@ -257,6 +353,7 @@ function AdminCouponEdit() {
                                         labelId="discount_on"
                                         label="Discount On"
                                         value={field.value ?? ""}
+                                        disabled={true}
                                     >
                                         <MenuItem value={"product"}>Individual Product</MenuItem>
                                         <MenuItem value={"all"}>Cart Value</MenuItem>
@@ -281,6 +378,7 @@ function AdminCouponEdit() {
                                         defaultValue={[]}
                                         render={({ field : {onChange, value} }) => (
                                             <Autocomplete
+                                                disabled={true}
                                                 multiple
                                                 options={options}
                                                 getOptionLabel={(option) => option.title || ""}
@@ -318,6 +416,7 @@ function AdminCouponEdit() {
                                         {/* <Box sx={{maxHeight: 100, overflow: "auto", border: 1, mt: 2}}> */}
                                             {selectedProducts.map((product) => (
                                             <Chip
+                                                disabled={true}
                                                 key={product.id}
                                                 label={`id: ${product.id}, Title: ${product.title}`}
                                                 onDelete={() => {
@@ -354,6 +453,7 @@ function AdminCouponEdit() {
                                 })}
                                 error={!!errors.min_cart_value}
                                 helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
+                                disabled={true}
                             />
 
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -370,6 +470,7 @@ function AdminCouponEdit() {
                                         rules={{ required: "Start Date is required" }}
                                         render={({ field }) => (
                                             <DatePicker
+                                                disabled={true}
                                                 // disablePast
                                                 value={field.value}
                                                 inputRef={field.ref}
@@ -383,16 +484,25 @@ function AdminCouponEdit() {
                                 <DemoItem label="End date">
                                     <Controller
                                         control={control}
-                                        defaultValue={dayjs().startOf('day').add(1, 'day')}
+                                        // defaultValue={dayjs().startOf('day').add(1, 'day')}
                                         name="end_time"
-                                        rules={{ required: "End Date is required" }}
-                                        render={({ field }) => (
+                                        // rules={{ required: "End Date is required" }}
+                                        rules={{
+                                                validate: (value) => (dayjs(value) >= dayjs() ? true : `Date can only be extended (>= ${dayjs().format("MM/DD/YYYY")})`),
+                                            }}
+                                        render={({ field, fieldState }) => (
                                             <DatePicker
                                                 disablePast
                                                 value={field.value}
                                                 inputRef={field.ref}
                                                 onChange={(date) => {
                                                     field.onChange(date);
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        error: !!fieldState.error,
+                                                        helperText: fieldState.error ? fieldState.error.message : null
+                                                    }
                                                 }}
                                             />
                                         )}
@@ -405,6 +515,12 @@ function AdminCouponEdit() {
                                 pattern: {
                                     value: /^[0-9]{0,}$/,
                                     message: "Total must be in digits only"
+                                },
+                                validate: (value) => {
+                                    if(value === "") return true
+                                    return parseInt(value, 10) >= originalData.total_coupons
+                                        ? true
+                                        : `Total Coupons can only be increased (≥ ${originalData.total_coupons})`;
                                 }
                             })}
                                 error={!!errors.total_coupons}
@@ -415,6 +531,12 @@ function AdminCouponEdit() {
                                 pattern: {
                                     value: /^[0-9]{0,}$/,
                                     message: "Limit must be in digits only"
+                                },
+                                validate: (value) => {
+                                    if(value === "") return true
+                                    return parseInt(value, 10) >= originalData.limit_per_user
+                                        ? true
+                                        : `Limit can only be increased (≥ ${originalData.limit_per_user})`;
                                 }
                             })}
                                 error={!!errors.limit_per_user}
@@ -425,10 +547,18 @@ function AdminCouponEdit() {
                                 control={<Checkbox {...register("for_new_users_only")}
                                 checked={watch("for_new_users_only") || false}/>}
                                 label="For New Users Only"
+                                disabled={true}
                             />
 
-                            <Button type="submit" variant="contained">Edit Coupon</Button>
-                            
+                            <Box sx={{display: "flex",justifyContent: "space-between"}}>
+                                {
+                                    editedData && editedData.is_active ?
+                                    <Button variant="contained" color='error' sx={{width: "100%", mr: 2}} onClick={handleClickOpen}>Deactivate</Button>
+                                    :
+                                    null
+                                }
+                                <Button type="submit" variant="contained" sx={{width: "100%"}}>Edit Coupon</Button>
+                            </Box>
                         </Stack>
                     </form>
                 </Card>
