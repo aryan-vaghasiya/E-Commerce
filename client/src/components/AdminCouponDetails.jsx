@@ -230,7 +230,7 @@ function AdminCouponDetails() {
             }
 
             const result = await response.json()
-            console.log(result);
+            // console.log(result);
             setProducts(result.products)
             setTotalProducts(result.totalProducts)
             setLoadingProducts(false)

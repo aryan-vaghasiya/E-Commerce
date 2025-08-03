@@ -12,6 +12,7 @@ router.post("/accept-orders", verifyAdminToken, adminController.orderStatus);
 router.get("/order", verifyAdminToken, adminController.getSingleOrder);
 router.get("/get-products", verifyAdminToken, adminController.getProducts);
 router.get("/product", verifyAdminToken, adminController.getSingleProduct);
+router.get("/product/categories", verifyAdminToken, adminController.getAllCategories);
 // -----------------
 router.post("/edit-product", verifyAdminToken, adminController.setEditedProduct);
 router.post("/upload/product/:id", verifyAdminToken, upload.array("images", 5), adminController.uploadProductImages);

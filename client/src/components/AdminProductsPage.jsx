@@ -94,6 +94,7 @@ function AdminProductsPage() {
                 base_price: (result.price).toFixed(2),
                 base_discount: result.discount,
                 stock: result.stock,
+                category: result.category
             });
             setProductStatus(result.status)
         } 
@@ -487,6 +488,20 @@ function AdminProductsPage() {
                                 })}
                                     error={!!errors.description}
                                     helperText={errors.description ? errors.description.message : ""}
+                                />
+
+                                <TextField multiline label="Category" type='text' {...register("category", {
+                                    required: {
+                                        value: true,
+                                        message: "Description is required"
+                                    },
+                                    pattern: {
+                                        value: /^.{5,}$/,
+                                        message: "Description must be 5 characters or more characters"
+                                    }
+                                })}
+                                    error={!!errors.category}
+                                    helperText={errors.category ? errors.category.message : ""}
                                 />
 
                                 <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {

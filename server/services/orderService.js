@@ -175,12 +175,14 @@ exports.getOrdersService = async (userId) => {
                                         p.rating, 
                                         p.brand, 
                                         p.thumbnail, 
+                                        c.category,
                                         o.total,
                                         o.discount_amount,
                                         o.final_total,
                                         o.status
                                     FROM order_item oi 
                                     JOIN products p ON oi.product_id = p.id
+                                    JOIN categories c ON c.id = p.category_id
                                     JOIN orders o ON oi.order_id = o.id
                                     WHERE o.user_id = ?`, [userId]);
     if(getOrders.length < 0){
@@ -209,7 +211,8 @@ exports.getOrdersService = async (userId) => {
             title: item.title,
             brand: item.brand,
             thumbnail: item.thumbnail,
-            rating: item.rating
+            rating: item.rating,
+            category: item.category
         });
         grouped[item.order_id].noOfItems += item.quantity;
     });
@@ -275,6 +278,7 @@ exports.checkCouponCode = async (userId, code) => {
 
     const getProducts = await runQuery(`SELECT 
                                             p.*,
+                                            c.category,
                                             ci.quantity,
                                             pp.mrp, 
                                             pp.discount, 
@@ -294,6 +298,8 @@ exports.checkCouponCode = async (userId, code) => {
                                         FROM cart_item ci
                                         JOIN products p
                                             ON ci.product_id = p.id
+                                        JOIN categories c
+                                            ON c.id = p.category_id
                                         JOIN product_inventory i 
                                             ON p.id = i.product_id 
                                         JOIN product_pricing pp 

@@ -193,6 +193,9 @@ function ProductPage() {
                                 <Typography>
                                     Brand: {product.brand}
                                 </Typography>
+                                <Typography>
+                                    Category: {product.category}
+                                </Typography>
                                 <Box sx={{ display: "inline-flex", alignItems: "center" }}>
                                     <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
                                     <Typography sx={{ fontSize: 16, pt: 0.2, pl: 0.2 }}>

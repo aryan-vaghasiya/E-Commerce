@@ -13,7 +13,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import IconButton from '@mui/material/IconButton'
 import ImageList from '@mui/material/ImageList'
 import ImageListItem from '@mui/material/ImageListItem'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
@@ -21,6 +21,10 @@ import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 import FormHelperText from '@mui/material/FormHelperText'
 import { useEffect } from 'react'
+import Autocomplete from '@mui/material/Autocomplete'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
+import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 
 
 const VisuallyHiddenInput = styled('input')({
@@ -38,12 +42,37 @@ const VisuallyHiddenInput = styled('input')({
 function AdminAddProduct() {
 
     const token = useSelector(state => state.userReducer.token)
+    const snackbarState = useSelector(state => state.snackbarReducer)
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm({})
     const [thumbnailPreview, setThumbnailPreview] = useState(null)
     const [imagesPreview, setImagesPreview] = useState([])
     const [productStatus, setProductStatus] = useState('')
     const navigate = useNavigate()
     const [inputMrp, inputPrice] = watch(["mrp", "price"])
+    const [categories, setCategories] = useState([])
+    const [selectedCategory, setSelectedCategory] = useState(null)
+    const dispatch = useDispatch()
+
+    const getAllCategories = async () => {
+        try{
+            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+    
+            if(!response.ok){
+                const error = await response.json()
+                return console.error(error.error);
+            }
+            const categories = await response.json()
+            // console.log(categories);
+            setCategories(categories)
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
 
     useEffect(() => {
         // if(inputMrp < inputPrice){
@@ -53,68 +82,70 @@ function AdminAddProduct() {
         setValue("discount", percentage || 0)
     }, [inputMrp, inputPrice])
 
+    useEffect(() => {
+        getAllCategories()
+    }, [])
+
     const submitProduct = async (data) => {
-        // console.log(data);
+        console.log(data);
         if(!thumbnailPreview){
-            console.error("Thumbnail is Required");
+            dispatch(showSnack({message: "Thumbnail is required", severity: "warning"}))
+            console.error("Thumbnail is required");
             return
         }
         if(imagesPreview.length < 1){
-            console.error("Atleast 1 Product Image is requires");
+            dispatch(showSnack({message: "Atleast 1 Product Image is required", severity: "warning"}))
+            console.error("Atleast 1 Product Image is required");
             return
         }
         // console.log("ran");
         try{
-            
-        const res = await fetch(`http://localhost:3000/admin/product/add`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        })
-        
-        let productId;
-        if(res.ok){
-            productId = await res.json()
-        }
-        else{
-            return console.error("Could not add Details")
-        }
-        // console.log(productId);
-
-        const formDataThumb = new FormData()
-        const thumbnailFile = thumbnailPreview.file
-        formDataThumb.append('thumbnail', thumbnailFile)
-
-        const thumbUpload = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
-            method: "POST",
-            body: formDataThumb,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                // "Content-Type": "multipart/form-data"
+            const res = await fetch(`http://localhost:3000/admin/product/add`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            let productId;
+            if(res.ok){
+                productId = await res.json()
             }
-        })
-
-        const formDataImages = new FormData()
-        const imagesFiles = imagesPreview.map(item => item.file)
-        // console.log(imagesFiles);
-
-        for (let i = 0; i < imagesFiles.length; i++) {
-            formDataImages.append("images", imagesFiles[i]);
-        }
-        const imagesUpload = await fetch(`http://localhost:3000/admin/upload/product/${productId}`, {
-            method: "POST",
-            body: formDataImages,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                // "Content-Type": "multipart/form-data"
+            else{
+                return console.error("Could not add Details")
             }
-        })
+            // console.log(productId);
 
-        navigate("/admin/products")
+            const formDataThumb = new FormData()
+            const thumbnailFile = thumbnailPreview.file
+            formDataThumb.append('thumbnail', thumbnailFile)
 
+            const thumbUpload = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
+                method: "POST",
+                body: formDataThumb,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    // "Content-Type": "multipart/form-data"
+                }
+            })
+
+            const formDataImages = new FormData()
+            const imagesFiles = imagesPreview.map(item => item.file)
+            // console.log(imagesFiles);
+
+            for (let i = 0; i < imagesFiles.length; i++) {
+                formDataImages.append("images", imagesFiles[i]);
+            }
+            const imagesUpload = await fetch(`http://localhost:3000/admin/upload/product/${productId}`, {
+                method: "POST",
+                body: formDataImages,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    // "Content-Type": "multipart/form-data"
+                }
+            })
+            navigate("/admin/products")
         }
         catch(err){
             console.error(err);
@@ -152,6 +183,19 @@ function AdminAddProduct() {
 
     return (
     <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+        <Snackbar
+            open={snackbarState.show}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            autoHideDuration={2000}
+            onClose={() => dispatch(hideSnack())}
+            sx={{
+                '&.MuiSnackbar-root': { top: '70px' },
+            }}
+        >
+            <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                {snackbarState.message}
+            </Alert>
+        </Snackbar>
         <Box sx={{ display: "flex", justifyContent: "center"}}>
         <Card sx={{p: 2}}>
             <form onSubmit={handleSubmit(submitProduct)} noValidate>
@@ -182,6 +226,43 @@ function AdminAddProduct() {
                             helperText={errors.brand ? errors.brand.message : ""}
                         />
                     {/* </Box> */}
+
+                    <Controller
+                        control={control}
+                        name="selected_category"
+                        rules={{ required: "Category is required" }}
+                        defaultValue={null}
+                        render={({ field: { onChange, value } }) => (
+                            <Autocomplete
+                                freeSolo
+                                options={categories}
+                                getOptionLabel={(option) =>
+                                    typeof option === "string" ? option : option.category || ""
+                                }
+                                isOptionEqualToValue={(option, val) => option.id === val.id}
+                                value={value}
+                                onInputChange={(event, newInputValue) => {
+                                        onChange({ id: null, category: newInputValue });
+                                }}
+                                onChange={(event, newValue) => {
+                                    onChange(newValue);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Search & Select Category"
+                                        variant="outlined"
+                                        error={!!errors.selected_category}
+                                        helperText={
+                                            errors.selected_category
+                                            ? errors.selected_category.message
+                                            : "Select an existing or add a new category"
+                                        }
+                                    />
+                                )}
+                            />
+                        )}
+                    />
 
                     <TextField multiline label="Description" type='text' {...register("description", {
                         required: {

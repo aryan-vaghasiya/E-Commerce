@@ -63,10 +63,13 @@ exports.getCartService = async(userId) => {
                                         p.status,
                                         pi.stock,
                                         p.brand,
-                                        p.thumbnail
+                                        p.thumbnail,
+                                        c.category
 									FROM products p JOIN product_inventory pi ON p.id = pi.product_id
                                     JOIN cart_item ci 
                                         ON p.id = ci.product_id
+                                    JOIN categories c
+                                        ON c.id = p.category_id
                                     JOIN product_pricing pp 
                                         ON pp.product_id = p.id
                                         AND ci.user_id = ? 

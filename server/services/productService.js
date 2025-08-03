@@ -4,6 +4,7 @@ exports.getAllProducts = async(page, limit, offset) => {
     const status = "active"
     const results = await runQuery(`SELECT 
         p.*, 
+        c.category,
         pp.mrp, 
         pp.discount, 
         i.stock,
@@ -18,6 +19,7 @@ exports.getAllProducts = async(page, limit, offset) => {
 
         FROM products p 
         JOIN product_inventory i ON p.id = i.product_id
+        JOIN categories c ON c.id = p.category_id
         JOIN product_pricing pp ON pp.product_id = p.id
         AND p.status = ?
         AND NOW() BETWEEN pp.start_time AND pp.end_time
@@ -51,6 +53,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
     const status = "active"
     const results = await runQuery(`SELECT 
         p.*, 
+        c.category,
         pp.mrp, 
         pp.discount, 
         i.stock,
@@ -64,6 +67,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
 
         FROM products p 
         JOIN product_inventory i ON p.id = i.product_id 
+        JOIN categories c ON c.id = p.category_id
         JOIN product_pricing pp ON pp.product_id = p.id 
             AND NOW() BETWEEN pp.start_time AND pp.end_time
         LEFT JOIN product_discounts pd ON pd.product_id = p.id
@@ -97,6 +101,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
 exports.getSingleProduct = async(productId) => {
     const results = await runQuery(`SELECT 
                                         p.*,
+                                        c.category,
                                         pp.mrp, 
                                         pp.discount, 
                                         i.stock,
@@ -110,6 +115,8 @@ exports.getSingleProduct = async(productId) => {
                                     FROM products p 
                                     JOIN product_inventory i 
                                         ON p.id = i.product_id 
+                                    JOIN categories c
+                                        ON c.id = p.category_id 
                                     JOIN product_pricing pp 
                                         ON pp.product_id = p.id 
                                         AND p.id = ? 

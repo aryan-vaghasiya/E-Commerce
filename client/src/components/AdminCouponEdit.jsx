@@ -44,6 +44,7 @@ function AdminCouponEdit() {
     const { register, handleSubmit, control, getValues, reset, watch, setValue, trigger, formState: { errors } } = useForm()
 
     const discount_on = watch("discount_on")
+    const discount_type = watch("discount_type")
 
     const fetchCoupon = async () => {
         try{
@@ -107,7 +108,7 @@ function AdminCouponEdit() {
             }
 
             const result = await response.json()
-            console.log(result);
+            // console.log(result);
             setSelectedProducts(result.products)
             setValue("selected_products", result.products)
             // setTotalProducts(result.totalProducts)
@@ -237,10 +238,11 @@ function AdminCouponEdit() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            {/* {
-                isActive?
+            {
+                // !originalData || !isActive ?
+                !originalData ?
                 <Typography>Can't edit, coupon is currently active</Typography>
-                : */}
+                :
                 <Box>
                     <Dialog
                         open={open}
@@ -470,7 +472,8 @@ function AdminCouponEdit() {
                                         rules={{ required: "Start Date is required" }}
                                         render={({ field }) => (
                                             <DatePicker
-                                                disabled={true}
+                                                readOnly
+                                                // disabled={true}
                                                 // disablePast
                                                 value={field.value}
                                                 inputRef={field.ref}
@@ -518,9 +521,9 @@ function AdminCouponEdit() {
                                 },
                                 validate: (value) => {
                                     if(value === "") return true
-                                    return parseInt(value, 10) >= originalData.total_coupons
+                                    return parseInt(value, 10) >= originalData.times_used + 5
                                         ? true
-                                        : `Total Coupons can only be increased (≥ ${originalData.total_coupons})`;
+                                        : `Total Coupons can't be less than Coupons Used (${originalData.times_used}) + 5 (≥ ${originalData.times_used + 5})`;
                                 }
                             })}
                                 error={!!errors.total_coupons}
@@ -563,7 +566,7 @@ function AdminCouponEdit() {
                     </form>
                 </Card>
                 </Box>
-            {/* } */}
+            }
         </Box>
     )
 }

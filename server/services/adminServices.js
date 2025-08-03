@@ -128,6 +128,7 @@ exports.getOrderData = async (orderId) => {
                                     oi.quantity,
                                     oi.purchase_price as price,
                                     p.title,
+                                    c.category,
 
                                     pd.discount_type,
                                     pd.discount_percentage as offer_discount,
@@ -145,7 +146,8 @@ exports.getOrderData = async (orderId) => {
 
                                     FROM order_item oi 
                                     JOIN products p ON oi.product_id = p.id
-                                    JOIN product_pricing pp on pp.product_id = p.id
+                                    JOIN categories c ON c.id = p.category_id
+                                    JOIN product_pricing pp ON pp.product_id = p.id
                                     AND oi.order_id = ? 
                                     AND NOW() BETWEEN pp.start_time AND pp.end_time
                                     
@@ -171,6 +173,7 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         p.brand,
                                         p.thumbnail,
                                         p.status,
+                                        c.category,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
@@ -180,8 +183,9 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         pd.discount_percentage as offer_discount
                                     FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
+                                    JOIN categories c ON c.id = p.category_id
                                     JOIN product_pricing pp ON pp.product_id = p.id
-                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
 
                                     LEFT JOIN product_discounts pd 
                                         ON pd.product_id = p.id
@@ -223,6 +227,7 @@ exports.getProductData = async (productId) => {
                                         p.brand,
                                         p.thumbnail,
                                         p.status,
+                                        c.category,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
                                         pin.stock,
@@ -239,6 +244,7 @@ exports.getProductData = async (productId) => {
                                         END AS offer_price
                                     FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
+                                    JOIN categories c ON c.id = p.category_id
                                     JOIN product_pricing pp ON pp.product_id = p.id
                                         AND p.id = ?
                                         AND NOW() BETWEEN pp.start_time AND pp.end_time
@@ -468,10 +474,22 @@ exports.setThumbnail = async(productId, imagePath) => {
     await fs.remove(absolutePath)
 }
 
-exports.addDetails = async (title, brand, description, price, status, stock, mrp, discount) => {
+exports.addDetails = async (title, brand, description, price, status, stock, mrp, discount, selected_category) => {
+
+    let categoryId = selected_category.id
+    const categoryName = selected_category.category
+    // console.log(categoryId, categoryName);
+
+    const category = await runQuery(`SELECT id FROM categories WHERE id = ? AND category = ?`, [categoryId, categoryName])
+    if(category.length === 0){
+        const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
+        categoryId = insertCategory.insertId
+    }
+    // console.log(categoryId, categoryName);
+
     const result = await runQuery(`
-        INSERT INTO products (title, brand, description, status, rating) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,[title, brand, description, status, 0.00]
+        INSERT INTO products (title, brand, description, status, rating, category_id) 
+        VALUES (?, ?, ?, ?, ?, ?)`,[title, brand, description, status, 0.00, categoryId]
     )
     if(result.affectedRows === 0){
         throw new Error ("Could not add Product Details")
@@ -480,7 +498,7 @@ exports.addDetails = async (title, brand, description, price, status, stock, mrp
     const productId = result.insertId
     // console.log(productId);
 
-    const addPricing = runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [productId, start_time, end_time, price, mrp, discount])
+    const addPricing = runQuery(`INSERT INTO product_pricing (product_id, price, mrp, discount) VALUES (?, ?, ?, ?)`, [productId, price, mrp, discount])
     if(addPricing.affectedRows === 0){
         throw new Error("Could not Add Pricing")
     }
@@ -528,6 +546,7 @@ exports.getProductForCoupon = async (query, price) => {
     const result = await runQuery(`SELECT 
                                     p.id, 
                                     p.title,
+                                    c.category
 
                                     CASE 
                                         WHEN pd.discount_percentage IS NOT NULL 
@@ -536,6 +555,7 @@ exports.getProductForCoupon = async (query, price) => {
                                     END AS price
 
                                     FROM products p
+                                    JOIN categories c ON c.id = p.category_id
                                     JOIN product_pricing pp ON pp.product_id = p.id
                                         AND NOW() BETWEEN pp.start_time AND pp.end_time
                                     LEFT JOIN product_discounts pd ON pd.product_id = p.id
@@ -801,6 +821,7 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
                                         p.brand,
                                         p.thumbnail,
                                         p.status,
+                                        c.category,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
 
@@ -816,6 +837,8 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
                                     FROM coupon_products cp
                                     JOIN products p
                                         ON p.id = cp.product_id
+                                    JOIN categories c
+                                        ON c.id = p.category_id
                                     JOIN product_pricing pp 
                                         ON pp.product_id = p.id
                                         AND NOW() BETWEEN pp.start_time AND pp.end_time
@@ -993,4 +1016,10 @@ exports.endCoupon = async (couponId) => {
     if(updateStatus.affectedRows === 0){
         throw new Error ("Could not deactivate Coupon")
     }
+}
+
+exports.getCategories = async () => {
+    const categories = await runQuery(`SELECT id, category FROM categories`)
+    // console.log(categories);
+    return categories
 }

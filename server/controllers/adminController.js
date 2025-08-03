@@ -172,10 +172,12 @@ exports.removeProductImages = async (req, res) => {
 }
 
 exports.addProductDetails = async(req, res) => {
-    const {title, brand, description, price, status, stock, mrp, discount} = req.body
+    const {title, brand, description, price, status, stock, mrp, discount, selected_category} = req.body
 
+    console.log(selected_category);
+    
     try{
-        const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount);
+        const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount, selected_category);
         return res.status(200).json(productId)
     }
     catch(err){
@@ -341,6 +343,17 @@ exports.deactivateCoupon = async (req, res) => {
     }
     catch(err){
         console.error("Error deactivating Coupon: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getAllCategories = async (req, res) => {
+    try{
+        const allCategories = await adminServices.getCategories()
+        res.status(200).json(allCategories);
+    }
+    catch(err){
+        console.error("Error fetching all Categories: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }
