@@ -100,7 +100,9 @@ exports.getSingleProduct = async (req,res) => {
 }
 
 exports.setEditedProduct = async (req, res) => {
-    const {id, title, brand, description, base_price, stock, base_discount, base_mrp, offer_price, offer_discount} = req.body;
+    const {id, title, brand, description, category, base_price, stock, base_discount, base_mrp, offer_price, offer_discount} = req.body;
+
+    console.log(category);
 
     const localTime = new Date(new Date().toISOString().slice(0, 19)+"-05:30")
     const currentTime = localTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -113,7 +115,7 @@ exports.setEditedProduct = async (req, res) => {
     // console.log(req.body);
     try{
         // await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time ?? currentTime, end_time ?? tenYearsLater);
-        await adminServices.setProductData(id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time, tenYearsLater, offer_price, offer_discount, currentTime);
+        await adminServices.setProductData(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, start_time, end_time, tenYearsLater, offer_price, offer_discount, currentTime);
         return res.status(200).send("Product Edited Successfully");
     }
     catch(err){
@@ -174,8 +176,7 @@ exports.removeProductImages = async (req, res) => {
 exports.addProductDetails = async(req, res) => {
     const {title, brand, description, price, status, stock, mrp, discount, selected_category} = req.body
 
-    console.log(selected_category);
-    
+    // console.log(selected_category);
     try{
         const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount, selected_category);
         return res.status(200).json(productId)

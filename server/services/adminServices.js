@@ -227,6 +227,7 @@ exports.getProductData = async (productId) => {
                                         p.brand,
                                         p.thumbnail,
                                         p.status,
+                                        c.id as cid,
                                         c.category,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
@@ -266,12 +267,24 @@ exports.getProductData = async (productId) => {
     return {...result, image}
 }
 
-exports.setProductData = async(id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime) => {
+exports.setProductData = async(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime) => {
     // console.log({id, title, brand, description, price, stock});
     // console.log({start_time, end_time, tenYearsLater});
     // console.log({id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime});
+
     
-    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ? WHERE id = ?`, [title, brand, description, id])
+    let categoryId = category.id
+    const categoryName = category.category
+    // console.log(categoryId, categoryName);
+
+    const getCategory = await runQuery(`SELECT id FROM categories WHERE id = ? AND category = ?`, [categoryId, categoryName])
+    if(getCategory.length === 0){
+        const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
+        categoryId = insertCategory.insertId
+    }
+    console.log(categoryId, categoryName);
+
+    const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, category_id = ? WHERE id = ?`, [title, brand, description, categoryId, id])
     if(updateProduct.affectedRows === 0){
         throw new Error("Could not Edit Product Details")
     }

@@ -27,6 +27,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DesktopDateTimePicker, DesktopDateTimePickerLayout } from '@mui/x-date-pickers/DesktopDateTimePicker';
 import Divider from '@mui/material/Divider';
+import Autocomplete from '@mui/material/Autocomplete';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -52,6 +53,7 @@ function AdminProductsPage() {
     const [imagePreview, setImagePreview] = useState([])
     const [thumbnailPreview, setThumbnailPreview] = useState(null)
     const [productStatus, setProductStatus] = useState(null)
+    const [categories, setCategories] = useState([])
 
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
     // const [inputMrp, inputPrice] = watch(["mrp", "price"])
@@ -94,7 +96,7 @@ function AdminProductsPage() {
                 base_price: (result.price).toFixed(2),
                 base_discount: result.discount,
                 stock: result.stock,
-                category: result.category
+                category: {id: result.cid, category: result.category}
             });
             setProductStatus(result.status)
         } 
@@ -103,8 +105,30 @@ function AdminProductsPage() {
         }
     };
 
+    const getAllCategories = async () => {
+        try{
+            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+    
+            if(!response.ok){
+                const error = await response.json()
+                return console.error(error.error);
+            }
+            const categories = await response.json()
+            // console.log(categories);
+            setCategories(categories)
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
+
     useEffect(() => {
         fetchData()
+        getAllCategories()
     }, [])
 
     // useEffect(() => {
@@ -145,7 +169,7 @@ function AdminProductsPage() {
 
 
         
-        // console.log({id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData});
+        console.log({id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData});
         
 
         const response = await fetch("http://localhost:3000/admin/edit-product", {
@@ -490,18 +514,55 @@ function AdminProductsPage() {
                                     helperText={errors.description ? errors.description.message : ""}
                                 />
 
-                                <TextField multiline label="Category" type='text' {...register("category", {
+                                {/* <TextField multiline label="Category" type='text' {...register("category", {
                                     required: {
                                         value: true,
-                                        message: "Description is required"
+                                        message: "Category is required"
                                     },
                                     pattern: {
                                         value: /^.{5,}$/,
-                                        message: "Description must be 5 characters or more characters"
+                                        message: "Category must be 5 characters or more characters"
                                     }
                                 })}
                                     error={!!errors.category}
                                     helperText={errors.category ? errors.category.message : ""}
+                                /> */}
+
+                                <Controller
+                                    control={control}
+                                    name="category"
+                                    rules={{ required: "Category is required" }}
+                                    // defaultValue={null}
+                                    render={({ field: { onChange, value } }) => (
+                                        <Autocomplete
+                                            freeSolo
+                                            options={categories}
+                                            getOptionLabel={(option) =>
+                                                typeof option === "string" ? option : option.category || ""
+                                            }
+                                            isOptionEqualToValue={(option, val) => option.id === val.id}
+                                            value={value}
+                                            onInputChange={(event, newInputValue) => {
+                                                onChange({ id: null, category: newInputValue });
+                                            }}
+                                            onChange={(event, newValue) => {
+                                                onChange(newValue);
+                                            }}
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    label="Search & Select Category"
+                                                    variant="outlined"
+                                                    error={!!errors.category}
+                                                    helperText={
+                                                        errors.category
+                                                        ? errors.category.message
+                                                        : "Select an existing or add a new category"
+                                                    }
+                                                />
+                                            )}
+                                        />
+                                    )}
                                 />
 
                                 <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
