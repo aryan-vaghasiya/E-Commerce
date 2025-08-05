@@ -592,7 +592,7 @@ exports.getProductForCoupon = async (query, price) => {
     return result
 }
 
-exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, for_new_users_only, start_time, end_time, productIds) => {
+exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, for_new_users_only, start_time, end_time, productIds, categoryIds) => {
 
     const ifActive = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
     if(ifActive.length > 0) {
@@ -621,6 +621,15 @@ exports.addCouponData = async(name, code, discount_value, discount_type, applies
         throw new Error ("Could not insert Coupon")
     }
     const couponId = result.insertId;
+
+    if (applies_to === 'category' && Array.isArray(categoryIds)) {
+        const values = categoryIds.map(cid => [couponId, cid]);
+        const categoryCoupon = await runQuery(`INSERT INTO coupon_categories (coupon_id, category_id) VALUES ?`, [values]);
+
+        if(categoryCoupon.affectedRows === 0){
+            throw new Error ("Could not add Category coupon")
+        }
+    }
 
     if (applies_to === 'product' && Array.isArray(productIds)) {
         const values = productIds.map(pid => [couponId, pid]);
@@ -800,13 +809,47 @@ exports.getSingleCoupon = async (couponId) => {
         return(coupon)
     }
 
-    else{
+
+    if(coupon.applies_to === "category"){
+        const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ?`, [couponId])
+        const orderIds = orders.map(item => item.id)
+        // console.log(orderIds);
+
+        let orderItems = []
+
+        if(orderIds.length > 0){
+            orderItems = await runQuery(`SELECT 
+                                            oi.product_id,
+                                            SUM(oi.quantity) AS total_quantity,
+                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                                        FROM order_item oi
+                                        JOIN products p 
+                                            ON oi.product_id = p.id
+                                        JOIN (
+                                            SELECT DISTINCT category_id 
+                                            FROM coupon_categories    
+                                            WHERE coupon_id = ?
+                                        ) cc
+                                            ON cc.category_id = p.category_id
+                                        WHERE oi.order_id IN (?)
+                                        GROUP BY oi.product_id`, [couponId, orderIds])
+            // console.log(orderItems);
+        }
+        const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ?`, [couponId])
+        const totalSales = orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)
+        // console.log(totalSales);
+
+        coupon = {...coupon, totalLoss, totalSales}
+        return(coupon)
+    }
+
+    // else{
         const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ?`, [couponId])
         const [{totalSales}] = await runQuery(`SELECT SUM(final_total) as totalSales FROM orders WHERE coupon_id = ?`, [couponId])
 
         coupon = {...coupon, totalLoss, totalSales}
         return(coupon)
-    }
+    // }
 }
 
 
@@ -817,15 +860,17 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
         throw new Error("Coupon does not exist")
     }
 
-    const [{ totalProducts }] = await runQuery(`SELECT 
-                                    COUNT(*) as totalProducts
-                                    FROM coupon_products
-                                    WHERE coupon_id = ?
-                                `, [couponId]);
-
+    let totalProducts = 0
     let products = []
+    let orderItems = []
 
     if(coupon.applies_to === "product"){
+        const result = await runQuery(`SELECT 
+                                        COUNT(*) as totalProducts
+                                        FROM coupon_products
+                                        WHERE coupon_id = ?
+                                    `, [couponId]);
+        totalProducts = result[0].totalProducts;
         products = await runQuery(`SELECT 
                                         p.id,
                                         p.title,
@@ -872,8 +917,6 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
         const orderIds = orders.map(item => item.id)
         // console.log(orderIds);
 
-        let orderItems = []
-
         if(orderIds.length > 0){
             orderItems = await runQuery(`SELECT 
                                             oi.product_id,
@@ -897,76 +940,157 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
         // console.log(quantityMap);
         // console.log(quantityMap[3].total_quantity);
 
-        products = products.map(item => {
-            let coupon_discount_amount = 0;
-            if(coupon.discount_type === "fixed"){
-                coupon_discount_amount = coupon.discount_value
-            }
-            else{
-                coupon_discount_amount = (item.price/100) * coupon.discount_value
-            }
-            if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
-                coupon_discount_amount = coupon.threshold_amount 
-            }
-            const matchingOrderItem = orderItems.find(o => o.product_id === item.id);
-            const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
-            const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
-
-            // let total_selling_price = coupon.discount_type === "percent" ? 
-            //                     total_purchase_price/(100 - coupon.discount_value) * 100
-            //                     :
-            //                     total_purchase_price + (coupon.discount_value * total_quantity);
-            
-            // let total_product_discount = total_selling_price - total_purchase_price
-            // console.log("total 1",total_product_discount);
-            // console.log("total 2",coupon.threshold_amount * total_quantity);
-
-            // if (coupon.threshold_amount && total_product_discount > (coupon.threshold_amount * total_quantity)) {
-            //     total_product_discount = coupon.threshold_amount;
-            // }
-            
-            let total_selling_price;
-            let total_product_discount;
-
-            if (coupon.discount_type === "percent") {
-                total_product_discount = Math.min(
-                    (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
-                    coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
-                );
-
-                total_selling_price = total_purchase_price + total_product_discount;
-            } 
-            else {
-                total_product_discount = coupon.discount_value * total_quantity;
-                total_selling_price = total_purchase_price + total_product_discount;
-            }
-
-            // if(coupon.discount_type === "percent"){
-            //     let total_selling_price = total_purchase_price/(100 - coupon.discount_value) * 100
-            //     console.log((total_selling_price).toFixed(2));
-                
-            // }
-
-            // let productDiscount = coupon.discount_type === 'percent' 
-            //             ? 
-            //             total_purchase_price * (coupon.discount_value / 100)
-            //             : 
-            //             coupon.discount_value * total_quantity;
-            // if (coupon.threshold_amount && productDiscount > coupon.threshold_amount) {
-            //     productDiscount = coupon.threshold_amount;
-            // }
-            return {
-                    ...item,
-                    coupon_discount_amount: coupon_discount_amount, 
-                    final_price: item.price - coupon_discount_amount,
-                    // total_quantity: quantityMap[item.id] || 0 
-                    total_quantity,
-                    total_purchase_price,
-                    total_product_discount
-                }
-        })
     }
 
+    if(coupon.applies_to === "category"){
+
+        const categories = await runQuery(`SELECT category_id FROM coupon_categories WHERE coupon_id = ?`, [couponId]);
+        const categoryIds = categories.map(item => item.category_id)
+        // console.log(categoryIds);
+        
+
+        const result = await runQuery(`SELECT 
+                                        COUNT(*) as totalProducts
+                                        FROM products
+                                        WHERE category_id IN ?
+                                    `, [[categoryIds]]);
+        totalProducts = result[0].totalProducts;
+
+        products = await runQuery(`SELECT 
+                                        p.id,
+                                        p.title,
+                                        p.description,
+                                        p.rating,
+                                        p.brand,
+                                        p.thumbnail,
+                                        p.status,
+                                        c.category,
+                                        DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
+                                        DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
+
+                                        pd.discount_type,
+                                        pd.discount_percentage as offer_discount,
+                                        pd.start_time as offer_start_time,
+                                        pd.end_time as offer_end_time,
+                                        CASE 
+                                            WHEN pd.discount_percentage IS NOT NULL 
+                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            ELSE pp.price
+                                        END AS price
+                                    FROM coupon_categories cc
+                                    JOIN products p
+                                        ON p.category_id = cc.category_id
+                                    JOIN categories c
+                                        ON c.id = p.category_id
+                                    JOIN product_pricing pp 
+                                        ON pp.product_id = p.id
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
+
+                                    LEFT JOIN product_discounts pd 
+                                        ON pd.product_id = p.id
+                                        AND pd.is_active = 1
+                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+
+                                    WHERE cc.coupon_id = ?
+                                    ORDER BY p.id ASC
+                                    LIMIT ?
+                                    OFFSET ?`
+                                , [couponId, limit, offset]);
+
+        const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ?`, [couponId])
+        const orderIds = orders.map(item => item.id)
+        // console.log(orderIds);
+
+
+        if(orderIds.length > 0){
+            orderItems = await runQuery(`SELECT 
+                                            oi.product_id,
+                                            SUM(oi.quantity) AS total_quantity,
+                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                                        FROM order_item oi
+                                        JOIN products p 
+                                            ON oi.product_id = p.id
+                                        JOIN (
+                                            SELECT DISTINCT category_id 
+                                            FROM coupon_categories    
+                                            WHERE coupon_id = ?
+                                        ) cc
+                                            ON cc.category_id = p.category_id
+                                        WHERE oi.order_id IN (?)
+                                        GROUP BY oi.product_id`, [couponId, orderIds])
+            // console.log(orderItems);
+        }
+    }
+
+        products = products.map(item => {
+        let coupon_discount_amount = 0;
+        if(coupon.discount_type === "fixed"){
+            coupon_discount_amount = coupon.discount_value
+        }
+        else{
+            coupon_discount_amount = (item.price/100) * coupon.discount_value
+        }
+        if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
+            coupon_discount_amount = coupon.threshold_amount 
+        }
+        const matchingOrderItem = orderItems.find(o => o.product_id === item.id);
+        const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
+        const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
+
+        // let total_selling_price = coupon.discount_type === "percent" ? 
+        //                     total_purchase_price/(100 - coupon.discount_value) * 100
+        //                     :
+        //                     total_purchase_price + (coupon.discount_value * total_quantity);
+        
+        // let total_product_discount = total_selling_price - total_purchase_price
+        // console.log("total 1",total_product_discount);
+        // console.log("total 2",coupon.threshold_amount * total_quantity);
+
+        // if (coupon.threshold_amount && total_product_discount > (coupon.threshold_amount * total_quantity)) {
+        //     total_product_discount = coupon.threshold_amount;
+        // }
+        
+        let total_selling_price;
+        let total_product_discount;
+
+        if (coupon.discount_type === "percent") {
+            total_product_discount = Math.min(
+                (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
+                coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
+            );
+
+            total_selling_price = total_purchase_price + total_product_discount;
+        } 
+        else {
+            total_product_discount = coupon.discount_value * total_quantity;
+            total_selling_price = total_purchase_price + total_product_discount;
+        }
+
+        // if(coupon.discount_type === "percent"){
+        //     let total_selling_price = total_purchase_price/(100 - coupon.discount_value) * 100
+        //     console.log((total_selling_price).toFixed(2));
+            
+        // }
+
+        // let productDiscount = coupon.discount_type === 'percent' 
+        //             ? 
+        //             total_purchase_price * (coupon.discount_value / 100)
+        //             : 
+        //             coupon.discount_value * total_quantity;
+        // if (coupon.threshold_amount && productDiscount > coupon.threshold_amount) {
+        //     productDiscount = coupon.threshold_amount;
+        // }
+        return {
+                ...item,
+                coupon_discount_amount: coupon_discount_amount, 
+                final_price: item.price - coupon_discount_amount,
+                // total_quantity: quantityMap[item.id] || 0 
+                total_quantity,
+                total_purchase_price,
+                total_product_discount
+            }
+    })
 
     const allProducts = {
         products,
@@ -977,9 +1101,7 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
 }
 
 exports.getCouponUsages = async (couponId, limit, offset) => {
-
     const [{totalUsages}] = await runQuery(`SELECT COUNT(*) AS totalUsages FROM coupon_usages WHERE coupon_id = ?`, [couponId])
-
     const usages = await runQuery(`SELECT 
                                     u.id,
                                     u.user_id,

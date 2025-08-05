@@ -94,8 +94,8 @@ function AdminAddProduct() {
             return
         }
         if(imagesPreview.length < 1){
-            dispatch(showSnack({message: "Atleast 1 Product Image is required", severity: "warning"}))
-            console.error("Atleast 1 Product Image is required");
+            dispatch(showSnack({message: "At least 1 Product Image is required", severity: "warning"}))
+            console.error("At least 1 Product Image is required");
             return
         }
         // console.log("ran");

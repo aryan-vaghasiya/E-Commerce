@@ -28,7 +28,7 @@ exports.checkCoupon = async (req, res) => {
                                 "You've already used this coupon the maximum number of times",
                                 "Your cart seems to be empty or inactive. Please add items and try again",
                                 "This coupon is not applicable to any of the products in your cart",
-                                "Insufficiant Cart Value",
+                                "Insufficient Cart Value",
                                 "Coupon applicable for First Order only"
                             ]
         console.error("Error in checkCoupon:", err.message);

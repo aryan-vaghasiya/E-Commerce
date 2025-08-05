@@ -77,7 +77,7 @@ function AdminCouponDetails() {
         },
         { 
             field: "final_total", 
-            headerName: "Final Total", 
+            headerName: "Order Total", 
             width: 140,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
@@ -341,7 +341,7 @@ function AdminCouponDetails() {
                             </Typography>
                             <Typography>
                                 <Typography component={'span'} sx={{fontWeight: 700}}>Applicable on: </Typography>
-                                {data.applies_to === "all" ? `Cart` : `Product(s)`}
+                                {data.applies_to === "all" ? `Cart` : data.applies_to === "product" ? `Product(s)` : `Categories`}
                             </Typography>
                             <Typography>
                                 <Typography component={'span'} sx={{fontWeight: 700}}>Min. Cart Value: </Typography>

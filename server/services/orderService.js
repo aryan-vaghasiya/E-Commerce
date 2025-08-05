@@ -227,7 +227,6 @@ exports.getOrdersService = async (userId) => {
 exports.checkCouponCode = async (userId, code) => {
     // console.log(code);
 
-    let productIds = []
     const [coupon] = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
 
     if(!coupon){
@@ -259,6 +258,7 @@ exports.checkCouponCode = async (userId, code) => {
     }
     const cartId = checkActiveCart.id
 
+    let productIds = []
     if(coupon.applies_to === "product"){
         const getCouponProducts = await runQuery(`SELECT product_id FROM coupon_products WHERE coupon_id = ?`,[coupon.id])
         productIds = getCouponProducts.map(product => product.product_id)
@@ -273,11 +273,43 @@ exports.checkCouponCode = async (userId, code) => {
         }
     }
 
-    const couponData = {...coupon, products : [...productIds]}
+    let categoryIds = []
+    if(coupon.applies_to === "category"){
+
+        if (coupon.applies_to === "category" && coupon.discount_type !== "percent") {
+            throw new Error("Only percentage-based discounts are allowed for category coupons");
+        }
+
+        const getCouponCategories = await runQuery(`SELECT category_id FROM coupon_categories WHERE coupon_id = ?`,[coupon.id])
+        categoryIds = getCouponCategories.map(category => category.category_id)
+        // console.log(categoryIds);
+
+        const getCartCategories = await runQuery(`SELECT
+                                                    ci.product_id,
+                                                    p.category_id
+                                                    FROM 
+                                                    cart_item ci
+                                                    JOIN products p
+                                                        ON ci.product_id = p.id
+                                                    WHERE cart_id = ? 
+                                                        AND user_id = ?`, [cartId, userId])
+        const cartCategories = getCartCategories.map(product => product.category_id)
+        // console.log(cartCategories);
+
+        const applicableProducts = categoryIds.filter(id => cartCategories.includes(id))
+        // console.log(applicableProducts);
+
+        if(applicableProducts.length < 1){
+            throw new Error("This coupon is not applicable to any of the products in your cart");
+        }
+    }
+
+    const couponData = {...coupon, products : [...productIds], categories: [...categoryIds]}
 
 
     const getProducts = await runQuery(`SELECT 
                                             p.*,
+                                            c.id AS cid,
                                             c.category,
                                             ci.quantity,
                                             pp.mrp, 
@@ -329,26 +361,46 @@ exports.checkCouponCode = async (userId, code) => {
                 discountValue = couponData.discount_type === 'percent'
                     ? cart.cartValue * (couponData.discount_value / 100)
                     : couponData.discount_value;
+                if (couponData.threshold_amount && discountValue > couponData.threshold_amount) {
+                    discountValue = couponData.threshold_amount;
+                }
             }
             else{
-                throw new Error("Insufficiant Cart Value")
+                throw new Error("Insufficient Cart Value")
             }
             break;
 
         case 'product':
-            // console.log("I ran")
             cart.items.forEach((item) => {
-                // console.log(item);
-                // console.log(item.id);
                 if (couponData.products.includes(item.id)) {
-                    // console.log("ran")
                     let productDiscount = couponData.discount_type === 'percent'
                         ? item.price * item.quantity * (couponData.discount_value / 100)
                         : couponData.discount_value * item.quantity;
-                    discountValue += productDiscount
+                    // discountValue += Math.min(productDiscount, couponData.threshold_amount) // wont work if threshold null or undefined
                     if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
-                        // console.log("i ran");
                         productDiscount = couponData.threshold_amount;
+                        discountValue += couponData.threshold_amount
+                    }
+                    else{
+                        discountValue += productDiscount
+                    }
+                    item.coupon_discount = parseFloat((productDiscount).toFixed(2))
+                }
+            });
+            break;
+
+        case 'category':
+            cart.items.forEach((item) => {
+                if (couponData.categories.includes(item.cid)) {
+                    let productDiscount = couponData.discount_type === 'percent'
+                        ? item.price * item.quantity * (couponData.discount_value / 100)
+                        : 0
+                    if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
+                        productDiscount = couponData.threshold_amount;
+                        discountValue += couponData.threshold_amount
+                    }
+                    else{
+                        discountValue += productDiscount
                     }
                     item.coupon_discount = parseFloat((productDiscount).toFixed(2))
                 }
@@ -359,23 +411,15 @@ exports.checkCouponCode = async (userId, code) => {
             throw new Error('Unsupported coupon type');
     }
 
-    // console.log(couponData.threshold_amount);
-    // console.log(discountValue);
-
-    if (couponData.threshold_amount && discountValue > couponData.threshold_amount) {
-        // console.log("i ran");
-        discountValue = couponData.threshold_amount;
-    }
-
-    console.log(discountValue);
-    // console.log(cart.cartValue - discountValue);
+    // if (couponData.threshold_amount && discountValue > couponData.threshold_amount) {
+    //     discountValue = couponData.threshold_amount;
+    // }
 
     const newCart = {...cart, discountValue: parseFloat((discountValue).toFixed(2)), newCartValue: parseFloat((cart.cartValue - discountValue).toFixed(2))}
-    // console.log(newCart);
 
     if(newCart.discountValue >= newCart.cartValue || newCart.newCartValue <= 0){
-        throw new Error("Insufficiant Cart Value")
+        throw new Error("Insufficient Cart Value")
     }
 
-    return {newCart, couponData}
+    return {newCart, couponData} // Manage what to send on frontend, revealing coupons left and for new users only
 }

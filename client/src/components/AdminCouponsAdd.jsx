@@ -46,7 +46,9 @@ function AdminCouponsAdd() {
     const [query, setQuery] = useState("");
     const [options, setOptions] = useState([]);
     const [selectedProducts, setSelectedProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [currentStep, setCurrentStep] = useState(1);
+    const [selectedCategories, setSelectedCategories] = useState([]);
 
     // const searchQuery = watch('product_query');
     const discount_type = watch("discount_type")
@@ -66,7 +68,7 @@ function AdminCouponsAdd() {
     const stepValidationFields = {
         1: ["coupon_name", "coupon_code"],
         2: ["discount_type", "discount_value", "discount_limit"],
-        3: ["discount_on", "selected_products", "min_cart_value"],
+        3: ["discount_on", "selected_products", "min_cart_value", "category"],
         4: ["start_time", "end_time", "total_coupons","limit_per_user"],
     };
 
@@ -75,6 +77,27 @@ function AdminCouponsAdd() {
         const validated = await trigger(fields);
         if (validated) nextStep();
     };
+
+    const getAllCategories = async () => {
+        try{
+            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+    
+            if(!response.ok){
+                const error = await response.json()
+                return console.error(error.error);
+            }
+            const categories = await response.json()
+            // console.log(categories);
+            setCategories(categories)
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
 
     const searchProduct = async () => {
         const price = discount_type === "fixed"? getValues("discount_value") : null
@@ -114,6 +137,9 @@ function AdminCouponsAdd() {
 
         return () => clearTimeout(searchDelay);
     }, [query]);
+    useEffect(() => {
+        getAllCategories()
+    }, []);
 
     const addCoupon = async (couponData) => {
 
@@ -231,12 +257,18 @@ function AdminCouponsAdd() {
                                         name="discount_type"
                                         control={control}
                                         rules={{ required: "Discount Type is required" }}
+                                        
                                         render={({field}) => (
                                             <Select
                                                 {...field}
                                                 labelId="discount_type"
                                                 label="Discount Type"
                                                 value={field.value ?? ""}
+                                                onChange={(e) => {
+                                                    field.onChange(e)
+                                                    setSelectedCategories([])
+                                                    setValue("discount_on", null)
+                                                }}
                                             >
                                                 <MenuItem value={"percent"}>Percentage</MenuItem>
                                                 <MenuItem value={"fixed"}>Fixed Amount</MenuItem>
@@ -308,8 +340,14 @@ function AdminCouponsAdd() {
                                             label="Discount On"
                                             value={field.value ?? ""}
                                         >
-                                            <MenuItem value={"product"}>Individual Product</MenuItem>
+                                            <MenuItem value={"product"}>Individual Product(s)</MenuItem>
                                             <MenuItem value={"all"}>Cart Value</MenuItem>
+                                            {
+                                                discount_type === "percent"?
+                                                <MenuItem value={"category"}>Category</MenuItem>
+                                                :
+                                                null
+                                            }
                                         </Select>
                                     )}
                                 />
@@ -380,6 +418,7 @@ function AdminCouponsAdd() {
                                         )}
                                     </Box>
                                     :
+                                    discount_on === "all"?
                                     <Box>
                                         <TextField label="Minimum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
                                                 required: {
@@ -401,6 +440,86 @@ function AdminCouponsAdd() {
                                             helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
                                         />
                                     </Box>
+                                    :
+                                    discount_on === "category"?
+                                    <Box>
+                                        <Controller
+                                            control={control}
+                                            name="category"
+                                            rules={{ required: "Category is required" }}
+                                            // rules={{
+                                            //     required: "Category is required",
+                                            //     validate: (value) => {
+                                            //     // Ensure selected value is in the categories list
+                                            //     if (!value) return "Category is required";
+                                            //     const isValid = categories.some((c) => c.id === value.id);
+                                            //     return isValid || "Please select a valid category";
+                                            //     }
+                                            // }}
+                                            defaultValue={[]}
+                                            render={({ field: { onChange, value } }) => (
+                                                <Autocomplete
+                                                    multiple
+                                                    // freeSolo
+                                                    options={categories}
+                                                    // getOptionLabel={(option) =>
+                                                    //     typeof option === "string" ? option : option.category || ""
+                                                    // }
+                                                    getOptionLabel={(option) => option.category || ""}
+                                                    filterSelectedOptions
+                                                    isOptionEqualToValue={(option, val) => option.id === val.id}
+                                                    value={selectedCategories}
+                                                    disableClearable
+                                                    freeSolo={false}
+                                                    renderValue={() => null}
+                                                    // onInputChange={(event, newInputValue) => {
+                                                    //     onChange({ id: null, category: newInputValue });
+                                                    // }}
+                                                    onChange={(event, newValue) => {
+                                                        setSelectedCategories(newValue)
+                                                        // console.log(selectedCategories);
+                                                        
+                                                        onChange(newValue);
+                                                    }}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Search & Select Category"
+                                                            variant="outlined"
+                                                            // inputProps={{
+                                                            //     ...params.inputProps,
+                                                            //     readOnly: true,
+                                                            // }}
+                                                            error={!!errors.category}
+                                                            helperText={
+                                                                errors.category
+                                                                ? errors.category.message
+                                                                : "Please select a category from the list"
+                                                            }
+                                                        />
+                                                    )}
+                                                />
+                                            )}
+                                        />
+                                        {selectedCategories?.length > 0 && (
+                                            <Box mt={2}>
+                                                {selectedCategories.map((category) => (
+                                                <Chip
+                                                    key={category.id}
+                                                    label={`id: ${category.id}, Title: ${category.category}`}
+                                                    onDelete={() => {
+                                                        const updated = selectedCategories.filter(p => p.id !== category.id);
+                                                        setSelectedCategories(updated);
+                                                        setValue('category', updated);
+                                                    }}
+                                                    sx={{ m: 0.5 }}
+                                                />
+                                                ))}
+                                            </Box>
+                                        )}
+                                    </Box>
+                                    :
+                                    null
                                 }
                                 <Box sx={{display: "flex", justifyContent: "space-between"}}>
                                     <Button onClick={() => prevStep()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>

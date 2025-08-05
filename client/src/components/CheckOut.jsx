@@ -341,7 +341,7 @@ function CheckOut() {
                         <span style={{ marginLeft: "auto" }}>
                             {/* ${cartReducer.products.reduce((accumulator, currentvalue) => accumulator + currentvalue.priceValue, 0)} */}
                             {/* ${(cartReducer.cartValue).toFixed(2)} */}
-                            ${isCouponApplied && couponData.applies_to === "product" ? (newCart?.newCartValue).toFixed(2) : (cartReducer.cartValue).toFixed(2)}
+                            ${isCouponApplied && couponData.applies_to !== "all" ? (newCart?.newCartValue).toFixed(2) : (cartReducer.cartValue).toFixed(2)}
                         </span>
                     </Typography>
                     {

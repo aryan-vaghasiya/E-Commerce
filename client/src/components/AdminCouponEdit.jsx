@@ -359,6 +359,7 @@ function AdminCouponEdit() {
                                     >
                                         <MenuItem value={"product"}>Individual Product</MenuItem>
                                         <MenuItem value={"all"}>Cart Value</MenuItem>
+                                        <MenuItem value={"category"}>Category</MenuItem>
                                     </Select>
                                 )}
                             />
