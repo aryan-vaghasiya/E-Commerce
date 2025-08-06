@@ -267,7 +267,58 @@ exports.getProductData = async (productId) => {
     return {...result, image}
 }
 
-exports.setProductData = async(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime) => {
+exports.getOffersData = async (productId) => {
+    const offers = await runQuery(`SELECT 
+                                    pd.*,
+                                    pp.mrp,
+                                    pp.price,
+                                    ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2) AS offer_selling_price
+                                    FROM product_discounts pd
+                                    JOIN product_pricing pp ON pd.product_id = pp.product_id
+                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                    WHERE pd.product_id = ?`,[productId])
+    // console.log(offers);
+    return offers
+}
+
+exports.setOfferData = async (product_id, offer_price, offer_discount, start_time, end_time) => {
+    if (!offer_price || !offer_discount || !start_time || !end_time) {
+        // console.log("no offer");
+        throw new Error ("Not received values")
+        return;
+    }
+
+    // Deactivate any overlapping time-based discounts
+    await runQuery(
+        `UPDATE product_discounts SET is_active = 0, 
+            end_time = start_time
+            WHERE product_id = ? AND discount_type = 'time_based'
+            AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))`,
+        [product_id, start_time, start_time, end_time, end_time]
+    );
+
+    // Insert new time-based discount
+    const insertDiscount = await runQuery(
+        `INSERT INTO product_discounts (product_id, discount_type, discount_percentage, start_time, end_time) VALUES (?, 'time_based', ?, ?, ?)`,
+        [product_id, offer_discount, start_time, end_time]
+    );
+    if (insertDiscount.affectedRows === 0) throw new Error("Failed to insert discount.");
+}
+
+exports.editOfferData = async (offer_id, end_time) => {
+    const updateTime = await runQuery(`UPDATE 
+        product_discounts 
+        SET end_time = ?
+            WHERE id = ?`,
+        [end_time, offer_id]
+    );
+
+    if(updateTime.affectedRows === 0){
+        throw new Error ("Could not extend time")
+    }
+}
+
+exports.setProductData = async(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, tenYearsLater, currentTime) => {
     // console.log({id, title, brand, description, price, stock});
     // console.log({start_time, end_time, tenYearsLater});
     // console.log({id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime});
@@ -282,7 +333,7 @@ exports.setProductData = async(id, title, brand, description, category, base_pri
         const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
         categoryId = insertCategory.insertId
     }
-    console.log(categoryId, categoryName);
+    // console.log(categoryId, categoryName);
 
     const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, category_id = ? WHERE id = ?`, [title, brand, description, categoryId, id])
     if(updateProduct.affectedRows === 0){
@@ -329,22 +380,6 @@ exports.setProductData = async(id, title, brand, description, category, base_pri
         // if (insert[0].affectedRows === 0) throw new Error("Failed to insert new pricing");
     }
 
-    if (!offer_price || !offer_discount || !start_time || !end_time) return;
-
-    // Deactivate any overlapping time-based discounts
-    await runQuery(
-        `UPDATE product_discounts SET is_active = 0 
-            WHERE product_id = ? AND discount_type = 'time_based'
-            AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))`,
-        [id, start_time, start_time, end_time, end_time]
-    );
-
-    // Insert new time-based discount
-    const insertDiscount = await runQuery(
-        `INSERT INTO product_discounts (product_id, discount_type, discount_percentage, start_time, end_time) VALUES (?, 'time_based', ?, ?, ?)`,
-        [id, offer_discount, start_time, end_time]
-    );
-    if (insertDiscount.affectedRows === 0) throw new Error("Failed to insert discount.");
 
 
 

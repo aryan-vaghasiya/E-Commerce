@@ -99,23 +99,58 @@ exports.getSingleProduct = async (req,res) => {
     }
 }
 
+exports.getProductOffers = async (req, res) => {
+    const productId = req.query.productId
+    // console.log(productId);
+
+    try{
+        const offersData = await adminServices.getOffersData(productId);
+        res.status(200).json(offersData);
+    }
+    catch(err){
+        console.error(`Error fetching Offers for Product ${productId} : ${ err.message}`);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.setProductOffer = async (req, res) => {
+    // console.log(req.body);
+    const {product_id, offer_price, offer_discount, start_time, end_time} = req.body;
+
+    try{
+        await adminServices.setOfferData(product_id, offer_price, offer_discount, start_time, end_time);
+        return res.status(200).send("Product Offer Added Successfully");
+    }
+    catch(err){
+        console.error("Error Adding Product Offer: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.extendProductOffer = async (req, res) => {
+    const {offer_id, end_time} = req.body
+    
+    try{
+        await adminServices.editOfferData(offer_id, end_time);
+        return res.status(200).send("Product Offer Added Successfully");
+    }
+    catch(err){
+        console.error("Error Adding Product Offer: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 exports.setEditedProduct = async (req, res) => {
-    const {id, title, brand, description, category, base_price, stock, base_discount, base_mrp, offer_price, offer_discount} = req.body;
+    const {id, title, brand, description, category, base_price, stock, base_discount, base_mrp} = req.body;
 
-    console.log(category);
-
+    // console.log(category);
     const localTime = new Date(new Date().toISOString().slice(0, 19)+"-05:30")
     const currentTime = localTime.toISOString().slice(0, 19).replace('T', ' ')
     const tenYearsLater = (parseInt(localTime.toISOString().slice(0,4)) + 10)+ localTime.toISOString().slice(4, 19).replace('T', ' ')
-    const {start_time} = req.body ;
-    const {end_time} = req.body;
 
-    // console.log(start_time, end_time);
-
-    // console.log(req.body);
     try{
         // await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time ?? currentTime, end_time ?? tenYearsLater);
-        await adminServices.setProductData(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, start_time, end_time, tenYearsLater, offer_price, offer_discount, currentTime);
+        await adminServices.setProductData(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, tenYearsLater, currentTime);
         return res.status(200).send("Product Edited Successfully");
     }
     catch(err){

@@ -31,8 +31,14 @@ import Alert from "@mui/material/Alert"
 import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions"
 import FormControlLabel from "@mui/material/FormControlLabel"
 import Checkbox from "@mui/material/Checkbox"
+import Tab from '@mui/material/Tab';
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
 
 function AdminCouponsAdd() {
+
+    const [page, setPage] = useState(1);
 
     const snackbarState = useSelector(state => state.snackbarReducer)
     const token = useSelector(state => state.userReducer.token);
@@ -49,6 +55,7 @@ function AdminCouponsAdd() {
     const [categories, setCategories] = useState([]);
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const [enabled, setEnabled] = useState([])
 
     // const searchQuery = watch('product_query');
     const discount_type = watch("discount_type")
@@ -57,13 +64,12 @@ function AdminCouponsAdd() {
     // console.log(end_time);
     const dynamicLabel = discount_type === "percent" ? "Discount Value (%)" : "Discount Value ($)"
 
-    const nextStep = () => {
-        setCurrentStep(currentStep + 1);
-    };
-
-    const prevStep = () => {
-        setCurrentStep(currentStep - 1);
-    };
+    const previousPage = () => {
+        setPage(prev => prev - 1)
+    }
+    // const nextPage = () => {
+    //     setPage(prev => prev + 1)
+    // }
 
     const stepValidationFields = {
         1: ["coupon_name", "coupon_code"],
@@ -72,10 +78,36 @@ function AdminCouponsAdd() {
         4: ["start_time", "end_time", "total_coupons","limit_per_user"],
     };
 
-    const handleStepValidation = async () => {
-        const fields = stepValidationFields[currentStep] || [];
+    const handleChange = async (event, newValue) => {
+        if(newValue < page){
+            return setPage(newValue)
+        }
+        const fields = stepValidationFields[page] || [];
         const validated = await trigger(fields);
-        if (validated) nextStep();
+        if (validated) {
+            setEnabled(prev => [...prev, page+1])
+            setPage(newValue)
+        }
+        else{
+            setEnabled(prev => prev.filter(state => state <= page))
+        }
+        // setPage(newValue)
+    };
+
+    const handleStepValidation = async () => {
+        // setEnabled([])
+        const fields = stepValidationFields[page] || [];
+        const validated = await trigger(fields);
+        // if (validated) nextStep();
+        if (validated) {
+            setEnabled(prev => [...prev, page+1])
+            console.log(enabled);
+            setPage(prev => prev + 1)
+        }
+        else{
+            setEnabled(prev => prev.filter(state => state <= page))
+            // setEnabled(prev => prev.filter(state => state !== page+1))
+        }
     };
 
     const getAllCategories = async () => {
@@ -137,12 +169,12 @@ function AdminCouponsAdd() {
 
         return () => clearTimeout(searchDelay);
     }, [query]);
+
     useEffect(() => {
         getAllCategories()
     }, []);
 
     const addCoupon = async (couponData) => {
-
         const sTime = dayjs(couponData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
         const eTime = dayjs(couponData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
         
@@ -165,7 +197,7 @@ function AdminCouponsAdd() {
             console.log(error.error);
             if(error.error === "This Code is already Active"){
                 dispatch(showSnack({message: "This Code is already Active", severity: "warning"}))
-                setCurrentStep(1)
+                setPage(1)
             }
         }
         else{
@@ -188,440 +220,464 @@ function AdminCouponsAdd() {
                     {snackbarState.message}
                 </Alert>
             </Snackbar>
-            <Card sx={{ display: "flex", justifyContent: "center", p: 2, width: "80%", maxWidth: 750, mx: "auto", py: 7}}>
-                <form onSubmit={handleSubmit(addCoupon)} noValidate>
-                    <Stack spacing={3} width={{ lg: 600, md: 500, xs: 300}}>
-                        {
-                            currentStep === 1?
-                            <Box>
-                                <Stack spacing={4}>
-                                <TextField label="Coupon Name" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_name", {
-                                    required: {
-                                        value: true,
-                                        message: "Coupon Name is required"
-                                    },
-                                    pattern: {
-                                        value: /^.{5,}$/,
-                                        message: "Coupon Name must be 5 or more characters"
-                                    },
-                                })}
-                                    error={!!errors.coupon_name}
-                                    helperText={errors.coupon_name ? errors.coupon_name.message : ""}
-                                />
-                                <TextField label="Coupon Code" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_code", {
-                                    required: {
-                                        value: true,
-                                        message: "Coupon Code is required"
-                                    },
-                                    pattern: {
-                                        value: /^.{5,}$/,
-                                        message: "Coupon Code must be 5 or more characters"
-                                    },
-                                })}
-                                    error={!!errors.coupon_code}
-                                    helperText={errors.coupon_code ? errors.coupon_code.message : ""}
-                                />
-                                <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                                    <Button color="error" onClick={() => navigate("/admin/coupons")} variant="outlined">Cancel</Button>
-                                    <Button 
-                                        onClick={handleStepValidation} 
-                                        endIcon={<NavigateNextIcon/>} 
-                                        variant="outlined"
-                                    >
-                                        Next
-                                    </Button>
-                                    {/* <Button 
-                                        onClick={async() => {
-                                                    const validated = await trigger(["coupon_name", "coupon_code"])
-                                                    if(!validated) return
-                                                    nextStep()
-                                                }} 
-                                        endIcon={<NavigateNextIcon/>} 
-                                        variant="outlined">
-                                            Next
-                                    </Button> */}
-                                </Box>
-                                </Stack>
-                            </Box>
-                            :
-                            null
-                        }
 
-                        {
-                            currentStep === 2?
-                            <Box>
-                                <Stack spacing={4}>
-                                <FormControl fullWidth error={!!errors.discount_type}>
-                                    <InputLabel id="discount_type">Discount Type</InputLabel>
+            <Card sx={{ display: "flex", justifyContent: "center", width: "80%", maxWidth: 750, mx: "auto", p: 2}}>
+                <form onSubmit={handleSubmit(addCoupon)} noValidate style={{width: "100%"}}>
+                    {/* <Stack spacing={3} width={{ lg: 700, md: 500, xs: 300}}> */}
+                        <TabContext value={page} sx={{width: "100%"}}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <TabList onChange={handleChange}
+                                    // variant="scrollable"
+                                    // scrollButtons="auto"
+                                >
+                                    <Tab label="Coupon" value={1} />
+                                    <Tab label="Discount" value={2} disabled={!enabled.includes(2)}/>
+                                    {/* <Tab label="Discount" value={2} disabled={() => checkDisabled()}/> */}
+                                    <Tab label="Apply On" value={3} disabled={!enabled.includes(3)}/>
+                                    <Tab label="Limits" value={4} disabled={!enabled.includes(4)}/>
+                                </TabList>
+                            </Box>
+                            <TabPanel value={1}>
+                                <Box sx={{pt: 3}}>
+                                    <Stack spacing={5}>
+                                    <TextField label="Coupon Name" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_name", {
+                                        required: {
+                                            value: true,
+                                            message: "Coupon Name is required"
+                                        },
+                                        pattern: {
+                                            value: /^.{5,}$/,
+                                            message: "Coupon Name must be 5 or more characters"
+                                        },
+                                    })}
+                                        error={!!errors.coupon_name}
+                                        helperText={errors.coupon_name ? errors.coupon_name.message : ""}
+                                    />
+                                    <TextField label="Coupon Code" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_code", {
+                                        required: {
+                                            value: true,
+                                            message: "Coupon Code is required"
+                                        },
+                                        pattern: {
+                                            value: /^[A-Za-z0-9_-]{3,}$/,
+                                            message: "Coupon Code must be at least 3 characters (letters, numbers, hyphens, underscores), no spaces"
+                                        }
+                                    })}
+                                        error={!!errors.coupon_code}
+                                        helperText={errors.coupon_code ? errors.coupon_code.message : ""}
+                                    />
+                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                        <Button color="error" onClick={() => navigate("/admin/coupons")} variant="outlined">Cancel</Button>
+                                        <Button 
+                                            // onClick={() => setPage('2')} 
+                                            onClick={handleStepValidation} 
+                                            endIcon={<NavigateNextIcon/>} 
+                                            variant="outlined"
+                                        >
+                                            Next
+                                        </Button>
+                                    </Box>
+                                    </Stack>
+                                </Box>
+                            </TabPanel>
+                            <TabPanel value={2}>
+                                <Box sx={{pt: 3}}>
+                                    <Stack spacing={5}>
+                                    <FormControl fullWidth error={!!errors.discount_type}>
+                                        <InputLabel id="discount_type">Discount Type</InputLabel>
+                                        <Controller
+                                            name="discount_type"
+                                            control={control}
+                                            rules={{ required: "Discount Type is required" }}
+                                            
+                                            render={({field}) => (
+                                                <Select
+                                                    {...field}
+                                                    labelId="discount_type"
+                                                    label="Discount Type"
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) => {
+                                                        field.onChange(e)
+                                                        setSelectedCategories([])
+                                                        setValue("discount_on", null)
+                                                    }}
+                                                >
+                                                    <MenuItem value={"percent"}>Percentage</MenuItem>
+                                                    <MenuItem value={"fixed"}>Fixed Amount</MenuItem>
+                                                </Select>
+                                            )}
+                                        />
+                                        {errors.discount_type && <FormHelperText>{errors.discount_type.message}</FormHelperText>}
+                                    </FormControl>
+
+                                    <TextField label={dynamicLabel} type='text' sx={{ width: "100%", mr: 1 }} {...register("discount_value", {
+                                        required: {
+                                            value: true,
+                                            message: "Discount Value is required"
+                                        },
+                                        pattern: {
+                                            value: /^[0-9]{1,}$/,
+                                            message: "Discount Value must be in digits only"
+                                        }
+                                    })}
+                                        error={!!errors.discount_value}
+                                        helperText={errors.discount_value ? errors.discount_value.message : ""}
+                                        onChange={(e) => {
+                                            setSelectedProducts([])
+                                            return register("discount_value").onChange(e);
+                                        }}
+                                    />
+
+                                    {
+                                        discount_type === "percent"?
+                                        <TextField label="Discount Limit ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("discount_limit", {
+                                            pattern: {
+                                                value: /^[0-9]{0,}$/,
+                                                message: "Discount Limit must be in digits only"
+                                            }
+                                        })}
+                                            error={!!errors.discount_limit}
+                                            helperText={errors.discount_limit ? errors.discount_limit.message : "Leave Empty for no limit"}
+                                        />
+                                        :
+                                        null
+                                    }
+                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                        {/* <Button onClick={() => setPage('1')} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button> */}
+                                        <Button onClick={() => previousPage()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
+                                        <Button 
+                                            // onClick={() => setPage('3')} 
+                                            onClick={handleStepValidation} 
+                                            endIcon={<NavigateNextIcon/>} 
+                                            variant="outlined"
+                                        >
+                                            Next
+                                        </Button>
+                                    </Box>
+                                    </Stack>
+                                </Box>
+                            </TabPanel>
+                            <TabPanel value={3}>
+                                <Box sx={{pt: 3}}>
+                                {/* <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 252}}> */}
+                                    <Stack spacing={5}>
+                                    <FormControl fullWidth error={!!errors.discount_on}>
+                                    <InputLabel id="discount_on">Discount On</InputLabel>
                                     <Controller
-                                        name="discount_type"
+                                        name="discount_on"
                                         control={control}
-                                        rules={{ required: "Discount Type is required" }}
-                                        
+                                        rules={{ required: "Discount On is required" }}
                                         render={({field}) => (
                                             <Select
                                                 {...field}
-                                                labelId="discount_type"
-                                                label="Discount Type"
+                                                labelId="discount_on"
+                                                label="Discount On"
                                                 value={field.value ?? ""}
-                                                onChange={(e) => {
-                                                    field.onChange(e)
-                                                    setSelectedCategories([])
-                                                    setValue("discount_on", null)
-                                                }}
                                             >
-                                                <MenuItem value={"percent"}>Percentage</MenuItem>
-                                                <MenuItem value={"fixed"}>Fixed Amount</MenuItem>
+                                                <MenuItem value={"product"}>Individual Product(s)</MenuItem>
+                                                <MenuItem value={"all"}>Cart Value</MenuItem>
+                                                {
+                                                    discount_type === "percent"?
+                                                    <MenuItem value={"category"}>Category</MenuItem>
+                                                    :
+                                                    null
+                                                }
                                             </Select>
                                         )}
                                     />
-                                    {errors.discount_type && <FormHelperText>{errors.discount_type.message}</FormHelperText>}
-                                </FormControl>
+                                    {errors.discount_on && <FormHelperText>{errors.discount_on.message}</FormHelperText>}
+                                    </FormControl>
 
-                                <TextField label={dynamicLabel} type='text' sx={{ width: "100%", mr: 1 }} {...register("discount_value", {
-                                    required: {
-                                        value: true,
-                                        message: "Discount Value is required"
-                                    },
-                                    pattern: {
-                                        value: /^[0-9]{0,}$/,
-                                        message: "Discount Value must be in digits only"
+                                    {
+                                        discount_on === "product"?
+                                        <Box>
+                                            <Typography sx={{pb: 1.5}}>Select Product(s):</Typography>
+                                            <Controller
+                                                control={control}
+                                                name="selected_products"
+                                                // rules={{ required: "At least one product must be selected" }}
+                                                rules={{
+                                                    validate: (value) => (value?.length > 0 ? true : "Select at least one product"),
+                                                }}
+                                                defaultValue={[]}
+                                                render={({ field : {onChange, value} }) => (
+                                                    <Autocomplete
+                                                        multiple
+                                                        options={options}
+                                                        getOptionLabel={(option) => option.title || ""}
+                                                        filterSelectedOptions
+                                                        onInputChange={(e, newInputValue) => {
+                                                            setQuery(newInputValue)
+                                                        }}
+                                                        // onInputChange={(event, newInputValue) => setQuery(newInputValue)}
+                                                        // onChange={(event, value) => setSelectedProducts(value)}
+                                                        onChange={(event, newValue) => {
+                                                            setSelectedProducts(newValue)
+                                                            onChange(newValue)
+                                                        }}
+                                                        value={selectedProducts}
+                                                        isOptionEqualToValue={(option, val) => option.id === val.id}
+                                                        renderValue={() => null}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                // {...field}
+                                                                label="Search & Select Products" 
+                                                                variant="outlined"
+                                                                error={!!errors.selected_products}
+                                                                helperText={
+                                                                    errors.selected_products ? 
+                                                                    errors.selected_products.message :
+                                                                    discount_type === "fixed" ? "Products with price more than "+getValues("discount_value") : ""}
+                                                            />
+                                                        )}
+                                                    />
+                                                )}
+                                            />
+                                            {selectedProducts?.length > 0 && (
+                                                <Box mt={2}>
+                                                    {selectedProducts.map((product) => (
+                                                    <Chip
+                                                        key={product.id}
+                                                        label={`id: ${product.id}, Title: ${product.title}`}
+                                                        onDelete={() => {
+                                                            const updated = selectedProducts.filter(p => p.id !== product.id);
+                                                            setSelectedProducts(updated);
+                                                            setValue('selected_products', updated);
+                                                        }}
+                                                        sx={{ m: 0.5 }}
+                                                    />
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        :
+                                        discount_on === "all"?
+                                        <Box>
+                                            <TextField label="Minimum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
+                                                    required: {
+                                                        value: true,
+                                                        message: "Cart Value is required"
+                                                    },
+                                                    pattern: {
+                                                        value: /^[0-9]+$/,
+                                                        message: "Cart Value must be in digits only"
+                                                    },
+                                                    validate: (value) => {
+                                                        if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
+                                                            return "Minimum cart value must be at least double than the discount amount";
+                                                        }
+                                                        return true;
+                                                    }
+                                                })}
+                                                error={!!errors.min_cart_value}
+                                                helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
+                                            />
+                                        </Box>
+                                        :
+                                        discount_on === "category"?
+                                        <Box>
+                                            <Controller
+                                                control={control}
+                                                name="category"
+                                                rules={{ required: "Category is required" }}
+                                                // rules={{
+                                                //     required: "Category is required",
+                                                //     validate: (value) => {
+                                                //     // Ensure selected value is in the categories list
+                                                //     if (!value) return "Category is required";
+                                                //     const isValid = categories.some((c) => c.id === value.id);
+                                                //     return isValid || "Please select a valid category";
+                                                //     }
+                                                // }}
+                                                defaultValue={[]}
+                                                render={({ field: { onChange, value } }) => (
+                                                    <Autocomplete
+                                                        multiple
+                                                        // freeSolo
+                                                        options={categories}
+                                                        // getOptionLabel={(option) =>
+                                                        //     typeof option === "string" ? option : option.category || ""
+                                                        // }
+                                                        getOptionLabel={(option) => option.category || ""}
+                                                        filterSelectedOptions
+                                                        isOptionEqualToValue={(option, val) => option.id === val.id}
+                                                        value={selectedCategories}
+                                                        disableClearable
+                                                        freeSolo={false}
+                                                        renderValue={() => null}
+                                                        // onInputChange={(event, newInputValue) => {
+                                                        //     onChange({ id: null, category: newInputValue });
+                                                        // }}
+                                                        onChange={(event, newValue) => {
+                                                            setSelectedCategories(newValue)
+                                                            // console.log(selectedCategories);
+                                                            
+                                                            onChange(newValue);
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Search & Select Category"
+                                                                variant="outlined"
+                                                                // inputProps={{
+                                                                //     ...params.inputProps,
+                                                                //     readOnly: true,
+                                                                // }}
+                                                                error={!!errors.category}
+                                                                helperText={
+                                                                    errors.category
+                                                                    ? errors.category.message
+                                                                    : "Please select a category from the list"
+                                                                }
+                                                            />
+                                                        )}
+                                                    />
+                                                )}
+                                            />
+                                            {selectedCategories?.length > 0 && (
+                                                <Box mt={2}>
+                                                    {selectedCategories.map((category) => (
+                                                    <Chip
+                                                        key={category.id}
+                                                        label={`id: ${category.id}, Title: ${category.category}`}
+                                                        onDelete={() => {
+                                                            const updated = selectedCategories.filter(p => p.id !== category.id);
+                                                            setSelectedCategories(updated);
+                                                            setValue('category', updated);
+                                                        }}
+                                                        sx={{ m: 0.5 }}
+                                                    />
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        :
+                                        null
                                     }
-                                })}
-                                    error={!!errors.discount_value}
-                                    helperText={errors.discount_value ? errors.discount_value.message : ""}
-                                    onChange={() => setSelectedProducts([])}
-                                />
+                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                        <Button onClick={() => previousPage()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
+                                        <Button 
+                                            onClick={handleStepValidation} 
+                                            endIcon={<NavigateNextIcon/>} 
+                                            variant="outlined"
+                                        >
+                                            Next
+                                        </Button>                                    
+                                    </Box>
+                                    </Stack>
+                                </Box>
+                            </TabPanel>
+                            <TabPanel value={4}>
+                                <Box>
+                                    <Stack spacing={4}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <DemoContainer
+                                        components= {[
+                                            'DatePicker'
+                                            ]}
+                                        >
+                                        <DemoItem label="Start date">
+                                            <Controller
+                                                control={control}
+                                                defaultValue={dayjs().startOf('day')}
+                                                name="start_time"
+                                                rules={{ required: "Start Date is required" }}
+                                                render={({ field }) => (
+                                                    <DatePicker
+                                                        disablePast
+                                                        value={field.value}
+                                                        inputRef={field.ref}
+                                                        onChange={(date) => {
+                                                            field.onChange(date);
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        </DemoItem>
+                                        <DemoItem label="End date">
+                                            <Controller
+                                                control={control}
+                                                defaultValue={dayjs().startOf('day').add(1, 'day')}
+                                                name="end_time"
+                                                rules={{ required: "End Date is required" }}
+                                                render={({ field }) => (
+                                                    <DatePicker
+                                                        disablePast
+                                                        value={field.value}
+                                                        inputRef={field.ref}
+                                                        onChange={(date) => {
+                                                            field.onChange(date);
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        </DemoItem>
+                                        </DemoContainer>
+                                    </LocalizationProvider>
 
-                                {
-                                    discount_type === "percent"?
-                                    <TextField label="Discount Limit ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("discount_limit", {
+                                    <TextField label="Total Coupons" type='text' sx={{ width: "100%", mr: 1 }} {...register("total_coupons", {
                                         pattern: {
                                             value: /^[0-9]{0,}$/,
-                                            message: "Discount Limit must be in digits only"
+                                            message: "Total must be in digits only"
                                         }
                                     })}
-                                        error={!!errors.discount_limit}
-                                        helperText={errors.discount_limit ? errors.discount_limit.message : "Leave Empty for no limit"}
+                                        error={!!errors.total_coupons}
+                                        helperText={errors.total_coupons ? errors.total_coupons.message : "Leave empty for Unlimited"}
                                     />
-                                    :
-                                    null
-                                }
-                                <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                                    <Button onClick={() => prevStep()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
-                                    <Button 
-                                        onClick={handleStepValidation} 
-                                        endIcon={<NavigateNextIcon/>} 
-                                        variant="outlined"
-                                    >
-                                        Next
-                                    </Button>
+
+                                    <TextField label="Limit per Customer" type='text' sx={{ width: "100%", mr: 1 }} {...register("limit_per_user", {
+                                        pattern: {
+                                            value: /^[0-9]{0,}$/,
+                                            message: "Limit must be in digits only"
+                                        }
+                                    })}
+                                        error={!!errors.limit_per_user}
+                                        helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
+                                    />
+
+                                    <FormControlLabel
+                                        control={<Checkbox {...register("for_new_users_only")}/>}
+                                        label="For New Users Only"
+                                    />
+
+                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                        <Button onClick={() => previousPage()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
+                                        <Button type="submit" variant="contained">Add Coupon</Button>
+                                    </Box>
+                                    
+                                    </Stack>
                                 </Box>
-                                </Stack>
-                            </Box>
+                            </TabPanel>
+                        </TabContext>
+                        {/* {
+                            currentStep === 1?
+                            
                             :
                             null
-                        }
+                        } */}
 
-                        {
+                        {/* {
+                            currentStep === 2?
+                            
+                            :
+                            null
+                        } */}
+
+                        {/* {
                             currentStep === 3 ?
-                            <Box>
-                                <Stack spacing={4}>
-                                <FormControl fullWidth error={!!errors.discount_on}>
-                                <InputLabel id="discount_on">Discount On</InputLabel>
-                                <Controller
-                                    name="discount_on"
-                                    control={control}
-                                    rules={{ required: "Discount On is required" }}
-                                    render={({field}) => (
-                                        <Select
-                                            {...field}
-                                            labelId="discount_on"
-                                            label="Discount On"
-                                            value={field.value ?? ""}
-                                        >
-                                            <MenuItem value={"product"}>Individual Product(s)</MenuItem>
-                                            <MenuItem value={"all"}>Cart Value</MenuItem>
-                                            {
-                                                discount_type === "percent"?
-                                                <MenuItem value={"category"}>Category</MenuItem>
-                                                :
-                                                null
-                                            }
-                                        </Select>
-                                    )}
-                                />
-                                {errors.discount_on && <FormHelperText>{errors.discount_on.message}</FormHelperText>}
-                                </FormControl>
-
-                                {
-                                    discount_on === "product"?
-                                    <Box>
-                                        <Typography sx={{pb: 1.5}}>Select Product(s):</Typography>
-                                        <Controller
-                                            control={control}
-                                            name="selected_products"
-                                            // rules={{ required: "At least one product must be selected" }}
-                                            rules={{
-                                                validate: (value) => (value?.length > 0 ? true : "Select at least one product"),
-                                            }}
-                                            defaultValue={[]}
-                                            render={({ field : {onChange, value} }) => (
-                                                <Autocomplete
-                                                    multiple
-                                                    options={options}
-                                                    getOptionLabel={(option) => option.title || ""}
-                                                    filterSelectedOptions
-                                                    onInputChange={(e, newInputValue) => {
-                                                        setQuery(newInputValue)
-                                                    }}
-                                                    // onInputChange={(event, newInputValue) => setQuery(newInputValue)}
-                                                    // onChange={(event, value) => setSelectedProducts(value)}
-                                                    onChange={(event, newValue) => {
-                                                        setSelectedProducts(newValue)
-                                                        onChange(newValue)
-                                                    }}
-                                                    value={selectedProducts}
-                                                    isOptionEqualToValue={(option, val) => option.id === val.id}
-                                                    renderValue={() => null}
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            // {...field}
-                                                            label="Search & Select Products" 
-                                                            variant="outlined"
-                                                            error={!!errors.selected_products}
-                                                            helperText={
-                                                                errors.selected_products ? 
-                                                                errors.selected_products.message :
-                                                                discount_type === "fixed" ? "Products with price more than "+getValues("discount_value") : ""}
-                                                        />
-                                                    )}
-                                                />
-                                            )}
-                                        />
-                                        {selectedProducts?.length > 0 && (
-                                            <Box mt={2}>
-                                                {selectedProducts.map((product) => (
-                                                <Chip
-                                                    key={product.id}
-                                                    label={`id: ${product.id}, Title: ${product.title}`}
-                                                    onDelete={() => {
-                                                        const updated = selectedProducts.filter(p => p.id !== product.id);
-                                                        setSelectedProducts(updated);
-                                                        setValue('selected_products', updated);
-                                                    }}
-                                                    sx={{ m: 0.5 }}
-                                                />
-                                                ))}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                    :
-                                    discount_on === "all"?
-                                    <Box>
-                                        <TextField label="Minimum Cart Value ($)" type='text' sx={{ width: "100%", mr: 1 }} {...register("min_cart_value", {
-                                                required: {
-                                                    value: true,
-                                                    message: "Cart Value is required"
-                                                },
-                                                pattern: {
-                                                    value: /^[0-9]+$/,
-                                                    message: "Cart Value must be in digits only"
-                                                },
-                                                validate: (value) => {
-                                                    if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
-                                                        return "Minimum cart value must be at least double than the discount amount";
-                                                    }
-                                                    return true;
-                                                }
-                                            })}
-                                            error={!!errors.min_cart_value}
-                                            helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
-                                        />
-                                    </Box>
-                                    :
-                                    discount_on === "category"?
-                                    <Box>
-                                        <Controller
-                                            control={control}
-                                            name="category"
-                                            rules={{ required: "Category is required" }}
-                                            // rules={{
-                                            //     required: "Category is required",
-                                            //     validate: (value) => {
-                                            //     // Ensure selected value is in the categories list
-                                            //     if (!value) return "Category is required";
-                                            //     const isValid = categories.some((c) => c.id === value.id);
-                                            //     return isValid || "Please select a valid category";
-                                            //     }
-                                            // }}
-                                            defaultValue={[]}
-                                            render={({ field: { onChange, value } }) => (
-                                                <Autocomplete
-                                                    multiple
-                                                    // freeSolo
-                                                    options={categories}
-                                                    // getOptionLabel={(option) =>
-                                                    //     typeof option === "string" ? option : option.category || ""
-                                                    // }
-                                                    getOptionLabel={(option) => option.category || ""}
-                                                    filterSelectedOptions
-                                                    isOptionEqualToValue={(option, val) => option.id === val.id}
-                                                    value={selectedCategories}
-                                                    disableClearable
-                                                    freeSolo={false}
-                                                    renderValue={() => null}
-                                                    // onInputChange={(event, newInputValue) => {
-                                                    //     onChange({ id: null, category: newInputValue });
-                                                    // }}
-                                                    onChange={(event, newValue) => {
-                                                        setSelectedCategories(newValue)
-                                                        // console.log(selectedCategories);
-                                                        
-                                                        onChange(newValue);
-                                                    }}
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            label="Search & Select Category"
-                                                            variant="outlined"
-                                                            // inputProps={{
-                                                            //     ...params.inputProps,
-                                                            //     readOnly: true,
-                                                            // }}
-                                                            error={!!errors.category}
-                                                            helperText={
-                                                                errors.category
-                                                                ? errors.category.message
-                                                                : "Please select a category from the list"
-                                                            }
-                                                        />
-                                                    )}
-                                                />
-                                            )}
-                                        />
-                                        {selectedCategories?.length > 0 && (
-                                            <Box mt={2}>
-                                                {selectedCategories.map((category) => (
-                                                <Chip
-                                                    key={category.id}
-                                                    label={`id: ${category.id}, Title: ${category.category}`}
-                                                    onDelete={() => {
-                                                        const updated = selectedCategories.filter(p => p.id !== category.id);
-                                                        setSelectedCategories(updated);
-                                                        setValue('category', updated);
-                                                    }}
-                                                    sx={{ m: 0.5 }}
-                                                />
-                                                ))}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                    :
-                                    null
-                                }
-                                <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                                    <Button onClick={() => prevStep()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
-                                    <Button 
-                                        onClick={handleStepValidation} 
-                                        endIcon={<NavigateNextIcon/>} 
-                                        variant="outlined"
-                                    >
-                                        Next
-                                    </Button>                                    
-                                </Box>
-                                </Stack>
-                            </Box>
+                            
                             :
                             null
-                        }
+                        } */}
 
-                        {
+                        {/* {
                             currentStep === 4 ?
-                            <Box>
-                                <Stack spacing={4}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DemoContainer
-                                    components= {[
-                                        'DatePicker'
-                                        ]}
-                                    >
-                                    <DemoItem label="Start date">
-                                        <Controller
-                                            control={control}
-                                            defaultValue={dayjs().startOf('day')}
-                                            name="start_time"
-                                            rules={{ required: "Start Date is required" }}
-                                            render={({ field }) => (
-                                                <DatePicker
-                                                    disablePast
-                                                    value={field.value}
-                                                    inputRef={field.ref}
-                                                    onChange={(date) => {
-                                                        field.onChange(date);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </DemoItem>
-                                    <DemoItem label="End date">
-                                        <Controller
-                                            control={control}
-                                            defaultValue={dayjs().startOf('day').add(1, 'day')}
-                                            name="end_time"
-                                            rules={{ required: "End Date is required" }}
-                                            render={({ field }) => (
-                                                <DatePicker
-                                                    disablePast
-                                                    value={field.value}
-                                                    inputRef={field.ref}
-                                                    onChange={(date) => {
-                                                        field.onChange(date);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </DemoItem>
-                                    </DemoContainer>
-                                </LocalizationProvider>
-
-                                <TextField label="Total Coupons" type='text' sx={{ width: "100%", mr: 1 }} {...register("total_coupons", {
-                                    pattern: {
-                                        value: /^[0-9]{0,}$/,
-                                        message: "Total must be in digits only"
-                                    }
-                                })}
-                                    error={!!errors.total_coupons}
-                                    helperText={errors.total_coupons ? errors.total_coupons.message : "Leave empty for Unlimited"}
-                                />
-
-                                <TextField label="Limit per Customer" type='text' sx={{ width: "100%", mr: 1 }} {...register("limit_per_user", {
-                                    pattern: {
-                                        value: /^[0-9]{0,}$/,
-                                        message: "Limit must be in digits only"
-                                    }
-                                })}
-                                    error={!!errors.limit_per_user}
-                                    helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
-                                />
-
-                                <FormControlLabel
-                                    control={<Checkbox {...register("for_new_users_only")}/>}
-                                    label="For New Users Only"
-                                />
-
-                                <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                                    <Button onClick={() => prevStep()} startIcon={<NavigateBeforeIcon/>} variant="outlined">Back</Button>
-                                    <Button type="submit" variant="contained">Add Coupon</Button>
-                                </Box>
-                                
-                                </Stack>
-                            </Box>
+                            
                             :
                             null
-                        }
-                    </Stack>
+                        } */}
+                    {/* </Stack> */}
                 </form>
             </Card>
         </Box>

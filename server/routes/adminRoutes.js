@@ -14,6 +14,10 @@ router.get("/get-products", verifyAdminToken, adminController.getProducts);
 router.get("/product", verifyAdminToken, adminController.getSingleProduct);
 router.get("/product/categories", verifyAdminToken, adminController.getAllCategories);
 // -----------------
+router.get("/product/get-offers", verifyAdminToken, adminController.getProductOffers);
+router.post("/product/offer/add", verifyAdminToken, adminController.setProductOffer);
+router.post("/product/offer/extend", verifyAdminToken, adminController.extendProductOffer);
+
 router.post("/edit-product", verifyAdminToken, adminController.setEditedProduct);
 router.post("/upload/product/:id", verifyAdminToken, upload.array("images", 5), adminController.uploadProductImages);
 router.post("/upload/product-thumbnail/:id", verifyAdminToken, upload.single("thumbnail"), adminController.uploadProductThumbnail);

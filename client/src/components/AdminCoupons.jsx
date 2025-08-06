@@ -379,6 +379,7 @@ function AdminCoupons() {
                                 <Controller
                                     name="start_date"
                                     control={control}
+                                    defaultValue=""
                                     render={({ field }) => (
                                         <TextField
                                             label="Start Date"
@@ -395,6 +396,7 @@ function AdminCoupons() {
                                 <Controller
                                     name="end_date"
                                     control={control}
+                                    defaultValue=""
                                     render={({ field }) => (
                                         <TextField
                                             label="End Date"
