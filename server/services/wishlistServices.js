@@ -19,12 +19,16 @@ exports.getWishlistService = async(userId) => {
                                         wi.product_id AS id,
                                         p.title,
                                         p.description,
-                                        
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount,
+                                        pp.discount,
                                         CASE 
-                                            WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
                                             ELSE pp.price
                                         END AS price,
 

@@ -23,6 +23,7 @@ import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import Modal from '@mui/material/Modal';
 import Chip from '@mui/material/Chip';
 import { alignItems, getValue, maxHeight, maxWidth } from '@mui/system';
+import Tooltip from '@mui/material/Tooltip';
 
 function AdminCoupons() {
     const { register, handleSubmit, control, reset, watch, resetField, setValue } = useForm();
@@ -283,10 +284,20 @@ function AdminCoupons() {
             field: 'edit',
             headerName: 'Edit Product',
             width: 110,
-            renderCell : (params) => <IconButton onClick={(e) => {
-                e.stopPropagation()
-                navigate(`/admin/coupons/${params.id}/edit`)
-            }} sx={{p: 0}}><EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon></IconButton>,
+            renderCell : (params) => 
+            <Tooltip title={params.row.is_active ? "Edit Coupon" : "Inactive"}>
+            <span>
+            <IconButton 
+                disabled={!params.row.is_active}
+                onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/admin/coupons/${params.id}/edit`)
+                }} sx={{p: 0}}
+            >
+                <EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon>
+            </IconButton>
+            </span>
+            </Tooltip>,
             align: "center"
         }
     ];

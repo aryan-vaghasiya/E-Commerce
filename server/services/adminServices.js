@@ -4,7 +4,7 @@ const secretKey = "abcde12345";
 const bcrypt = require("bcrypt")
 const fs = require("fs-extra");
 const path = require("path");
-const { off } = require("process");
+const dayjs = require('dayjs')
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -131,12 +131,11 @@ exports.getOrderData = async (orderId) => {
                                     c.category,
 
                                     pd.discount_type,
-                                    pd.discount_percentage as offer_discount,
                                     CASE 
-                                        WHEN pd.discount_percentage IS NOT NULL 
-                                        THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
-                                        ELSE pp.price
-                                    END AS price,
+                                        WHEN pd.offer_price IS NOT NULL 
+                                            THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                        ELSE NULL
+                                    END AS offer_discount,
 
                                     pp.mrp,
                                     pp.discount,
@@ -166,7 +165,6 @@ exports.getAllProducts = async(page, limit, offset) => {
     const results = await runQuery(`SELECT
                                         p.id,
                                         p.title,
-                                        pp.price,
                                         pp.mrp,
                                         pp.discount,
                                         p.rating,
@@ -180,7 +178,18 @@ exports.getAllProducts = async(page, limit, offset) => {
                                         DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as inventory_updated,
 
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount
+
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
+                                            ELSE pp.price
+                                        END AS price
+
                                     FROM products p
                                     JOIN product_inventory pin ON p.id = pin.product_id
                                     JOIN categories c ON c.id = p.category_id
@@ -235,12 +244,16 @@ exports.getProductData = async (productId) => {
                                         DATE_FORMAT(pin.last_updated, '%d/%m/%Y') as last_updated,
 
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount,
                                         pd.start_time as offer_start_time,
                                         pd.end_time as offer_end_time,
                                         CASE 
-                                            WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
                                             ELSE NULL
                                         END AS offer_price
                                     FROM products p
@@ -269,15 +282,23 @@ exports.getProductData = async (productId) => {
 
 exports.getOffersData = async (productId) => {
     const offers = await runQuery(`SELECT 
-                                    pd.*,
+                                    pd.id,
+                                    pd.product_id,
+                                    pd.discount_type,
+                                    pd.start_time,
+                                    pd.end_time,
+                                    pd.is_active,
+                                    pd.offer_price AS offer_selling_price,
+                                    ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2) AS discount_percentage,
                                     pp.mrp,
-                                    pp.price,
-                                    ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2) AS offer_selling_price
-                                    FROM product_discounts pd
-                                    JOIN product_pricing pp ON pd.product_id = pp.product_id
-                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
-                                    WHERE pd.product_id = ?`,[productId])
+                                    pp.price
+                                FROM product_discounts pd
+                                JOIN product_pricing pp ON pd.product_id = pp.product_id
+                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                                WHERE pd.product_id = ?
+                                ORDER BY pd.id DESC`,[productId])
     // console.log(offers);
+    
     return offers
 }
 
@@ -285,36 +306,91 @@ exports.setOfferData = async (product_id, offer_price, offer_discount, start_tim
     if (!offer_price || !offer_discount || !start_time || !end_time) {
         // console.log("no offer");
         throw new Error ("Not received values")
-        return;
     }
 
     // Deactivate any overlapping time-based discounts
     await runQuery(
         `UPDATE product_discounts SET is_active = 0, 
-            end_time = start_time
+            end_time = ?
             WHERE product_id = ? AND discount_type = 'time_based'
             AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))`,
-        [product_id, start_time, start_time, end_time, end_time]
+        [start_time, product_id, start_time, start_time, end_time, end_time]
     );
+
+    let is_active = 0;
+    if(dayjs(start_time) <= dayjs()){
+        console.log("i ran");
+        
+        is_active = 1
+    }
 
     // Insert new time-based discount
     const insertDiscount = await runQuery(
-        `INSERT INTO product_discounts (product_id, discount_type, discount_percentage, start_time, end_time) VALUES (?, 'time_based', ?, ?, ?)`,
-        [product_id, offer_discount, start_time, end_time]
+        `INSERT INTO product_discounts (product_id, discount_type, offer_price, discount_percentage, start_time, end_time, is_active) VALUES (?, 'time_based', ?, ?, ?, ?, ?)`,
+        [product_id, offer_price, offer_discount, start_time, end_time, is_active]
     );
-    if (insertDiscount.affectedRows === 0) throw new Error("Failed to insert discount.");
+
+    if (insertDiscount.affectedRows === 0) {
+        throw new Error("Failed to insert discount.")
+    }
+    // const insertId = insertDiscount.insertId
+    // const offers = await runQuery(`SELECT 
+    //                             pd.*,
+    //                             pp.mrp,
+    //                             pp.price,
+    //                             ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2) AS offer_selling_price
+    //                             FROM product_discounts pd
+    //                             JOIN product_pricing pp ON pd.product_id = pp.product_id
+    //                                 AND NOW() BETWEEN pp.start_time AND pp.end_time
+    //                             WHERE pd.product_id = ?
+    //                                 AND pd.id = ?`,[product_id, insertId]);
+
+    // console.log([offers]);
+
+    const newOffers = await this.getOffersData(product_id)
+    return newOffers
 }
 
-exports.editOfferData = async (offer_id, end_time) => {
-    const updateTime = await runQuery(`UPDATE 
-        product_discounts 
-        SET end_time = ?
-            WHERE id = ?`,
-        [end_time, offer_id]
-    );
+exports.editOfferData = async (offer_id, start_time, end_time) => {
+    if(start_time){
+        const updateStartTime = await runQuery(`UPDATE 
+            product_discounts 
+            SET start_time = ?
+                WHERE id = ?`,
+            [start_time, offer_id]
+        );
+        // console.log("start_time");
+    
+        if(updateStartTime.affectedRows === 0){
+            throw new Error ("Could not extend start time")
+        }
+    }
+    if(end_time){
+        const updateEndTime = await runQuery(`UPDATE 
+            product_discounts 
+            SET end_time = ?
+                WHERE id = ?`,
+            [end_time, offer_id]
+        );
+        // console.log("end_time");
+    
+        if(updateEndTime.affectedRows === 0){
+            throw new Error ("Could not extend end time")
+        }
+    }
+}
 
-    if(updateTime.affectedRows === 0){
-        throw new Error ("Could not extend time")
+exports.endOfferDate = async (offer_id) => {
+    const endOffer = await runQuery(`UPDATE product_discounts SET end_time = NOW(), is_active = ? WHERE id = ?`, [0, offer_id])
+    if(endOffer.affectedRows === 0){
+        throw new Error ("Could not end offer")
+    }
+}
+
+exports.deleteOfferData = async (offer_id) => {
+    const deleteOffer = await runQuery(`DELETE FROM product_discounts WHERE id = ? AND is_active = ? AND start_time > NOW()`, [offer_id, 0])
+    if(deleteOffer.affectedRows === 0){
+        throw new Error ("Could not delete offer")
     }
 }
 
@@ -594,11 +670,11 @@ exports.getProductForCoupon = async (query, price) => {
     const result = await runQuery(`SELECT 
                                     p.id, 
                                     p.title,
-                                    c.category
+                                    c.category,
 
                                     CASE 
-                                        WHEN pd.discount_percentage IS NOT NULL 
-                                        THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                        WHEN pd.offer_price IS NOT NULL 
+                                            THEN pd.offer_price
                                         ELSE pp.price
                                     END AS price
 
@@ -627,7 +703,7 @@ exports.getProductForCoupon = async (query, price) => {
     return result
 }
 
-exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons, limit_per_user, min_cart_value, for_new_users_only, start_time, end_time, productIds, categoryIds) => {
+exports.addCouponData = async(name, code, discount_value, discount_type, applies_to, threshold_amount, total_coupons,  min_cart_value, for_new_users_only, limit_per_user, start_time, end_time, productIds, categoryIds) => {
 
     const ifActive = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
     if(ifActive.length > 0) {
@@ -919,12 +995,16 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
 
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount,
                                         pd.start_time as offer_start_time,
                                         pd.end_time as offer_end_time,
                                         CASE 
-                                            WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
                                             ELSE pp.price
                                         END AS price
                                     FROM coupon_products cp
@@ -1004,12 +1084,16 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
 
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount,
                                         pd.start_time as offer_start_time,
                                         pd.end_time as offer_end_time,
                                         CASE 
-                                            WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
                                             ELSE pp.price
                                         END AS price
                                     FROM coupon_categories cc

@@ -16,24 +16,30 @@ import { useSelector } from 'react-redux'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
+import Chip from '@mui/material/Chip';
 
-function LimitedTimeOffers({productId}) {
+
+function LimitedTimeOffers({productId, mrp}) {
 
     const token = useSelector(state => state.userReducer.token)
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
     const [editable, setEditable] = useState(null)
-    const [editedTime, setEditedTime] = useState(null)
+    const [editedStartTime, setEditedStartTime] = useState(null)
+    const [editedEndTime, setEditedEndTime] = useState(null)
     const [offers, setOffers] = useState(null)
     const [toggleForm, setToggleForm] = useState(false)
+    const [toggleEditing, setToggleEditing] = useState(false)
 
-    const base_mrp = offers && offers.length>0 ? offers[0].mrp : 0
+    // const base_mrp = offers && offers.length>0 ? offers[0].mrp : 0
+    const base_mrp = mrp
     const offer_price = watch("offer_price")
+    const discountError = parseFloat(offer_price) > parseFloat(base_mrp);
 
     const calcDiscount = (mrp, price) => {
         if (!mrp || !price || mrp <= 0) return '';
         const discount = ((mrp - price) / mrp) * 100;
         return `${discount.toFixed(2)}`;
-    };
+    }
 
     const getAllOffers = async () => {
         try {
@@ -50,6 +56,8 @@ function LimitedTimeOffers({productId}) {
             const result = await response.json();
             // console.log(result);
             setOffers(result)
+            setEditable(0)
+            // setEditable(result.length - 1)
         }
         catch (err) {
             console.error(err)
@@ -60,17 +68,85 @@ function LimitedTimeOffers({productId}) {
         getAllOffers()
     }, [])
 
-    const handleEdit = (id) => {
-        // console.log(id);
-        setEditable(id)
+    const handleEdit = () => {
+        setToggleEditing(true)
+        setToggleForm(false)
     }
 
-    const handleExtend = async (id) => {
-        if(editedTime === null){
+    const handleEndNow = async (offerId, index) => {
+        const response = await fetch("http://localhost:3000/admin/product/offer/end", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({offer_id : offerId})
+        })
+
+        if (response.ok) {
+            const newOffers = [...offers];
+            if (newOffers[index]?.id === offerId) {
+                newOffers[index] = {...newOffers[index], end_time: dayjs(), is_active: 0}
+            }
+            setOffers(newOffers);
+
+            // let newOffers = offers
+            // if(newOffers[index].id === offerId){
+            //     newOffers[index].end_time = dayjs()
+            //     newOffers[index].is_active = 0
+            // }
+            // console.log(newOffers);
+            // setOffers(newOffers)
+        }
+    }
+
+    const handleDelete = async (offerId, index) => {
+        if(dayjs(offers[index].start_time) < dayjs()){
+            return console.log("Cannot delete, offer already started, End now instead")
+        }
+        const response = await fetch("http://localhost:3000/admin/product/offer/delete", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({offer_id : offerId})
+        })
+
+        if (response.ok) {
+            const newOffers = offers.filter(item => item.id !== offerId)
+            // const newOffers = offers
+            // newOffers.splice(index, 1)
+
+            setOffers(newOffers)
+        }
+    }
+
+    const handleExtend = async (id, index) => {        
+        if(editedEndTime === null && editedStartTime === null){
             return console.log("the date is unchanged")
         }
-        const eDate = dayjs(editedTime).format(`YYYY-MM-DD HH:mm:ss`)
-        // console.log(id, eDate);
+        if(editedStartTime){
+            const prevStartDate = dayjs(offers[index].start_time);
+            const prevOfferEndDate = dayjs(offers[index - 1]?.start_time);
+            console.log(prevOfferEndDate);
+            if( editedStartTime < prevStartDate){
+                return console.log("cant go backwards")
+            }
+            if(prevOfferEndDate && editedStartTime < prevOfferEndDate){
+                return console.log("cant go backwards")
+            }
+        }
+        if(editedEndTime){
+            const prevStartDate = dayjs(offers[index].start_time)
+            if( editedEndTime < prevStartDate){
+                return console.log("End time cant be less than start time")
+            }
+        }
+
+        const sDate = editedStartTime ? dayjs(editedStartTime).format(`YYYY-MM-DD HH:mm:ss`) : null
+        const eDate = editedEndTime ? dayjs(editedEndTime).format(`YYYY-MM-DD HH:mm:ss`) : null
+        // console.log(id, sDate, eDate);
 
         const response = await fetch("http://localhost:3000/admin/product/offer/extend", {
             method: "POST",
@@ -78,18 +154,44 @@ function LimitedTimeOffers({productId}) {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({offer_id: id, end_time : eDate })
+            body: JSON.stringify({offer_id: id, start_time : sDate, end_time : eDate })
         })
 
         if (response.ok) {
-            setEditable(null)
-            // navigate("/admin/products", { replace: true })
-        }
+            // const newOffers = offers.map(item => {
+            //     if(item.id === id){
+            //         item.end_time = editedEndTime
+            //         editedStartTime ? item.start_time = editedStartTime : null
+            //         return item
+            //     }
+            //     else{
+            //         return item
+            //     }
+            // })
 
+            // let newOffers = offers
+            // if(newOffers[index].id === id){
+            //     newOffers[index].end_time = editedEndTime
+            //     editedStartTime ? newOffers[index].start_time = editedStartTime : null
+            //     if(newOffers[index].start_time < dayjs() < newOffers[index].end_time){
+            //         newOffers[index].is_active = 1
+            //     }
+            // }
+            // setOffers(newOffers)
+
+            let newOffers = [...offers];
+            newOffers[index] = {
+                ...newOffers[index],
+                end_time: editedEndTime,
+                start_time: editedStartTime || newOffers[index].start_time,
+                is_active: dayjs().isBetween(editedStartTime || newOffers[index].start_time, editedEndTime) ? 1 : 0
+            }
+            setOffers(newOffers);
+            setToggleEditing(false)
+        }
     }
 
     const addNewOffer = async (formData) => {
-        // console.log("i ran");
         // console.log(formData);
 
         let sDate;
@@ -104,6 +206,9 @@ function LimitedTimeOffers({productId}) {
             }
             if (!dayjs().isBefore(formData.start_time, "minute") || !dayjs().isBefore(formData.end_time, "minute")) {
                 return console.error("Start Time or End Time is before current Time");
+            }
+            if (dayjs(formData.start_time).isBefore(offers[0]?.end_time, "minute")) {
+                return console.error("Start Time cant be before previous offers endtime");
             }
             formData.start_time = sDate
             formData.end_time = eDate
@@ -121,192 +226,342 @@ function LimitedTimeOffers({productId}) {
         })
 
         if (response.ok) {
+            const newOffers = await response.json()
+            // console.log(newOffers);
+            setOffers(newOffers)
+            setToggleForm(false)
             // navigate("/admin/products", { replace: true })
         }
-        
     }
 
     return (
         <Box>
-            {
-                offers && offers.length > 0 ?
+            {/* {
+                offers && offers.length > 0 ? */}
                 <Card sx={{ p: 2, mt: 2}}>
-                    <Typography>Limited Time Offers:</Typography>
-                {
-                offers.map(offer => (
-                    <Card key={offer.id} sx={{ p: 1, bgcolor: "#F8F8F8", m: 1, display: "flex", gap: 1, justifyContent: "space-between", maxHeight: 500, overflow: "auto"}}>
-                        <TextField label="Offer Selling Price ($)" type='text'
-                            value={offer.offer_selling_price || ""}
-                            // disabled={offer.is_active === 0 ? true : false}
-                            disabled={true}
-                        />
-                        <TextField label="Discount" type='text'
-                            value={`${offer.discount_percentage} %` || ""}
-                            disabled={true}
-                        />
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DateTimePicker
-                                disabled={true}
-                                // disablePast
-                                value={dayjs(offer.start_time)}
-                                // inputRef={field.ref}
-                                // onChange={(date) => {
-                                //     field.onChange(date);
-                                // }}
-                            />
-                            <DateTimePicker
-                                // disablePast
-                                // disabled={offer.is_active === 0 ? true : false}
-                                disabled={editable === offer.id ? false : true}
-                                defaultValue={dayjs(offer.end_time)}
-                                // inputRef={field.ref}
-                                onChange={(date) => {
-                                    // field.onChange(date);
-                                    setEditedTime(date)
-                                }}
-                            />
-                        </LocalizationProvider>
+                    <Box sx={{px: 1, py: 1}}>
+                    <Box sx={{display: "flex", justifyContent: 'space-between', alignItems: "center", mb: 1}}>
+                        <Typography sx={{fontSize: 16}}>Limited Time Offers:</Typography>
+                        <Button variant='outlined' sx={{}} onClick={() => setToggleForm(prev => !prev)} color={toggleForm ? "error" : "primary"}>{toggleForm ? "Cancel" : "Add Offer"}</Button>
+                    </Box>
+                    <Divider sx={{pt: 1}}></Divider>
+                    {
+                    toggleForm ?
+                    <Box sx={{mt: 2}}>
+                    <Typography sx={{pb: 1}}>Add new offer: </Typography>
+                    <form onSubmit={handleSubmit(addNewOffer)} noValidate>
+                        {/* <Stack spacing={3}> */}
+                        <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}> 
+                            <Box sx={{display: "flex", gap: 1}}>
+                            <TextField label="Selling Price ($)" type='text' {...register("offer_price", {
+                                    required: {
+                                        value: true,
+                                        message: "Offer Selling Price is required"
+                                    },
+                                    pattern: {
+                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                        message: "Not a valid price format"
+                                    },
+                                    validate: (value) =>
+                                        parseFloat(value) <= base_mrp
+                                            ? true
+                                            : `Offer price cannot be greater than MRP (${base_mrp})`
+                                })}
+                                    error={!!errors.offer_price}
+                                    helperText={errors.offer_price ? errors.offer_price.message : ""}
+                                    // sx={{ maxWidth: 400}}
+                                />
 
-                        {/* <IconButton sx={{p: 0}}>
-                            <EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon>
-                        </IconButton> */}
+                                <TextField label="Discount (%)" type="text"
+                                    {...register("offer_discount", 
+                                    )}
+                                    value={calcDiscount(base_mrp, offer_price)}
+                                    disabled
+                                    // sx={{ maxWidth: 400 }}
+                                    error={discountError}
+                                    helperText={discountError ? `Discount is negative. Price can't be greater than MRP` : ""}
+                                />
+                            
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <Controller
+                                    control={control}
+                                    name="start_time"
+                                    rules={{ required: "Start Date is required" }}
+                                    render={({ field, fieldState }) => (
+                                        <DateTimePicker
+                                            sx={{maxWidth: 500, pr: 1}}
+                                            label="Start Time"
+                                            disablePast
+                                            minDateTime={dayjs(offers[0]?.end_time)}
+                                            // value={field.value}
+                                            inputRef={field.ref}
+                                            onChange={(date) => {
+                                                field.onChange(date);
+                                            }}
+                                            slotProps={{
+                                                textField: {
+                                                    error: !!fieldState.error,
+                                                    helperText: fieldState.error ? fieldState.error.message : null
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    control={control}
+                                    // defaultValue={dayjs().add(1, 'day')}
+                                    name="end_time"
+                                    rules={{ required: "End Date is required" }}
+                                    render={({ field, fieldState }) => (
+                                        <DateTimePicker
+                                            sx={{maxWidth: 500}}
+                                            label="End Time"
+                                            disablePast
+                                            minDateTime={dayjs(offers[0]?.end_time)}
+                                            // value={field.value}
+                                            inputRef={field.ref}
+                                            onChange={(date) => {
+                                                field.onChange(date);
+                                            }}
+                                            slotProps={{
+                                                textField: {
+                                                    error: !!fieldState.error,
+                                                    helperText: fieldState.error ? fieldState.error.message : null
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </LocalizationProvider>
+                            </Box >
+                                <Button type='submit' variant='contained'>Submit</Button>
+                            </Box>
+                        {/* </Stack> */}
+                        </form>
+                        <Divider sx={{mt: 3}}></Divider>
+                        </Box>
+                        :
+                        null
+                        }
+                        {/* </Box> */}
+                    </Box>
+                <Typography sx={{pl: 1, pt: 1, pb: 2}}>Offer History: </Typography>
+                <Box sx={{maxHeight: 440, overflow: "auto"}}>
+                {
+                offers && offers.length > 0 ? offers.map((offer, index) => (
+                    <Card key={offer.id} sx={{mb: 2, borderRadius: 3, width: "98%", mx: "auto", bgcolor: "#F0F0F0"}} elevation={3}>
+                        <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", p: 2}}>
+                            <Box sx={{maxWidth: "80%"}}>
+                                <Typography sx={{pb: 1}}>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Price: </Typography>
+                                    {` $${(offer.offer_selling_price).toFixed(2)} (${(offer.discount_percentage).toFixed(2)}% off)` }</Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Validity: </Typography>
+                                    {` ${ dayjs(offer.start_time).format(`DD MMM YYYY, hh:mm A`)} - ${ dayjs(offer.end_time).format(`DD MMM YYYY, hh:mm A`)}`}
+                                </Typography>
+                            </Box>
+                            <Box sx={{display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1}}>
+                                <Chip label={dayjs().isBetween(offer.start_time, offer.end_time) ? "Active" : "Inactive"} color={dayjs().isBetween(offer.start_time, offer.end_time)  ? "success" : "error"} sx={{fontSize: 12}}/>
+                                {/* <Chip label={offer.is_active ? "Active" : "Inactive"} color={offer.is_active ? "success" : "error"} sx={{fontSize: 12}}/> */}
+                                {/* {
+                                    editable === index ?
+                                    <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
+                                        {
+                                            // dayjs(offer.end_time) > dayjs() && dayjs(offer.start_time) < dayjs() ?
+                                            // <Button variant='outlined' color='error' onClick={() => handleEndNow(offer.id, index)}>End Now</Button>
+                                            // : 
+                                            dayjs(offer.end_time) > dayjs() && dayjs(offer.start_time) > dayjs() ?
+                                            <Button variant='outlined' color='error' onClick={() => handleDelete(offer.id, index)}>Delete Offer</Button>
+                                            :
+                                            null
+                                        }
+                                        
+                                        {
+                                            toggleEditing && editable === index? 
+                                            <Box>
+                                                <Button variant='outlined' color='error' 
+                                                    onClick={() => {
+                                                        // setValue("end_time", offer.end_time)
+                                                        // reset("end_time")
+                                                        // setEditable(null)
+                                                        setToggleEditing(false)
+                                                        }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </Box>
+                                            : 
+                                            editable === index ?
+                                            <Box sx={{display: "flex", gap: 1}}>
+                                                <Button onClick={handleEdit} variant='outlined'>Edit</Button>
+                                                {
+                                                offer.is_active ?
+                                                    <Button variant='outlined' color='error' onClick={() => handleEndNow(offer.id, index)}>End Now</Button>
+                                                :
+                                                null
+                                                }
+                                            </Box>
+                                            :
+                                            null
+                                        }
+                                    </Box>
+                                    :
+                                    null
+                                } */}
+
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    {
+                                    dayjs(offer.start_time).isAfter(dayjs()) ?
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            onClick={() => handleDelete(offer.id, index)}
+                                        >
+                                            Delete Offer
+                                        </Button>
+                                    :
+                                    null
+                                    }
+
+                                    {
+                                    offer.is_active ?
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            onClick={() => handleEndNow(offer.id, index)}
+                                        >
+                                            End Now
+                                        </Button>
+                                    :
+                                    null
+                                    }
+
+                                    {
+                                    editable === index ? 
+                                        toggleEditing ? 
+                                        <Button variant="outlined" color="error" onClick={() => setToggleEditing(false)}>
+                                            Cancel
+                                        </Button>
+                                        :
+                                        <Button onClick={handleEdit} variant="outlined">
+                                            Edit
+                                        </Button>
+                                    : 
+                                    null
+                                    }
+                                </Box>
+                            </Box>
+                        </Box>
                         {
-                            editable !== offer.id ?
-                            <Box sx={{display: "flex", alignItems: "center", px: 1}}>
-                                <Button 
-                                    disabled={offer.is_active === 0 ? true : false}
-                                    variant='outlined' 
-                                    onClick={() => handleEdit(offer.id)}
-                                >
-                                    {offer.is_active === 0 ? "Offer Inactive" : "Extend Offer"}
-                                </Button>
-                                {/* <Button variant='outlined' onClick={() => handleEdit(offer.id)}>Extend Offer</Button> */}
+                            editable === index && toggleEditing?
+                            <Box>
+                                <Divider variant='middle'></Divider>
+                                <Box sx={{p: 2}}>
+                                    <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+                                        <Box>
+                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                <DateTimePicker
+                                                    sx={{m:1, ml: 0}}
+                                                    label={"Start Time"}
+                                                    disabled={dayjs(offer.start_time) < dayjs()}
+                                                    disablePast
+                                                    defaultValue={dayjs(offer.start_time)}
+                                                    minDateTime={dayjs(offer.start_time)}
+                                                    onChange={(date) => setEditedStartTime(date)}
+                                                />
+                                                <DateTimePicker
+                                                    sx={{my: 1}}
+                                                    label={"End Time"}
+                                                    disablePast
+                                                    defaultValue={dayjs(offer.end_time)}
+                                                    minDateTime={dayjs(offer.start_time)}
+                                                    onChange={(date) => setEditedEndTime(date)}
+                                                />
+                                            </LocalizationProvider>
+                                        </Box>
+
+                                        <Button variant='contained' onClick={() => handleExtend(offer.id, index)} sx={{ml: 1}}>
+                                            Apply
+                                        </Button>
+                                    </Box>
+                                </Box>
                             </Box>
                             :
-                            <Box sx={{display: "flex", alignItems: "center", gap: 1, px: 1}}>
-                                <Button variant='outlined' color='error' 
-                                    onClick={() => {
-                                        // setValue("end_time", offer.end_time)
-                                        // reset("end_time")
-                                        setEditable(null)
-                                        }}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button variant='outlined' onClick={() => handleExtend(offer.id)}>Apply</Button>
-                            </Box>
+                            null
                         }
                     </Card>
-                    ))
-                }
-                <Divider sx={{pt: 1}} variant='middle'></Divider>
-                <Box sx={{px: 1, py: 1}}>
-                    <Box sx={{display: "flex", justifyContent: 'flex-end'}}>
-                        <Button variant='outlined' onClick={() => setToggleForm(prev => !prev)} color={toggleForm ? "error" : "primary"}>{toggleForm ? "Cancel" : "Add Offer"}</Button>
-                    </Box>
-                    {
-                    toggleForm ? 
-                    <form onSubmit={handleSubmit(addNewOffer)} noValidate>
-                        <Stack spacing={3}>
-                        <Box>
-                        <TextField label="Offer Selling Price ($)" type='text' {...register("offer_price", {
-                                required: {
-                                    value: true,
-                                    message: "Offer Selling Price is required"
-                                },
-                                pattern: {
-                                    value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                    message: "Not a valid price format"
-                                }
-                            })}
-                                error={!!errors.offer_price}
-                                helperText={errors.offer_price ? errors.offer_price.message : ""}
-                                sx={{ width: "60%", pr: 1 }}
-                            />
+                    // <Card key={offer.id} sx={{ p: 1, bgcolor: "#F8F8F8", m: 1, display: "flex", gap: 1, justifyContent: "space-between", maxHeight: 500, overflow: "auto"}}>
+                    //     <TextField label="Offer Selling Price ($)" type='text'
+                    //         value={offer.offer_selling_price || ""}
+                    //         // disabled={offer.is_active === 0 ? true : false}
+                    //         disabled={true}
+                    //     />
+                    //     <TextField label="Discount" type='text'
+                    //         value={`${offer.discount_percentage} %` || ""}
+                    //         disabled={true}
+                    //     />
+                    //     <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    //         <DateTimePicker
+                    //             disabled={true}
+                    //             // disablePast
+                    //             value={dayjs(offer.start_time)}
+                    //             // inputRef={field.ref}
+                    //             // onChange={(date) => {
+                    //             //     field.onChange(date);
+                    //             // }}
+                    //         />
+                    //         <DateTimePicker
+                    //             // disablePast
+                    //             // disabled={offer.is_active === 0 ? true : false}
+                    //             disabled={editable === offer.id ? false : true}
+                    //             defaultValue={dayjs(offer.end_time)}
+                    //             // inputRef={field.ref}
+                    //             onChange={(date) => {
+                    //                 // field.onChange(date);
+                    //                 setEditedTime(date)
+                    //             }}
+                    //         />
+                    //     </LocalizationProvider>
 
-                            <TextField label="Offer Discount (%)" type="text"
-                                {...register("offer_discount", 
-                                //     {
-                                //     required: {
-                                //         value: true,
-                                //         message: "Offer Discount (%) is required"
-                                //     }
-                                // }
-                                )}
-                                value={calcDiscount(base_mrp, offer_price)}
-                                // slotProps={{
-                                //     input: {
-                                //     readOnly: true,
-                                //     },
-                                // }}
-                                disabled
-                                sx={{ width: "40%" }}
-                            />
-                        </Box>
-                        
-                        <Box sx={{display: "flex"}}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <Controller
-                                // sx={{width: "100%"}}
-                                control={control}
-                                // defaultValue={dayjs()}
-                                name="start_time"
-                                rules={{ required: "Start Date is required" }}
-                                render={({ field, fieldState }) => (
-                                    <DateTimePicker
-                                        sx={{width: "100%", pr: 1}}
-                                        disablePast
-                                        // value={field.value}
-                                        inputRef={field.ref}
-                                        onChange={(date) => {
-                                            field.onChange(date);
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                error: !!fieldState.error,
-                                                helperText: fieldState.error ? fieldState.error.message : null
-                                            }
-                                        }}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                // defaultValue={dayjs().add(1, 'day')}
-                                name="end_time"
-                                rules={{ required: "End Date is required" }}
-                                render={({ field, fieldState }) => (
-                                    <DateTimePicker
-                                        sx={{width: "100%"}}
-                                        disablePast
-                                        // value={field.value}
-                                        inputRef={field.ref}
-                                        onChange={(date) => {
-                                            field.onChange(date);
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                error: !!fieldState.error,
-                                                helperText: fieldState.error ? fieldState.error.message : null
-                                            }
-                                        }}
-                                    />
-                                )}
-                            />
-                        </LocalizationProvider>
-                        </Box>
-                        <Button type='submit' variant='contained'>Submit</Button>
-                    </Stack>
-                    </form>
+                    //     {/* <IconButton sx={{p: 0}}>
+                    //         <EditNoteIcon sx={{fontSize: 35}}></EditNoteIcon>
+                    //     </IconButton> */}
+                    //     {
+                    //         editable !== offer.id ?
+                    //         <Box sx={{display: "flex", alignItems: "center", px: 1}}>
+                    //             <Button 
+                    //                 disabled={offer.is_active === 0 ? true : false}
+                    //                 variant='outlined' 
+                    //                 onClick={() => handleEdit(offer.id)}
+                    //             >
+                    //                 {offer.is_active === 0 ? "Offer Inactive" : "Extend Offer"}
+                    //             </Button>
+                    //             {/* <Button variant='outlined' onClick={() => handleEdit(offer.id)}>Extend Offer</Button> */}
+                    //         </Box>
+                    //         :
+                    //         <Box sx={{display: "flex", alignItems: "center", gap: 1, px: 1}}>
+                    //             <Button variant='outlined' color='error' 
+                    //                 onClick={() => {
+                    //                     // setValue("end_time", offer.end_time)
+                    //                     // reset("end_time")
+                    //                     setEditable(null)
+                    //                     }}
+                    //             >
+                    //                 Cancel
+                    //             </Button>
+                    //             <Button variant='outlined' onClick={() => handleExtend(offer.id)}>Apply</Button>
+                    //         </Box>
+                    //     }
+                    // </Card>
+                    ))
                     :
-                    null
-                    }
-                    {/* </Box> */}
+                    <Typography sx={{pl: 1, py: 1}}>This product never had limited time offers</Typography>
+                }
                 </Box>
                 </Card>
-            :
+            {/* :
             null
-            }
+            } */}
         </Box>
     )
 }

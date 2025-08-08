@@ -29,6 +29,10 @@ import { DesktopDateTimePicker, DesktopDateTimePickerLayout } from '@mui/x-date-
 import Divider from '@mui/material/Divider';
 import Autocomplete from '@mui/material/Autocomplete';
 import LimitedTimeOffers from './LimitedTimeOffers';
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import Tab from '@mui/material/Tab';
+import TabPanel from '@mui/lab/TabPanel';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -57,6 +61,8 @@ function AdminProductsPage() {
     const [categories, setCategories] = useState([])
     const [offers, setOffers] = useState(null)
 
+    const [page, setPage] = useState(1);
+
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
     // const [inputMrp, inputPrice] = watch(["mrp", "price"])
 
@@ -65,6 +71,10 @@ function AdminProductsPage() {
 
     // const offer_mrp = watch('offer_mrp');
     const offer_price = watch('offer_price');
+
+    const handlePageChange = (event, newValue) => {
+        setPage(newValue);
+    };
 
     const calcDiscount = (mrp, price) => {
         if (!mrp || !price || mrp <= 0) return '';
@@ -350,10 +360,17 @@ function AdminProductsPage() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            {
-                data ?
-                    // <Box sx={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}>
-                    <Box>
+        {
+            data ?
+            <TabContext value={page}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <TabList onChange={handlePageChange} aria-label="lab API tabs example">
+                    <Tab label="Details" value={1} />
+                    <Tab label="Offers" value={2} />
+                </TabList>
+                </Box>
+                <TabPanel value={1} sx={{px: 0}}>
+                    {/* <Card sx={{py: 4, px: 2}}> */}
                         <Box sx={{ display: "flex", justifyContent: "space-around" }}>
                             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                                 <Card sx={{}}>
@@ -662,7 +679,7 @@ function AdminProductsPage() {
                                                 {/* </Stack> */}
                                             </Box>
 
-                                            {
+                                            {/* {
                                                 data.offer_discount ?
                                                     <Box>
                                                         <Typography variant="h6">Current Offer</Typography>
@@ -673,7 +690,9 @@ function AdminProductsPage() {
                                                     </Box>
                                                     :
                                                     null
-                                            }
+                                            } */}
+
+
                                             {/* <Typography variant="h6" gutterBottom mt={4}>Add Offer Pricing (Optional)</Typography> */}
                                             {/* <Box sx={{ display: "flex" }}> */}
 
@@ -777,10 +796,22 @@ function AdminProductsPage() {
 
                             </Box>
                         </Box>
+                    {/* </Card> */}
+                </TabPanel>
+                <TabPanel value={2} sx={{px: 0}}>
+                    <Box>
+                        <LimitedTimeOffers mrp={data.mrp} productId={productId}/>
+                    </Box>
+                </TabPanel>
+
+                    {/* <Box sx={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}> */}
+                    <Box>
+                        
                         {/* {
                             offers && offers.length > 0 ? */}
                                 {/* <Card sx={{ p: 2, mt: 2}}> */}
-                                    <LimitedTimeOffers offers={offers} productId={productId}/>
+                                    {/* <LimitedTimeOffers offers={offers} productId={productId}/> */}
+                        
                                     {/* {
                                         offers.map(offer => (
                                             <Card key={offer.id} sx={{ p: 2 }}>
@@ -812,6 +843,7 @@ function AdminProductsPage() {
                                 null */}
                         {/* } */}
                     </Box>
+                    </TabContext>
                     :
                     null
             }

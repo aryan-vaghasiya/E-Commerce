@@ -8,10 +8,12 @@ import CartItem from './CartItem'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router'
 import WishlistItem from './WishlistItem'
+import { getFullWishlist } from '../redux/wishlist/wishlistActions'
 
 function MyWishlist() {
     const productState = useSelector(state => state.productReducer.products)
     const wishlist = useSelector(state => state.wishlistReducer)
+    const token = useSelector(state => state.userReducer.token)
 
     const [loading, setLoading] = useState(true)
 
@@ -21,6 +23,9 @@ function MyWishlist() {
         }, 1000)
 
         return () => clearInterval(timeOut)
+    }, [])
+    useEffect(() => {
+        dispatch(getFullWishlist(token))
     }, [])
     // console.log(productState);
     

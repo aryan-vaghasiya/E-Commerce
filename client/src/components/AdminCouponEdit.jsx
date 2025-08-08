@@ -198,7 +198,7 @@ function AdminCouponEdit() {
 
     const deactivateCoupon = async () => {
         console.log("I ran");
-
+ 
         try{
             const response = await fetch("http://localhost:3000/admin/coupons/deactivate", {
                 method: "POST",

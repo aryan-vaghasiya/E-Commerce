@@ -20,6 +20,7 @@ app.use(cors());
 app.use(express.json());
 
 cron.schedule('*/10 * * * *', async () => {
+// cron.schedule('* * * * * *', async () => {
     try{
         console.log('Updating coupon status, every 10 minutes');
         await runQuery(`UPDATE coupons SET is_active = ? WHERE NOW() BETWEEN start_time AND end_time`, [1])
@@ -28,7 +29,8 @@ cron.schedule('*/10 * * * *', async () => {
 
         console.log('Updating product discount status, every 10 minutes');
         await runQuery(`UPDATE product_discounts SET is_active = ? WHERE NOW() BETWEEN start_time AND end_time`, [1])
-        await runQuery(`UPDATE product_discounts SET is_active = ? WHERE end_time <= NOW() AND is_active = ?`, [0, 1])
+        await runQuery(`UPDATE product_discounts SET is_active = ? WHERE  NOW() NOT BETWEEN start_time AND end_time AND is_active = ?`, [0, 1])
+        // await runQuery(`UPDATE product_discounts SET is_active = ? WHERE end_time <= NOW() AND is_active = ?`, [0, 1])
     }
     catch(err){
         console.error('Error in cron job:', err);

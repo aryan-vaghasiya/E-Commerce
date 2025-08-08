@@ -5,7 +5,7 @@ import CardMedia from '@mui/material/CardMedia'
 import Typography from '@mui/material/Typography'
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, useParams } from 'react-router'
+import { data, useNavigate, useParams } from 'react-router'
 import StarIcon from '@mui/icons-material/Star'
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -26,6 +26,12 @@ import { ButtonBlue } from './ProductItem'
 import { addWishlistDb, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { getImageUrl } from '../utils/imageUrl'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime';
+import duration from 'dayjs/plugin/duration'
+import OfferTimeLeft from './OfferTimeLeft'
+// dayjs.extend(relativeTime)
+// dayjs.extend(duration)
 
 const ButtonRed = styled(ButtonBlue)`
 background-color: red;
@@ -48,6 +54,16 @@ function ProductPage() {
 
     const [product, setProduct] = useState(null)
     const [snack, setSnack] = useState(false)
+
+    // const now_time = dayjs()
+    // const end_time = product && product.end_time ? dayjs(product.end_time) : null
+    // const remaining = end_time ? end_time.diff(now_time) : null
+    // const isActive = end_time ? now_time.isBefore(end_time) : null      
+
+    // const durationLeft = end_time ? dayjs.duration(end_time.diff(now_time)) : null
+    // const hours = end_time ? String(durationLeft.hours()).padStart(2, '0') : null
+    // const minutes = end_time ? String(durationLeft.minutes()).padStart(2, '0') : null
+    // const seconds = end_time ? String(durationLeft.seconds()).padStart(2, '0') : null
     // console.log(product);
 
     useEffect(() => {
@@ -227,6 +243,22 @@ function ProductPage() {
                                     :
                                     null}
                                 </Box>
+                                <OfferTimeLeft offerEndTime = {product.end_time}/>
+                                {/* <Box>
+                                {isActive && (
+                                    <Typography variant="body2" color="error" sx={{fontSize: 14, fontWeight: 500, pt: 1}}>
+                                        Limited time offer! Order within {dayjs().to(end_time)} to get this price.
+                                    </Typography>
+                                )}
+                                </Box>
+                                <Box>
+                                {isActive && hours < 24 ?
+                                    <Typography variant="body2" color="error" sx={{fontSize: 14, fontWeight: 500, pt: 1}}>
+                                        Limited time offer! Order within {hours}:{minutes} to get this price.
+                                    </Typography>
+                                :
+                                null}
+                                </Box> */}
 
                                 {
                                 product.stock > 0?

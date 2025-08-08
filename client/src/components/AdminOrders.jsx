@@ -25,7 +25,7 @@ function AdminOrders() {
     const adminOrdersState = useSelector(state => state.adminOrdersReducer)
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
-        pageSize: 5,
+        pageSize: 10,
     });
     const [selected, setSelected] = useState({})
     // console.log(selected);
@@ -135,7 +135,7 @@ function AdminOrders() {
         <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column", flexGrow: 1}}>
         {/* <Box sx={{ height: 370 , mx: "auto", textAlign: "center"}}> */}
             <DataGrid
-                sx={{maxWidth: 897, maxHeight: 370}}
+                sx={{maxWidth: 897, maxHeight: 630}}
                 // rows={adminOrdersState.orders}
                 rows={orders}
                 columns={columns}
@@ -155,7 +155,7 @@ function AdminOrders() {
                 //     },
                 // },
                 // }}
-                pageSizeOptions={[5, 10]}
+                pageSizeOptions={[5, 10, 20]}
                 checkboxSelection
                 disableRowSelectionOnClick
             />

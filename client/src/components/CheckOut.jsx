@@ -78,7 +78,6 @@ function CheckOut() {
                 console.error(error.error);
                 dispatch(showSnack({message: "Server error! Please try again", severity: "error"}))
             }
-
             return
         }
 
@@ -102,10 +101,11 @@ function CheckOut() {
         //     return
         // }
 
+        dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
         setCouponData(couponRes.couponData)
         setNewCart(couponRes.newCart)
         setIsCouponApplied(true)
-        console.log(couponRes)
+        // console.log(couponRes)
     }
 
     const removeCoupon = () => {

@@ -17,6 +17,8 @@ router.get("/product/categories", verifyAdminToken, adminController.getAllCatego
 router.get("/product/get-offers", verifyAdminToken, adminController.getProductOffers);
 router.post("/product/offer/add", verifyAdminToken, adminController.setProductOffer);
 router.post("/product/offer/extend", verifyAdminToken, adminController.extendProductOffer);
+router.post("/product/offer/end", verifyAdminToken, adminController.endProductOffer);
+router.post("/product/offer/delete", verifyAdminToken, adminController.deleteProductOffer);
 
 router.post("/edit-product", verifyAdminToken, adminController.setEditedProduct);
 router.post("/upload/product/:id", verifyAdminToken, upload.array("images", 5), adminController.uploadProductImages);

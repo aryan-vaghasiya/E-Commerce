@@ -118,8 +118,9 @@ exports.setProductOffer = async (req, res) => {
     const {product_id, offer_price, offer_discount, start_time, end_time} = req.body;
 
     try{
-        await adminServices.setOfferData(product_id, offer_price, offer_discount, start_time, end_time);
-        return res.status(200).send("Product Offer Added Successfully");
+        const newOffers = await adminServices.setOfferData(product_id, offer_price, offer_discount, start_time, end_time);
+        // return res.send("Product Offer Added Successfully");
+        return res.status(200).json(newOffers);
     }
     catch(err){
         console.error("Error Adding Product Offer: ", err.message);
@@ -128,14 +129,40 @@ exports.setProductOffer = async (req, res) => {
 }
 
 exports.extendProductOffer = async (req, res) => {
-    const {offer_id, end_time} = req.body
+    const {offer_id, start_time, end_time} = req.body
     
     try{
-        await adminServices.editOfferData(offer_id, end_time);
-        return res.status(200).send("Product Offer Added Successfully");
+        await adminServices.editOfferData(offer_id, start_time, end_time);
+        return res.status(200).send("Product Offer Extended Successfully");
     }
     catch(err){
-        console.error("Error Adding Product Offer: ", err.message);
+        console.error("Error Extending Product Offer: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.endProductOffer = async (req, res) => {
+    const {offer_id} = req.body
+    
+    try{
+        await adminServices.endOfferDate(offer_id);
+        return res.status(200).send("Product Offer Ended Successfully");
+    }
+    catch(err){
+        console.error("Error Ending Product Offer: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.deleteProductOffer = async (req, res) => {
+    const {offer_id} = req.body
+    
+    try{
+        await adminServices.deleteOfferData(offer_id);
+        return res.status(200).send("Product Offer Ended Successfully");
+    }
+    catch(err){
+        console.error("Error Ending Product Offer: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }
@@ -295,9 +322,10 @@ exports.addCoupon = async(req, res) => {
                                             // threshold_amount ?? null, 
                                             !threshold_amount ? null : threshold_amount, 
                                             !total_coupons ? null : total_coupons, 
-                                            !limit_per_user ? null : limit_per_user,
                                             !min_cart_value ? null : min_cart_value,
                                             !for_new_users_only ? 0 : 1,
+                                            // !limit_per_user ? null : for_new_users_only ? 1 : limit_per_user,
+                                            for_new_users_only ? 1 : (!limit_per_user ? null : limit_per_user),
                                             start_time, 
                                             end_time, 
                                             productIds,

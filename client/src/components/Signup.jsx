@@ -62,7 +62,8 @@ function Signup() {
             // dispatch(fetchCart(token))
             // dispatch(fetchOrders(token))
             // dispatch(fetchDetails(token))
-            navigate(fromPath, { replace: true })
+            navigate("/")
+            // navigate(fromPath, { replace: true })
         }
         else{
             const error = await response.json()

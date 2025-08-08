@@ -61,8 +61,21 @@ function AdminCouponsAdd() {
     const discount_type = watch("discount_type")
     const discount_value = watch("discount_value")
     const discount_on = watch("discount_on")
+    
     // console.log(end_time);
     const dynamicLabel = discount_type === "percent" ? "Discount Value (%)" : "Discount Value ($)"
+
+    const isForNewUsers = watch("for_new_users_only")
+    const disableLimitPerUser = isForNewUsers ? true : false
+
+    useEffect(() => {
+        if (isForNewUsers) {
+            setValue("limit_per_user", 1)
+            // reset({
+            //     limit_per_user: 1
+            // })
+        }
+    }, [isForNewUsers, setValue])
 
     const previousPage = () => {
         setPage(prev => prev - 1)
@@ -101,7 +114,7 @@ function AdminCouponsAdd() {
         // if (validated) nextStep();
         if (validated) {
             setEnabled(prev => [...prev, page+1])
-            console.log(enabled);
+            // console.log(enabled);
             setPage(prev => prev + 1)
         }
         else{
@@ -626,19 +639,26 @@ function AdminCouponsAdd() {
                                         helperText={errors.total_coupons ? errors.total_coupons.message : "Leave empty for Unlimited"}
                                     />
 
-                                    <TextField label="Limit per Customer" type='text' sx={{ width: "100%", mr: 1 }} {...register("limit_per_user", {
-                                        pattern: {
-                                            value: /^[0-9]{0,}$/,
-                                            message: "Limit must be in digits only"
-                                        }
-                                    })}
-                                        error={!!errors.limit_per_user}
-                                        helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
-                                    />
+                                    {
+                                    !isForNewUsers ?
+                                        <TextField label="Limit per Customer" type='text' sx={{ width: "100%", mr: 1 }} {...register("limit_per_user", {
+                                            pattern: {
+                                                value: /^[0-9]{0,}$/,
+                                                message: "Limit must be in digits only"
+                                            }
+                                        })}
+                                            disabled={disableLimitPerUser}
+                                            error={!!errors.limit_per_user}
+                                            defaultValue={1}
+                                            helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
+                                        />
+                                    : 
+                                    null
+                                    }
 
                                     <FormControlLabel
                                         control={<Checkbox {...register("for_new_users_only")}/>}
-                                        label="For New Users Only"
+                                        label="For New Users Only (1 time use)"
                                     />
 
                                     <Box sx={{display: "flex", justifyContent: "space-between"}}>

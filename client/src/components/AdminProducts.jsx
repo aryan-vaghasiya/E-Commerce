@@ -248,15 +248,16 @@ function AdminProducts() {
                 <Button onClick={deleteProduct} autoFocus>Yes</Button>
                 </DialogActions>
             </Dialog>
-            <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Products</Typography>
+            <Box sx={{display : "flex", justifyContent : "space-between", pb: 1}}>
+                <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Products</Typography>
+                <Button variant='contained' onClick={() => navigate("/admin/product/add")}>Add Product</Button>
+            </Box>
+            
             <Divider sx={{mt: 1, mb: 2}}/>
             <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column"}}>
             {/* <Box sx={{ height: 370 , mx: "auto", textAlign: "center"}}> */}
-                <Box sx={{ width: "100%", maxWidth: "90%", mb: 2, display: "flex", justifyContent: "flex-end" }}>
-                    <Button variant='contained' onClick={() => navigate("/admin/product/add")}>Add Product</Button>
-                </Box>
                 <DataGrid
-                    sx={{ maxHeight: 630, maxWidth: "90%"}} 
+                    sx={{ maxHeight: 630, maxWidth: "100%"}} 
                     // rows={adminOrdersState.orders}
                     // autoHeight={true}
                     rows={products}

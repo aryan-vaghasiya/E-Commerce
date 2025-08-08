@@ -49,12 +49,16 @@ exports.getCartService = async(userId) => {
                                         ci.quantity,
                                         p.title,
                                         p.description,
-                                        
+                                        pp.discount,
                                         pd.discount_type,
-                                        pd.discount_percentage as offer_discount,
                                         CASE 
-                                            WHEN pd.discount_percentage IS NOT NULL 
-                                            THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                            ELSE NULL
+                                        END AS offer_discount,
+                                        CASE 
+                                            WHEN pd.offer_price IS NOT NULL 
+                                                THEN pd.offer_price
                                             ELSE pp.price
                                         END AS price,
                                         pp.mrp,

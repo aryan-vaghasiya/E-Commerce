@@ -98,8 +98,8 @@ exports.addOrder = async(userId, order, coupon) => {
                 ci.product_id, 
                 ci.quantity, 
                 CASE 
-                    WHEN pd.discount_percentage IS NOT NULL 
-                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN pd.offer_price
                     ELSE pp.price
                 END AS purchase_price
 
@@ -316,15 +316,19 @@ exports.checkCouponCode = async (userId, code) => {
                                             pp.discount, 
                                             i.stock,
                                             pd.discount_type,
-                                            pd.discount_percentage AS offer_discount,
-                                            CASE
-                                                WHEN pd.discount_percentage IS NOT NULL 
-                                                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                            CASE 
+                                                WHEN pd.offer_price IS NOT NULL 
+                                                    THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                                                ELSE NULL
+                                            END AS offer_discount,
+                                            CASE 
+                                                WHEN pd.offer_price IS NOT NULL 
+                                                    THEN pd.offer_price
                                                 ELSE pp.price
                                             END AS price,
                                             CASE
-                                                WHEN pd.discount_percentage IS NOT NULL 
-                                                    THEN ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2)
+                                                WHEN pd.offer_price IS NOT NULL 
+                                                    THEN pd.offer_price
                                                 ELSE pp.price
                                             END * ci.quantity AS priceValue
                                         FROM cart_item ci
@@ -377,13 +381,21 @@ exports.checkCouponCode = async (userId, code) => {
                         ? item.price * item.quantity * (couponData.discount_value / 100)
                         : couponData.discount_value * item.quantity;
                     // discountValue += Math.min(productDiscount, couponData.threshold_amount) // wont work if threshold null or undefined
-                    if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
-                        productDiscount = couponData.threshold_amount;
-                        discountValue += couponData.threshold_amount
+
+                    // if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
+                    //     productDiscount = couponData.threshold_amount;
+                    //     discountValue += couponData.threshold_amount
+                    // }
+                    // else{
+                    //     discountValue += productDiscount
+                    // }
+
+                    const maxAllowedDiscount = couponData.threshold_amount ? (couponData.threshold_amount * item.quantity) : Infinity;
+                    if (productDiscount > maxAllowedDiscount) {
+                        productDiscount = maxAllowedDiscount;
                     }
-                    else{
-                        discountValue += productDiscount
-                    }
+                    discountValue += productDiscount;
+
                     item.coupon_discount = parseFloat((productDiscount).toFixed(2))
                 }
             });
@@ -395,13 +407,21 @@ exports.checkCouponCode = async (userId, code) => {
                     let productDiscount = couponData.discount_type === 'percent'
                         ? item.price * item.quantity * (couponData.discount_value / 100)
                         : 0
-                    if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
-                        productDiscount = couponData.threshold_amount;
-                        discountValue += couponData.threshold_amount
+
+                    // if (couponData.threshold_amount && productDiscount > couponData.threshold_amount) {
+                    //     productDiscount = couponData.threshold_amount;
+                    //     discountValue += couponData.threshold_amount
+                    // }
+                    // else{
+                    //     discountValue += productDiscount
+                    // }
+
+                    const maxAllowedDiscount = couponData.threshold_amount ? (couponData.threshold_amount * item.quantity) : Infinity;
+                    if (productDiscount > maxAllowedDiscount) {
+                        productDiscount = maxAllowedDiscount;
                     }
-                    else{
-                        discountValue += productDiscount
-                    }
+
+                    discountValue += productDiscount;
                     item.coupon_discount = parseFloat((productDiscount).toFixed(2))
                 }
             });
