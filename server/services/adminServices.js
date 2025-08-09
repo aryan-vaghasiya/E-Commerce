@@ -1277,3 +1277,16 @@ exports.getCategories = async () => {
     // console.log(categories);
     return categories
 }
+
+exports.getCouponCategories = async (couponId) => {
+    const couponCategories = await runQuery(`SELECT
+                                                cc.category_id AS id,
+                                                c.category
+                                            FROM coupon_categories cc
+                                            JOIN categories c
+                                                ON cc.category_id = c.id
+                                                WHERE cc.coupon_id = ?
+                                                `, [couponId]);
+    // console.log(couponCategories);
+    return couponCategories
+}

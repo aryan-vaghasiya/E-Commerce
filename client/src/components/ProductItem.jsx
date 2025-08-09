@@ -116,12 +116,12 @@ function ProductItem({product, loading}) {
                             <Box sx={{display: "inline-flex", alignItems: "center"}}>
                                 <StarIcon sx={{color: "#FF8C00", fontSize: 20}}></StarIcon>
                                 <Typography sx={{fontSize: 14, pt: 0.3, pr: 0.2}}>
-                                    {product.rating}
+                                    {(product.rating).toFixed(1)}
                                 </Typography>
                             </Box>
                             {/* <Typography sx={{fontSize: 16}}>${product.offer_price ?? product.price}</Typography> */}
                             <Box sx={{display: "flex", alignItems: "center"}}>
-                            <Typography sx={{fontSize: 16}}>${product.price}</Typography>
+                            <Typography sx={{fontSize: 16}}>${(product.price).toFixed(2)}</Typography>
                             {
                                 product.offer_discount?
                                 <Typography 

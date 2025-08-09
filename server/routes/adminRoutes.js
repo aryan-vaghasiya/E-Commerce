@@ -32,6 +32,7 @@ router.post("/product/update-status", verifyAdminToken, adminController.updatePr
 router.get("/coupons/search-product", verifyAdminToken, adminController.searchProduct);
 router.post("/coupons/add", verifyAdminToken, adminController.addCoupon);
 router.get("/get-coupons", verifyAdminToken, adminController.getCoupons);
+router.get("/coupons/get-categories", verifyAdminToken, adminController.getCouponCategories);
 router.get("/coupons/:couponId", verifyAdminToken, adminController.getSingleCouponDetails);
 router.get("/coupons/usages/:couponId", verifyAdminToken, adminController.getSingleCouponUsages);
 router.get("/coupons/products/:couponId", verifyAdminToken, adminController.getSingleCouponProducts);

@@ -12,16 +12,26 @@ import IconButton from '@mui/material/IconButton'
 import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
 import Divider from '@mui/material/Divider'
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogActions from '@mui/material/DialogActions'
+import Snackbar from '@mui/material/Snackbar'
+import Alert from '@mui/material/Alert'
+import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 
 
 function LimitedTimeOffers({productId, mrp}) {
 
     const token = useSelector(state => state.userReducer.token)
+    const snackbarState = useSelector((state) => state.snackbarReducer)
+    const dispatch = useDispatch()
     const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm()
     const [editable, setEditable] = useState(null)
     const [editedStartTime, setEditedStartTime] = useState(null)
@@ -29,6 +39,10 @@ function LimitedTimeOffers({productId, mrp}) {
     const [offers, setOffers] = useState(null)
     const [toggleForm, setToggleForm] = useState(false)
     const [toggleEditing, setToggleEditing] = useState(false)
+    const [openEndDialog, setOpenEndDialog] = useState(false)
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+    const [toEnd, setToEnd] = useState({id: null, index: null})
+    const [toDelete, setToDelete] = useState({id: null, index: null})
 
     // const base_mrp = offers && offers.length>0 ? offers[0].mrp : 0
     const base_mrp = mrp
@@ -39,6 +53,15 @@ function LimitedTimeOffers({productId, mrp}) {
         if (!mrp || !price || mrp <= 0) return '';
         const discount = ((mrp - price) / mrp) * 100;
         return `${discount.toFixed(2)}`;
+    }
+
+    const handleCloseEndDialog = () => {
+        setOpenEndDialog(false)
+        setToEnd({id: null, index: null})
+    }
+    const handleCloseDeleteDialog = () => {
+        setOpenDeleteDialog(false)
+        setToDelete({id: null, index: null})
     }
 
     const getAllOffers = async () => {
@@ -84,11 +107,13 @@ function LimitedTimeOffers({productId, mrp}) {
         })
 
         if (response.ok) {
+            dispatch(showSnack({message: "Offer Ended", severity: "success"}))
             const newOffers = [...offers];
             if (newOffers[index]?.id === offerId) {
                 newOffers[index] = {...newOffers[index], end_time: dayjs(), is_active: 0}
             }
             setOffers(newOffers);
+            setOpenEndDialog(false)
 
             // let newOffers = offers
             // if(newOffers[index].id === offerId){
@@ -114,32 +139,52 @@ function LimitedTimeOffers({productId, mrp}) {
         })
 
         if (response.ok) {
+            dispatch(showSnack({message: "Offer Deleted", severity: "success"}))
             const newOffers = offers.filter(item => item.id !== offerId)
             // const newOffers = offers
             // newOffers.splice(index, 1)
 
             setOffers(newOffers)
+            setOpenDeleteDialog(false)
         }
     }
 
     const handleExtend = async (id, index) => {        
         if(editedEndTime === null && editedStartTime === null){
+            dispatch(showSnack({message: "There was no change in time", severity: "warning"}))
             return console.log("the date is unchanged")
         }
         if(editedStartTime){
             const prevStartDate = dayjs(offers[index].start_time);
-            const prevOfferEndDate = dayjs(offers[index - 1]?.start_time);
-            console.log(prevOfferEndDate);
+            const prevOfferEndDate = dayjs(offers[index + 1]?.end_time);
+
+            // console.log(prevOfferEndDate);
             if( editedStartTime < prevStartDate){
+                dispatch(showSnack({message: "Start time can't be extended backwards", severity: "warning"}))
                 return console.log("cant go backwards")
             }
             if(prevOfferEndDate && editedStartTime < prevOfferEndDate){
+                dispatch(showSnack({message: "Start time can't be before previous offer's end time", severity: "warning"}))
                 return console.log("cant go backwards")
+            }
+
+            let currentOfferEndDate;
+            if(editedEndTime){
+                currentOfferEndDate = editedEndTime
+            }
+            else{
+                currentOfferEndDate = dayjs(offers[index].end_time)
+            }
+
+            if(editedStartTime > currentOfferEndDate){
+                dispatch(showSnack({message: "Start time can't be more than End time", severity: "warning"}))
+                return console.log("start date cant be more than end date")
             }
         }
         if(editedEndTime){
             const prevStartDate = dayjs(offers[index].start_time)
             if( editedEndTime < prevStartDate){
+                dispatch(showSnack({message: "End time can't be before Start time", severity: "warning"}))
                 return console.log("End time cant be less than start time")
             }
         }
@@ -179,6 +224,7 @@ function LimitedTimeOffers({productId, mrp}) {
             // }
             // setOffers(newOffers)
 
+            dispatch(showSnack({message: "Offer Extended", severity: "success"}))
             let newOffers = [...offers];
             newOffers[index] = {
                 ...newOffers[index],
@@ -202,13 +248,18 @@ function LimitedTimeOffers({productId, mrp}) {
             eDate = dayjs(formData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
 
             if (!formData.start_time.isBefore(formData.end_time, "minute")) {
-                return console.error("End Time cannot be before Start Time");
+                dispatch(showSnack({message: "End time can't be before Start time", severity: "warning"}))
+                return console.error("End time cannot be before Start time");
             }
             if (!dayjs().isBefore(formData.start_time, "minute") || !dayjs().isBefore(formData.end_time, "minute")) {
-                return console.error("Start Time or End Time is before current Time");
+                // console.log("i ran 1");
+                dispatch(showSnack({message: "Start time or End time is before current time", severity: "warning"}))
+                return console.error("Start time or End time is before current time");
             }
             if (dayjs(formData.start_time).isBefore(offers[0]?.end_time, "minute")) {
-                return console.error("Start Time cant be before previous offers endtime");
+                // console.log("i ran 2");
+                dispatch(showSnack({message: "Start time cant be before previous offers Tnd time", severity: "warning"}))
+                return console.error("Start time cant be before previous offers Tnd time");
             }
             formData.start_time = sDate
             formData.end_time = eDate
@@ -236,6 +287,57 @@ function LimitedTimeOffers({productId, mrp}) {
 
     return (
         <Box>
+            <Snackbar
+                open={snackbarState.show}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={2000}
+                onClose={() => dispatch(hideSnack())}
+                sx={{
+                    '&.MuiSnackbar-root': { top: '70px' },
+                }}
+            >
+                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                    {snackbarState.message}
+                </Alert>
+            </Snackbar>
+            <Dialog
+                open={openEndDialog}
+                onClose={handleCloseEndDialog}
+                // aria-labelledby="alert-dialog-title"
+                // aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    End offer now ?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        This limited time offer will be ended now, click Yes if you want to proceed further.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                <Button onClick={handleCloseEndDialog} color='error'>No</Button>
+                <Button onClick={() => handleEndNow(toEnd.id, toEnd.index)} autoFocus>Yes</Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={openDeleteDialog}
+                onClose={handleCloseDeleteDialog}
+                // aria-labelledby="alert-dialog-title"
+                // aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    Delete offer ?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        This limited time offer will be permanently deleted, click Yes if you want to proceed further.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                <Button onClick={handleCloseDeleteDialog} color='error'>No</Button>
+                <Button onClick={() => handleDelete(toDelete.id, toDelete.index)} autoFocus>Yes</Button>
+                </DialogActions>
+            </Dialog>
             {/* {
                 offers && offers.length > 0 ? */}
                 <Card sx={{ p: 2, mt: 2}}>
@@ -330,7 +432,7 @@ function LimitedTimeOffers({productId, mrp}) {
                                                 }
                                             }}
                                         />
-                                    )}
+                                    )} 
                                 />
                             </LocalizationProvider>
                             </Box >
@@ -415,7 +517,11 @@ function LimitedTimeOffers({productId, mrp}) {
                                         <Button
                                             variant="outlined"
                                             color="error"
-                                            onClick={() => handleDelete(offer.id, index)}
+                                            // onClick={() => handleDelete(offer.id, index)}
+                                            onClick={() => {
+                                                setOpenDeleteDialog(true)
+                                                setToDelete({id: offer.id, index})
+                                            }}
                                         >
                                             Delete Offer
                                         </Button>
@@ -424,11 +530,16 @@ function LimitedTimeOffers({productId, mrp}) {
                                     }
 
                                     {
-                                    offer.is_active ?
+                                    // offer.is_active ?
+                                    dayjs().isBetween(offer.start_time, offer.end_time) ?
                                         <Button
                                             variant="outlined"
                                             color="error"
-                                            onClick={() => handleEndNow(offer.id, index)}
+                                            onClick={() => {
+                                                setToEnd({id: offer.id, index})
+                                                setOpenEndDialog(true)
+                                            }}
+                                            // onClick={() => handleEndNow(offer.id, index)}
                                         >
                                             End Now
                                         </Button>

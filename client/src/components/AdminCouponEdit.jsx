@@ -37,7 +37,9 @@ function AdminCouponEdit() {
     const [editedData, setEditedData] = useState(null)
     const [isActive, setIsActive] = useState(null)
     const [selectedProducts, setSelectedProducts] = useState([])
+    const [selectedCategories, setSelectedCategories] = useState([])
     const [options, setOptions] = useState([])
+    const [categories, setCategories] = useState([])
     const [query, setQuery] = useState("")
     const [open, setOpen] = useState(false)
 
@@ -92,7 +94,7 @@ function AdminCouponEdit() {
         }
     }
 
-        const fetchCouponProducts = async (page, limit) => {
+    const fetchCouponProducts = async (page, limit) => {
         // setLoadingProducts(true)
         try{
             const response = await fetch(`http://localhost:3000/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
@@ -111,6 +113,31 @@ function AdminCouponEdit() {
             // console.log(result);
             setSelectedProducts(result.products)
             setValue("selected_products", result.products)
+            // setTotalProducts(result.totalProducts)
+            // setLoadingProducts(false)
+        }
+        catch(err){
+            console.error(err.message)
+        }
+    }
+
+    const fetchCouponCategories = async () => {
+        try{
+            const response = await fetch(`http://localhost:3000/admin/coupons/get-categories?couponId=${couponId}`, {
+                headers: {
+                    Authorization : `Bearer ${token}`
+                }
+            })
+
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error)
+            }
+
+            const result = await response.json()
+            console.log(result);
+            setSelectedCategories(result)
+            setValue("selected_categories", result)
             // setTotalProducts(result.totalProducts)
             // setLoadingProducts(false)
         }
@@ -157,7 +184,7 @@ function AdminCouponEdit() {
 
         const sTime = dayjs(formData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
         const eTime = dayjs(formData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
-        
+
         formData.start_time = sTime
         formData.end_time = eTime
         console.log(formData);
@@ -198,7 +225,7 @@ function AdminCouponEdit() {
 
     const deactivateCoupon = async () => {
         console.log("I ran");
- 
+
         try{
             const response = await fetch("http://localhost:3000/admin/coupons/deactivate", {
                 method: "POST",
@@ -225,6 +252,7 @@ function AdminCouponEdit() {
     useEffect(() => {
         fetchCoupon()
         fetchCouponProducts(1, 1000)
+        fetchCouponCategories()
     },[])
 
     useEffect(() => {
@@ -434,6 +462,86 @@ function AdminCouponEdit() {
                                     )}
                                 </Box>
                                 :
+                                discount_on === "category"?
+                                        <Box>
+                                            <Controller
+                                                control={control}
+                                                name="selected_category"
+                                                rules={{ required: "Category is required" }}
+                                                // rules={{
+                                                //     required: "Category is required",
+                                                //     validate: (value) => {
+                                                //     // Ensure selected value is in the categories list
+                                                //     if (!value) return "Category is required";
+                                                //     const isValid = categories.some((c) => c.id === value.id);
+                                                //     return isValid || "Please select a valid category";
+                                                //     }
+                                                // }}
+                                                defaultValue={[]}
+                                                render={({ field: { onChange, value } }) => (
+                                                    <Autocomplete
+                                                        disabled={true}
+                                                        multiple
+                                                        // freeSolo
+                                                        options={categories}
+                                                        // getOptionLabel={(option) =>
+                                                        //     typeof option === "string" ? option : option.category || ""
+                                                        // }
+                                                        getOptionLabel={(option) => option.category || ""}
+                                                        filterSelectedOptions
+                                                        isOptionEqualToValue={(option, val) => option.id === val.id}
+                                                        value={selectedCategories}
+                                                        disableClearable
+                                                        freeSolo={false}
+                                                        renderValue={() => null}
+                                                        // onInputChange={(event, newInputValue) => {
+                                                        //     onChange({ id: null, category: newInputValue });
+                                                        // }}
+                                                        onChange={(event, newValue) => {
+                                                            setSelectedCategories(newValue)
+                                                            // console.log(selectedCategories);
+                                                            
+                                                            onChange(newValue);
+                                                        }}
+                                                        renderInput={(params) => (
+                                                            <TextField
+                                                                {...params}
+                                                                label="Search & Select Category"
+                                                                variant="outlined"
+                                                                // inputProps={{
+                                                                //     ...params.inputProps,
+                                                                //     readOnly: true,
+                                                                // }}
+                                                                error={!!errors.category}
+                                                                helperText={
+                                                                    errors.category
+                                                                    ? errors.category.message
+                                                                    : "Please select a category from the list"
+                                                                }
+                                                            />
+                                                        )}
+                                                    />
+                                                )}
+                                            />
+                                            {selectedCategories?.length > 0 && (
+                                                <Box mt={2}>
+                                                    {selectedCategories.map((category) => (
+                                                    <Chip
+                                                        disabled={true}
+                                                        key={category.id}
+                                                        label={`id: ${category.id}, Title: ${category.category}`}
+                                                        onDelete={() => {
+                                                            const updated = selectedCategories.filter(p => p.id !== category.id);
+                                                            setSelectedCategories(updated);
+                                                            setValue('category', updated);
+                                                        }}
+                                                        sx={{ m: 0.5 }}
+                                                    />
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                :
                                 null
                             }
                                         
@@ -447,12 +555,6 @@ function AdminCouponEdit() {
                                         value: /^[0-9]+$/,
                                         message: "Cart Value must be in digits only"
                                     },
-                                    validate: (value) => {
-                                        if (discount_type === "fixed" && parseFloat(value) < 2 * parseFloat(discount_value)) {
-                                            return "Minimum cart value must be at least double than the discount amount";
-                                        }
-                                        return true;
-                                    }
                                 })}
                                 error={!!errors.min_cart_value}
                                 helperText={errors.min_cart_value ? errors.min_cart_value.message : ""}
@@ -492,7 +594,7 @@ function AdminCouponEdit() {
                                         name="end_time"
                                         // rules={{ required: "End Date is required" }}
                                         rules={{
-                                                validate: (value) => (dayjs(value) >= dayjs() ? true : `Date can only be extended (>= ${dayjs().format("MM/DD/YYYY")})`),
+                                                validate: (value) => (dayjs(value) >= dayjs() ? true : `Date can't be less than today (> ${dayjs().format("MM/DD/YYYY")})`),
                                             }}
                                         render={({ field, fieldState }) => (
                                             <DatePicker
@@ -543,6 +645,7 @@ function AdminCouponEdit() {
                                         : `Limit can only be increased (≥ ${originalData.limit_per_user})`;
                                 }
                             })}
+                                disabled={true}
                                 error={!!errors.limit_per_user}
                                 helperText={errors.limit_per_user ? errors.limit_per_user.message : "Leave empty for Unlimited"}
                             />

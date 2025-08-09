@@ -371,6 +371,19 @@ exports.getSingleCouponDetails = async (req, res) => {
     }
 }
 
+exports.getCouponCategories = async (req, res) => {
+    const couponId = req.query.couponId
+
+    try{
+        const couponCategories = await adminServices.getCouponCategories(couponId)
+        res.status(200).json(couponCategories);
+    }
+    catch(err){
+        console.error("Error fetching coupon categories: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 exports.getSingleCouponUsages = async (req, res) => {
     const couponId = req.params.couponId
     const page = parseInt(req.query.page) || 1;
@@ -408,7 +421,7 @@ exports.editCoupon = async (req, res) => {
     const {end_time, total_coupons, limit_per_user, id} = req.body;
 
     try{
-        await adminServices.updateCouponData(end_time, total_coupons, limit_per_user, id)
+        await adminServices.updateCouponData(end_time, !!total_coupons ? total_coupons : null, !!limit_per_user ? limit_per_user : null, id)
         res.status(200).send("Coupon edited Successfully");
     }
     catch(err){

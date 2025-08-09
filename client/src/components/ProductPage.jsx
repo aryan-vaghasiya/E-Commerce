@@ -215,13 +215,13 @@ function ProductPage() {
                                 <Box sx={{ display: "inline-flex", alignItems: "center" }}>
                                     <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
                                     <Typography sx={{ fontSize: 16, pt: 0.2, pl: 0.2 }}>
-                                        {product.rating}
+                                        {(product.rating).toFixed(1)}  
                                     </Typography>
                                 </Box>
                                 <br />
                                 <Box sx={{ display: "inline-flex", alignItems: "center", mt: 1 }}>
                                     <Typography variant='h5'>
-                                        ${product.price}
+                                        ${(product.price).toFixed(2)}
                                     </Typography>
                                     {/* {product.discount > 0? */}
                                     {product.discount || product.offer_discount?
