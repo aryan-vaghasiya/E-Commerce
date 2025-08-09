@@ -21,7 +21,10 @@ import TableBody from '@mui/material/TableBody';
 import Paper from '@mui/material/Paper';
 import { DataGrid } from '@mui/x-data-grid';
 import Stack from '@mui/material/Stack';
-import { use } from 'react';
+import Tab from '@mui/material/Tab';
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
 
 function AdminCouponDetails() {
 
@@ -48,6 +51,12 @@ function AdminCouponDetails() {
         page: 0,
         pageSize: 5,
     });
+
+    const [tab, setTab] = useState(1);
+
+    const handleTabChange = (event, newValue) => {
+        setTab(newValue);
+    };
 
 
     const usageColumns = [
@@ -289,7 +298,16 @@ function AdminCouponDetails() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            {
+
+        <TabContext value={tab}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <TabList onChange={handleTabChange}>
+                    <Tab label="Details" value={1} />
+                    <Tab label="Report" value={2} />
+                </TabList>
+            </Box>
+            <TabPanel value={1} sx={{px: 0}}>
+                {
                 data && usages && products ?
                 <Box>
                     <Stack spacing={3}>
@@ -400,59 +418,6 @@ function AdminCouponDetails() {
                             </CardContent>
                         </Card>
 
-                        {/* <Card>
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 2 }}>Applicable Products</Typography>
-                                {data.products.length > 0 ? 
-                                    (
-                                        <Grid container spacing={2} sx={{maxHeight: 460, overflow: "auto"}}>
-                                            {data.products.map((p) => (
-                                                <Grid size={{xs:6, sm:4, md:3}} key={p.id}>
-                                                    <Card variant="outlined">
-                                                        <CardContent>
-                                                            <CardMedia
-                                                                component="img"
-                                                                image={getImageUrl(p.thumbnail)}
-                                                                alt="Product Image"
-                                                                sx={{ minHeight: 50, objectFit: "contain" }}
-                                                            />
-                                                        <Typography variant="subtitle1">{p.title}</Typography>
-                                                        <Typography variant="body2" color="text.secondary" 
-                                                            sx={{display: "flex", justifyContent: "space-between"}}>
-                                                            Price: 
-                                                            <Typography component={"span"}>
-                                                                ${(p.price).toFixed(2)}
-                                                            </Typography>
-                                                        </Typography>
-                                                        <Typography variant="body2" color="error" 
-                                                            sx={{pb: 0.3, display: "flex", justifyContent: "space-between"}}>
-                                                            Discount: 
-                                                            <Typography component={"span"}>
-                                                                -${(p.coupon_discount_amount).toFixed(2)}
-                                                            </Typography>
-                                                        </Typography>
-                                                        <Divider variant='fullWidth'></Divider>
-                                                        <Typography variant="body2" color="success" 
-                                                            sx={{pt: 0.3, display: "flex", justifyContent: "space-between"}}>
-                                                            Final Price: 
-                                                            <Typography component={"span"}>
-                                                                ${(p.final_price).toFixed(2)}
-                                                            </Typography>
-                                                        </Typography>
-                                                        </CardContent>
-                                                    </Card>
-                                                </Grid>
-                                            ))}
-                                        </Grid>
-                                    ) 
-                                    : 
-                                    (
-                                        <Typography>No products attached to this coupon.</Typography>
-                                    )
-                                }
-                        </CardContent>
-                    </Card> */}
-
                         <Card>
                             <CardContent>
                                 <Typography variant="h6" sx={{ mb: 2 }}>
@@ -491,7 +456,13 @@ function AdminCouponDetails() {
                 <Box>
                     <Typography>Could not fetch coupon data</Typography>
                 </Box>
-            }
+                }
+            </TabPanel>
+            <TabPanel value={2}>
+                Reports
+            </TabPanel>
+        </TabContext>
+            
         </Box>
     )
 }
