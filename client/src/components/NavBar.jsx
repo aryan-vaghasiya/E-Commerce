@@ -1,4 +1,5 @@
 import flipkartLogo from "../assets/flipkart-logo.png"
+import cartifyLogo from "../assets/cartify-logo.png"
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, useNavigate } from 'react-router'
 
@@ -19,6 +20,7 @@ import Tooltip from "@mui/material/Tooltip"
 import IconButton from "@mui/material/IconButton"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
+import '@fontsource-variable/playfair-display';
 
 
 function NavBar() {
@@ -121,9 +123,12 @@ function NavBar() {
         <AppBar position="sticky">
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <Box sx={{width: "7%", marginRight: 2, paddingTop: 0.5}}>
+                    <Box sx={{width: "7%", marginRight: 2, paddingTop: 0}}>
+                    {/* <Box sx={{width: "7%", marginRight: 2, paddingTop: 0.5}}> */}
                         <NavLink to={"/"}>
-                            <img src={flipkartLogo} alt="logo"/>
+                            {/* <img src={flipkartLogo} alt="logo"/> */}
+                            <img src={cartifyLogo} alt="logo"/>
+                            {/* <Typography sx={{fontFamily: "Playfair Display", fontSize: "1.5rem", letterSpacing: 1, fontWeight: 700}}>Cartify</Typography> */}
                         </NavLink>
                     </Box>
                     <NavLink to={"/"}>

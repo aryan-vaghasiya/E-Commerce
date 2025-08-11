@@ -1,4 +1,5 @@
 import flipkartLogo from "../assets/flipkart-logo.png"
+import cartifyLogo from "../assets/cartify-logo.png"
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, useNavigate } from 'react-router'
 
@@ -104,9 +105,10 @@ function AdminNavBar() {
         <AppBar position="sticky">
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <Box sx={{width: "7%", marginRight: 3, paddingTop: 0.5}}>
+                    <Box sx={{width: "7%", marginRight: 3, paddingTop: 0}}>
                         <NavLink to={"/dashboard"}>
-                            <img src={flipkartLogo} alt="logo"/>
+                            {/* <img src={flipkartLogo} alt="logo"/> */}
+                            <img src={cartifyLogo}  alt="logo"/>
                         </NavLink>
                     </Box>
                     <NavLink to={"/admin/dashboard"}>

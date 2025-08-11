@@ -1,5 +1,6 @@
 const runQuery = require("../db");
 const adminServices = require("../services/adminServices")
+const dayjs = require('dayjs')
 
 exports.login = async (req, res) => {
     const { username, password } = req.body;
@@ -452,5 +453,25 @@ exports.getAllCategories = async (req, res) => {
     catch(err){
         console.error("Error fetching all Categories: ", err.message);
         res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleCouponReport = async (req, res) => {
+    const couponId = req.params.couponId
+    const days = req.query.days
+    console.log(days);
+
+    const todayStart = dayjs().startOf("day")
+    const fromDate = dayjs(todayStart).subtract(days, "day").format("YYYY-MM-DD HH:mm:ss")
+    // console.log(fromDate);
+    // console.log(typeof fromDate);
+
+    try{
+        const report = await adminServices.getCouponReport(couponId, fromDate)
+        res.status(200).json(report)
+    }
+    catch (err){
+        console.error("Error fetching coupon report: ", err.message)
+        res.status(500).json({ error: err.message })
     }
 }
