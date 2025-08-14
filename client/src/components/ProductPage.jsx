@@ -243,7 +243,12 @@ function ProductPage() {
                                     :
                                     null}
                                 </Box>
-                                <OfferTimeLeft offerEndTime = {product.end_time}/>
+                                {
+                                    product.offer_discount && product.start_time ?
+                                    <OfferTimeLeft offerEndTime = {product.end_time}/>
+                                    :
+                                    null
+                                }
                                 {/* <Box>
                                 {isActive && (
                                     <Typography variant="body2" color="error" sx={{fontSize: 14, fontWeight: 500, pt: 1}}>

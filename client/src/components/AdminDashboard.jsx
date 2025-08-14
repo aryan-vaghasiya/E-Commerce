@@ -129,15 +129,19 @@ function AdminDashboard() {
                     <TableBody>
                     {dashboardState.recentOrders.map((row) => (
                         <TableRow
-                        key={row.id}
-                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                            key={row.id}
+                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                         >
                         <TableCell align='right'>{row.id}</TableCell>
                         <TableCell align="left">{row.first_name} {row.last_name}</TableCell>
                         <TableCell align="left">{row.status}</TableCell>
                         <TableCell align="left">{row.order_date}</TableCell>
                         <TableCell align="right">${row.total}</TableCell>
-                        <TableCell align="center"><IconButton onClick={() => navigate(`/admin/order/${row.id}`)} sx={{p: 0}}><AssignmentIcon></AssignmentIcon></IconButton></TableCell>
+                        <TableCell align="center">
+                            <IconButton onClick={() => navigate(`/admin/order/${row.id}`)} sx={{p: 0}}>
+                                <AssignmentIcon></AssignmentIcon>
+                            </IconButton>
+                        </TableCell>
                         </TableRow>
                     ))}
                     </TableBody>

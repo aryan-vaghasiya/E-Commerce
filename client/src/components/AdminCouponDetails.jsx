@@ -459,11 +459,10 @@ function AdminCouponDetails() {
                 </Box>
                 }
             </TabPanel>
-            <TabPanel value={2}>
-                <AdminCouponReport/>
+            <TabPanel value={2} sx={{px: 0}}>
+                <AdminCouponReport couponData = {data}/>
             </TabPanel>
         </TabContext>
-            
         </Box>
     )
 }

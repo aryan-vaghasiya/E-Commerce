@@ -1291,7 +1291,7 @@ exports.getCouponCategories = async (couponId) => {
     return couponCategories
 }
 
-exports.getCouponReport = async (couponId, fromDate) => {
+exports.getCouponReport = async (couponId, fromTime, toTime) => {
 
     let [coupon] = await runQuery(`SELECT * FROM coupons WHERE id = ?`, [couponId])
 
@@ -1299,26 +1299,89 @@ exports.getCouponReport = async (couponId, fromDate) => {
         throw new Error("Coupon does not exist")
     }
 
-    const [{totalUsage}] = await runQuery(`SELECT COUNT(*) AS totalUsage FROM coupon_usages WHERE coupon_id = ? AND used_at >= ?`, [couponId, fromDate])
+    // const [{totalUsage}] = await runQuery(`SELECT 
+    const couponUsages = await runQuery(`SELECT 
+                                                id,
+                                                coupon_id,
+                                                user_id,
+                                                order_id,
+                                                DATE_FORMAT(used_at, '%m/%d/%Y') as used_at
+                                            FROM coupon_usages WHERE coupon_id = ? AND (used_at BETWEEN ? AND ?)`, [couponId, fromTime, toTime]);
 
-    const uniqueUsers = await runQuery(`SELECT DISTINCT user_id FROM coupon_usages WHERE coupon_id = ? AND used_at >= ?`, [couponId, fromDate])
-    // const uniqueUsers = await runQuery(`SELECT user_id, COUNT(*) FROM coupon_usages WHERE coupon_id = ? GROUP BY user_id`, [couponId])
-    // console.log(uniqueUsers);
-    
+    const totalUsage = couponUsages.length
+
+    let totalDateRedemptions = 0;
+    groupedDateUsages = Object.values(
+        couponUsages.reduce((acc, item) => {
+            const date = item.used_at;
+
+            if (!acc[date]) {
+                acc[date] = {
+                    id: date,
+                    date: dayjs(date),
+                    total_redemptions: 0,
+                };
+            }
+
+            acc[date].total_redemptions += 1;
+
+            totalDateRedemptions += 1
+            return acc;
+        }, {})
+    );
+    // console.log(groupedDateUsages);
+
+    const uniqueUsers = await runQuery(`SELECT DISTINCT user_id FROM coupon_usages WHERE coupon_id = ? AND (used_at BETWEEN ? AND ?)`, [couponId, fromTime, toTime])
+
     const uniqueUserIds = uniqueUsers.map(user => user.user_id)
     const totalUniqueUsers = uniqueUserIds.length
 
     // const coupon = await this.getSingleCoupon(couponId)
 
-    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND order_date >= ?`, [couponId, fromDate])
+    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?)`, [couponId, fromTime, toTime])
     const orderIds = orders.map(item => item.id)
     const totalOrders = orderIds.length
-    // console.log(orderIds);
+
+    let totalUserRedemptions = 0
+    let totalUserDiscount = 0
+    let totalUserSales = 0
+
+    groupedUsers = Object.values(
+        orders.reduce((acc, item) => {
+            const userId = item.user_id;
+
+            if (!acc[userId]) {
+                acc[userId] = {
+                    id: userId,
+                    total_redemptions: 0,
+                    total_discount: 0,
+                    total_sales: 0
+                };
+            }
+
+            acc[userId].total_redemptions += 1;
+            acc[userId].total_discount += item.discount_amount;
+            acc[userId].total_sales += item.final_total;
+
+            totalUserRedemptions += 1
+            totalUserDiscount += item.discount_amount
+            totalUserSales += item.final_total
+            return acc;
+        }, {})
+    );
 
     let orderItems = []
     let productIds = []
     let products = []
-    let grouped = []
+    let groupedCategories = []
+    let totalProductsSold = 0;
+    let totalProductsDiscounts = 0;
+    let totalProductsSales = 0;
+
+    let totalCategoryProductsSold = 0;
+    let totalCategoryProductsDiscounts = 0;
+    let totalCategoryProductsSales = 0;
+
     if(coupon.applies_to === "product" && orderIds.length > 0){
         orderItems = await runQuery(`SELECT
                                         oi.product_id,
@@ -1354,10 +1417,18 @@ exports.getCouponReport = async (couponId, fromDate) => {
                                         ON cc.category_id = p.category_id
                                     WHERE oi.order_id IN (?)
                                     GROUP BY oi.product_id`, [couponId, orderIds]);
-        console.log(orderItems);
-
-
+        // console.log(orderItems);
     }
+
+    // if(coupon.applies_to === "all" && orderIds.length > 0){
+    //     orderItems = await runQuery(`SELECT 
+    //                                     product_id,
+    //                                     quantity AS total_quantity,
+    //                                     purchase_price AS total_purchase_price
+    //                                 FROM order_item
+    //                                 WHERE order_id IN (?)`, [orderIds]);
+    //     // console.log(orderItems);
+    // }
 
     if(orderItems.length > 0){
         productIds = orderItems.map(item => item.product_id)
@@ -1371,6 +1442,7 @@ exports.getCouponReport = async (couponId, fromDate) => {
                                         p.brand,
                                         p.thumbnail,
                                         p.status,
+                                        p.category_id,
                                         c.category,
                                         DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
                                         DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
@@ -1425,6 +1497,9 @@ exports.getCouponReport = async (couponId, fromDate) => {
                                         )
                                     : coupon.discount_value * total_quantity;
 
+            totalProductsSold += total_quantity
+            totalProductsDiscounts += total_product_discount
+            totalProductsSales += total_purchase_price
             return {
                     ...item,
                     coupon_discount_amount: coupon_discount_amount, 
@@ -1435,12 +1510,13 @@ exports.getCouponReport = async (couponId, fromDate) => {
                 }
         })
 
-        grouped = Object.values(
+        groupedCategories = Object.values(
             products.reduce((acc, item) => {
                 const cat = item.category;
 
                 if (!acc[cat]) {
                     acc[cat] = {
+                        id: item.category_id,
                         category: cat,
                         total_quantity: 0,
                         total_purchase_price: 0,
@@ -1452,25 +1528,31 @@ exports.getCouponReport = async (couponId, fromDate) => {
                 acc[cat].total_purchase_price += item.total_purchase_price;
                 acc[cat].total_product_discount += item.total_product_discount;
 
-                console.log(acc);
-                
+                totalCategoryProductsSold += item.total_quantity
+                totalCategoryProductsSales += item.total_purchase_price
+                totalCategoryProductsDiscounts += item.total_product_discount
+
+                // console.log(acc);
 
                 return acc;
             }, {})
         );
     }
 
-    const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND order_date >= ?`, [couponId, fromDate])
-    const totalSales = orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)
+    const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?)`, [couponId, fromTime, toTime])
+    const totalSales = parseFloat((orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)).toFixed(2))
 
-    const [{totalGrossSales}] = await runQuery(`SELECT SUM(final_total) as totalGrossSales FROM orders WHERE coupon_id = ? AND order_date >= ?`, [couponId, fromDate])
+    const [{totalGrossSales}] = await runQuery(`SELECT SUM(final_total) as totalGrossSales FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?)`, [couponId, fromTime, toTime])
 
     const targetedAOV = parseFloat((totalSales/totalOrders).toFixed(2))
     const grossAOV = parseFloat((totalGrossSales/totalOrders).toFixed(2))
 
-    // console.log(orderItems);
-    // console.log(totalLoss, totalSales, totalGrossSales);
-    // console.log(targetedAOV, grossAOV);
+    const productDetails = {products, totalProductsSold, totalProductsDiscounts, totalProductsSales}
+    const categoryDetails = {categories: groupedCategories, totalCategoryProductsSold, totalCategoryProductsDiscounts, totalCategoryProductsSales}
+    const userDetails = {users: groupedUsers, totalUserRedemptions, totalUserDiscount, totalUserSales}
+    const dateDetails = {dates: groupedDateUsages, totalDateRedemptions}
 
-    return {totalUsage, totalUniqueUsers, totalOrders, totalLoss, totalSales, totalGrossSales, targetedAOV, grossAOV, products, grouped}
+
+
+    return {totalUsage, totalUniqueUsers, totalLoss, totalSales, totalGrossSales, targetedAOV, grossAOV, productDetails, categoryDetails, userDetails, dateDetails, fromTime, toTime}
 }

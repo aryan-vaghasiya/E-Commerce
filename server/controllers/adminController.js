@@ -458,17 +458,26 @@ exports.getAllCategories = async (req, res) => {
 
 exports.getSingleCouponReport = async (req, res) => {
     const couponId = req.params.couponId
-    const days = req.query.days
-    console.log(days);
+    // const days = req.query.days
+    const fromTime = req.query.from
+    const toTime = req.query.to
+    // console.log(days);
 
-    const todayStart = dayjs().startOf("day")
-    const fromDate = dayjs(todayStart).subtract(days, "day").format("YYYY-MM-DD HH:mm:ss")
+    // let fromDate;
+    // let toDate;
+
+    // if(days){
+    //     const todayStart = dayjs().startOf("day")
+    //     fromDate = dayjs(todayStart).subtract(days, "day").format("YYYY-MM-DD HH:mm:ss")
+    //     toDate = dayjs().format("YYYY-MM-DD HH:mm:ss")
+    // }
     // console.log(fromDate);
     // console.log(typeof fromDate);
 
     try{
-        const report = await adminServices.getCouponReport(couponId, fromDate)
-        res.status(200).json(report)
+        const report = await adminServices.getCouponReport(couponId, fromTime, toTime)
+        res.status(200).json({...report, fromTime})
+        // res.status(200).json({...report, days})
     }
     catch (err){
         console.error("Error fetching coupon report: ", err.message)
