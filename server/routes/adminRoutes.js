@@ -38,6 +38,9 @@ router.get("/coupons/usages/:couponId", verifyAdminToken, adminController.getSin
 router.get("/coupons/products/:couponId", verifyAdminToken, adminController.getSingleCouponProducts);
 router.post("/coupons/edit", verifyAdminToken, adminController.editCoupon);
 router.post("/coupons/deactivate", verifyAdminToken, adminController.deactivateCoupon);
-router.get("/coupons/:couponId/report", verifyAdminToken, adminController.getSingleCouponReport);
+router.get("/coupons/:couponId/report/summary", verifyAdminToken, adminController.getSingleCouponReportSummary);
+router.get("/coupons/:couponId/report/products", verifyAdminToken, adminController.getSingleCouponReportProducts);
+router.get("/coupons/:couponId/report/users", verifyAdminToken, adminController.getSingleCouponReportUsers);
+router.get("/coupons/:couponId/report/dates", verifyAdminToken, adminController.getSingleCouponReportDates);
 
 module.exports = router;

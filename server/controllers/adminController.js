@@ -456,7 +456,7 @@ exports.getAllCategories = async (req, res) => {
     }
 }
 
-exports.getSingleCouponReport = async (req, res) => {
+exports.getSingleCouponReportSummary = async (req, res) => {
     const couponId = req.params.couponId
     // const days = req.query.days
     const fromTime = req.query.from
@@ -476,11 +476,59 @@ exports.getSingleCouponReport = async (req, res) => {
 
     try{
         const report = await adminServices.getCouponReport(couponId, fromTime, toTime)
-        res.status(200).json({...report, fromTime})
+        // console.log(report);
+        res.status(200).json(report)
         // res.status(200).json({...report, days})
     }
     catch (err){
-        console.error("Error fetching coupon report: ", err.message)
+        console.error("Error fetching coupon report summary: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getSingleCouponReportProducts = async (req, res) => {
+    const couponId = req.params.couponId
+    const fromTime = req.query.from
+    const toTime = req.query.to
+
+    try{
+        const report = await adminServices.getCouponReportProducts(couponId, fromTime, toTime)
+        
+        
+        res.status(200).json(report)
+    }
+    catch (err){
+        console.error("Error fetching coupon report products: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getSingleCouponReportUsers = async (req, res) => {
+    const couponId = req.params.couponId
+    const fromTime = req.query.from
+    const toTime = req.query.to
+
+    try{
+        const report = await adminServices.getCouponReportUsers(couponId, fromTime, toTime)
+        res.status(200).json(report)
+    }
+    catch (err){
+        console.error("Error fetching coupon report users: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getSingleCouponReportDates = async (req, res) => {
+    const couponId = req.params.couponId
+    const fromTime = req.query.from
+    const toTime = req.query.to
+
+    try{
+        const report = await adminServices.getCouponReportDates(couponId, fromTime, toTime)
+        res.status(200).json(report)
+    }
+    catch (err){
+        console.error("Error fetching coupon report dates: ", err.message)
         res.status(500).json({ error: err.message })
     }
 }
