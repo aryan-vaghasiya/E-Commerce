@@ -58,7 +58,6 @@ function AdminCoupons() {
     const statusActive = watch("status_active");
     const statusInactive = watch("status_inactive");
     // console.log(watchAllFields);
-    
 
     const style = {
         position: 'absolute',
@@ -309,134 +308,111 @@ function AdminCoupons() {
                 onClose={handleClose}
             >
                 <Box sx={style}>
-                <Card sx={{width: "auto"}}>
-                    <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>FILTER COUPONS</Typography>
-                    <Box sx={{p: 2}}>
-                        
-                        {/* <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                            
-                            {Object.entries(watchAllFields).map(([key, value]) => {
-                            if (!value) return null;
-                            return (
-                                <Chip
-                                    key={key}
-                                    label={getLabel(key, value)}
-                                    onDelete={() => {
-                                        setValue(key, "")
-                                        // handleSubmit(handleFilter)()
-                                    }}
-                                    // deleteIcon={<CloseIcon />}
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            );
-                            })}
-                        </Box> */}
-                    <Box component="form" onSubmit={handleSubmit(handleFilter)} sx={{display: "flex", justifyContent: "center"}}>
-                    {/* <form onSubmit={handleSubmit(handleFilter)} noValidate> */}
-                        <Stack spacing={2} width={{ lg: 500}}>
-                        <TextField
-                            label="Search Coupon (name or code)"
-                            variant="outlined"
-                            {...register("search")}
-                            fullWidth
-                        />
+                    <Card sx={{width: "auto"}}>
+                        <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white"}}>FILTER COUPONS</Typography>
+                        <Box sx={{p: 2}}>
+                            <Box component="form" onSubmit={handleSubmit(handleFilter)} sx={{display: "flex", justifyContent: "center"}}>
+                                <Stack spacing={2} width={{ lg: 500}}>
+                                    <TextField
+                                        label="Search Coupon (name or code)"
+                                        variant="outlined"
+                                        {...register("search")}
+                                        fullWidth
+                                    />
 
-                        <FormControl component="fieldset">
-                            <FormLabel component="legend">Discount Type</FormLabel>
-                            <FormGroup >
-                                <FormControlLabel
-                                    control={<Checkbox {...register("discount_type_fixed")} checked={!!discountTypeFixed}/>}
-                                    label="Fixed Amount"
-                                />
-                                <FormControlLabel
-                                    control={<Checkbox {...register("discount_type_percentage")} checked={!!discountTypePercentage}/>}
-                                    label="Percentage"
-                                />
-                            </FormGroup>
-                        </FormControl>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">Discount Type</FormLabel>
+                                        <FormGroup >
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("discount_type_fixed")} checked={!!discountTypeFixed}/>}
+                                                label="Fixed Amount"
+                                            />
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("discount_type_percentage")} checked={!!discountTypePercentage}/>}
+                                                label="Percentage"
+                                            />
+                                        </FormGroup>
+                                    </FormControl>
 
-                        <FormControl component="fieldset">
-                            <FormLabel component="legend">Applies On</FormLabel>
-                            <FormGroup>
-                                <FormControlLabel
-                                    control={<Checkbox {...register("apply_on_product")} checked={!!applyOnProduct}/>}
-                                    label="Product"
-                                />
-                                <FormControlLabel
-                                    control={<Checkbox {...register("apply_on_cart")} checked={!!applyOnCart}/>}
-                                    label="Cart"
-                                />
-                            </FormGroup>
-                        </FormControl>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">Applies On</FormLabel>
+                                        <FormGroup>
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("apply_on_product")} checked={!!applyOnProduct}/>}
+                                                label="Product"
+                                            />
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("apply_on_cart")} checked={!!applyOnCart}/>}
+                                                label="Cart"
+                                            />
+                                        </FormGroup>
+                                    </FormControl>
 
-                        <FormControl component="fieldset">
-                            <FormLabel component="legend">Status</FormLabel>
-                            {/* <FormGroup row> */}
-                            <FormGroup >
-                                <FormControlLabel
-                                    control={<Checkbox {...register("status_active")} checked={!!statusActive}/>}
-                                    label="Active"
-                                />
-                                <FormControlLabel
-                                    control={<Checkbox {...register("status_inactive")} checked={!!statusInactive}/>}
-                                    label="Inactive"
-                                />
-                            </FormGroup>
-                        </FormControl>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">Status</FormLabel>
+                                        {/* <FormGroup row> */}
+                                        <FormGroup >
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("status_active")} checked={!!statusActive}/>}
+                                                label="Active"
+                                            />
+                                            <FormControlLabel
+                                                control={<Checkbox {...register("status_inactive")} checked={!!statusInactive}/>}
+                                                label="Inactive"
+                                            />
+                                        </FormGroup>
+                                    </FormControl>
 
-                        <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                            <FormGroup row sx={{width: "100%"}}>
-                                <Controller
-                                    name="start_date"
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                        <TextField
-                                            label="Start Date"
-                                            type="date"
-                                            // InputLabelProps={{ shrink: true }}
-                                            slotProps={{inputLabel: {shrink: true}}}
-                                            {...field}
-                                            sx={{ mr: 2 , width: "48%"}}
-                                            // fullWidth
-                                        />
-                                    )}
-                                />
+                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                        <FormGroup row sx={{width: "100%"}}>
+                                            <Controller
+                                                name="start_date"
+                                                control={control}
+                                                defaultValue=""
+                                                render={({ field }) => (
+                                                    <TextField
+                                                        label="Start Date"
+                                                        type="date"
+                                                        // InputLabelProps={{ shrink: true }}
+                                                        slotProps={{inputLabel: {shrink: true}}}
+                                                        {...field}
+                                                        sx={{ mr: 2 , width: "48%"}}
+                                                        // fullWidth
+                                                    />
+                                                )}
+                                            />
 
-                                <Controller
-                                    name="end_date"
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                        <TextField
-                                            label="End Date"
-                                            type="date"
-                                            // InputLabelProps={{ shrink: true }}
-                                            slotProps={{inputLabel: {shrink: true}}}
-                                            {...field}
-                                            sx={{width: "48%"}}
-                                            // fullWidth
-                                        />
-                                    )}
-                                />
-                            </FormGroup>
+                                            <Controller
+                                                name="end_date"
+                                                control={control}
+                                                defaultValue=""
+                                                render={({ field }) => (
+                                                    <TextField
+                                                        label="End Date"
+                                                        type="date"
+                                                        // InputLabelProps={{ shrink: true }}
+                                                        slotProps={{inputLabel: {shrink: true}}}
+                                                        {...field}
+                                                        sx={{width: "48%"}}
+                                                        // fullWidth
+                                                    />
+                                                )}
+                                            />
+                                        </FormGroup>
+                                    </Box>
+
+                                    <Box sx={{display : "flex", justifyContent: "flex-end"}}>
+                                        <Button variant="outlined" color="primary" onClick={() => reset()} sx={{mr: 1}}>
+                                            Clear All
+                                        </Button>
+                                        <Button type="submit" variant="contained" color="primary">
+                                            Apply Filters
+                                        </Button>
+                                    </Box>
+                                </Stack>
+                            </Box>
                         </Box>
-
-                        <Box sx={{display : "flex", justifyContent: "flex-end"}}>
-                        <Button variant="outlined" color="primary" onClick={() => reset()} sx={{mr: 1}}>
-                            Clear All
-                        </Button>
-                        <Button type="submit" variant="contained" color="primary">
-                            Apply Filters
-                        </Button>
-                        </Box>
-
-                        </Stack>
-                    {/* </form> */}
-                    </Box>
-                    </Box>
-                </Card>
+                    </Card>
                 </Box>
             </Modal>
             <Box sx={{display : "flex", justifyContent : "space-between", pb: 1}}>

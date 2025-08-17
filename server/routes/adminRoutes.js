@@ -40,6 +40,7 @@ router.post("/coupons/edit", verifyAdminToken, adminController.editCoupon);
 router.post("/coupons/deactivate", verifyAdminToken, adminController.deactivateCoupon);
 router.get("/coupons/:couponId/report/summary", verifyAdminToken, adminController.getSingleCouponReportSummary);
 router.get("/coupons/:couponId/report/products", verifyAdminToken, adminController.getSingleCouponReportProducts);
+router.get("/coupons/:couponId/report/categories", verifyAdminToken, adminController.getSingleCouponReportCategories);
 router.get("/coupons/:couponId/report/users", verifyAdminToken, adminController.getSingleCouponReportUsers);
 router.get("/coupons/:couponId/report/dates", verifyAdminToken, adminController.getSingleCouponReportDates);
 

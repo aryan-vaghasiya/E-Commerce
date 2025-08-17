@@ -490,11 +490,12 @@ exports.getSingleCouponReportProducts = async (req, res) => {
     const couponId = req.params.couponId
     const fromTime = req.query.from
     const toTime = req.query.to
+    const limit = req.query.limit
+    const sortBy = req.query.sortBy
+    const orderBy = req.query.orderBy
 
     try{
-        const report = await adminServices.getCouponReportProducts(couponId, fromTime, toTime)
-        
-        
+        const report = await adminServices.getCouponReportProducts(couponId, fromTime, toTime, limit, sortBy, orderBy)
         res.status(200).json(report)
     }
     catch (err){
@@ -503,13 +504,34 @@ exports.getSingleCouponReportProducts = async (req, res) => {
     }
 }
 
+exports.getSingleCouponReportCategories= async (req, res) => {
+    const couponId = req.params.couponId
+    const fromTime = req.query.from
+    const toTime = req.query.to
+    const limit = req.query.limit
+    const sortBy = req.query.sortBy
+    const orderBy = req.query.orderBy
+
+    try{
+        const report = await adminServices.getCouponReportCategories(couponId, fromTime, toTime, limit, sortBy, orderBy)
+        res.status(200).json(report)
+    }
+    catch (err){
+        console.error("Error fetching coupon report categories: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
 exports.getSingleCouponReportUsers = async (req, res) => {
     const couponId = req.params.couponId
     const fromTime = req.query.from
     const toTime = req.query.to
+    const limit = req.query.limit
+    const sortBy = req.query.sortBy
+    const orderBy = req.query.orderBy
 
     try{
-        const report = await adminServices.getCouponReportUsers(couponId, fromTime, toTime)
+        const report = await adminServices.getCouponReportUsers(couponId, fromTime, toTime, limit, sortBy, orderBy)
         res.status(200).json(report)
     }
     catch (err){
@@ -522,9 +544,12 @@ exports.getSingleCouponReportDates = async (req, res) => {
     const couponId = req.params.couponId
     const fromTime = req.query.from
     const toTime = req.query.to
+    const limit = req.query.limit
+    const sortBy = req.query.sortBy
+    const orderBy = req.query.orderBy
 
     try{
-        const report = await adminServices.getCouponReportDates(couponId, fromTime, toTime)
+        const report = await adminServices.getCouponReportDates(couponId, fromTime, toTime, limit, sortBy, orderBy)
         res.status(200).json(report)
     }
     catch (err){
