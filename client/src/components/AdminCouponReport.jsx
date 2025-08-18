@@ -12,15 +12,7 @@ import { useSelector } from 'react-redux';
 import { useParams } from 'react-router';
 import dayjs from 'dayjs';
 import Divider from '@mui/material/Divider';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DemoContainer, DemoItem } from '@mui/x-date-pickers/internals/demo';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DataGrid } from '@mui/x-data-grid';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -43,7 +35,6 @@ function AdminCouponReport({couponData}) {
     const [chips, setChips] = useState(null)
 
     const timeRange = watch("timeRange")
-    const watchAllFields = watch()
 
     const handleReportFilter = async (formData) => {
         console.log(formData);
@@ -57,6 +48,7 @@ function AdminCouponReport({couponData}) {
         let fromTime;
         let toTime;
         setChips([`Timerange: ${formData.timeRange === 0 ? "Today" : formData.timeRange === `custom` ? "custom" : `Last ${formData.timeRange} days`}`])
+
         if(formData.timeRange === "custom" && !formData.start_time && !formData.end_time){
             console.error("Select a custom date");
             return
@@ -69,10 +61,8 @@ function AdminCouponReport({couponData}) {
         if(formData.timeRange === "custom" && formData.start_time && formData.end_time){
             fromTime = dayjs(formData.start_time).format("YYYY-MM-DD HH:mm:ss")
             toTime = dayjs(formData.end_time).format("YYYY-MM-DD HH:mm:ss")
-            // toTime = formData.end_time ? dayjs(formData.end_time).format("YYYY-MM-DD HH:mm:ss") : dayjs().format("YYYY-MM-DD HH:mm:ss")
             setChips(prev => [...prev, `Start: ${formData.start_time}`, `End: ${formData.end_time}`])
         }
-        // console.log(fromTime, toTime);
 
         fetchCouponReportSummary(couponId, fromTime, toTime)
         
@@ -89,7 +79,6 @@ function AdminCouponReport({couponData}) {
             fetchCouponReportDates(couponId, fromTime, toTime, formData.date.topN, formData.date.sortBy, formData.date.orderBy)
         }
 
-        // console.log(chips);
         setModalOpen(false)
     }
 
@@ -104,32 +93,8 @@ function AdminCouponReport({couponData}) {
         if (reason === "backdropClick") {
             handleSubmit(handleReportFilter)();
         }
-        setOpen(false);
+        setModalOpen(false);
     }
-
-    const getLabel = (key, value) => {
-        // console.log(key);
-
-        if(key === "timeRange" && timeRange !== "custom"){
-            return `Last ${value} Days`
-        }
-        else{
-            return `${key}: ${value}`
-        }
-
-        // switch (key) {
-        //     case "timeRange":
-        //         return `Last ${value} Days`;
-        //     case "start_time":
-        //         return `From: ${dayjs(value).format("DD MMM YYYY, hh:mm A")}`;
-        //     case "end_time":
-        //         return `To: ${dayjs(value).format("DD MMM YYYY, hh:mm A")}`;
-        //     case "product":
-        //         return `Products: Product`;
-        //     default:
-        //         return `${key}: ${value}`;
-        // }
-    };
 
     const fetchCouponReportSummary = async (coupon_id, from = getSqlToday(), to = getSqlNow()) => {
         try{
@@ -154,9 +119,6 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportProducts = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
 
-        console.log(coupon_id, from, to, limit, sortBy, orderBy);
-        
-
         try{
             const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/products?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
                 headers: {
@@ -170,7 +132,6 @@ function AdminCouponReport({couponData}) {
             }
             const result = await response.json()
             setProducts(result)
-            // setCategories(result.categories)
             console.log(result)
             // setChips(prev => [...prev, `Products`])
             result.products.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Products"]))) : null
@@ -407,90 +368,11 @@ function AdminCouponReport({couponData}) {
         '&::-webkit-scrollbar': {
             display: 'none',
         },
-        // bgcolor: 'background.paper',
-        // border: '2px solid #000',
         boxShadow: 24,
-        // p: 4,
     };
 
     return (
         <Box>
-            {/* <Box component="form" onSubmit={handleSubmit(handleReportFilter)} sx={{display: "flex", py: 2, justifyContent: "space-between", alignItems: "center"}}>
-                <Box sx={{display: "flex", gap: 1, flexGrow: 1}}>
-                    <FormControl fullWidth sx={{minWidth: 100, maxWidth: 200}}>
-                        <InputLabel id="select-label">Choose an option</InputLabel>
-                        <Controller
-                            name="timeRange"
-                            control={control}
-                            defaultValue={0}
-                            render={({ field }) => (
-                                <Select
-                                    labelId="select-label"
-                                    label="Choose an option"
-                                    {...field}
-                                    onChange={(newRange) => {
-                                        setValue("start_time", null)
-                                        setValue("end_time", null)
-                                        field.onChange(newRange)
-                                    }}
-                                >
-                                    <MenuItem value={0}>Today</MenuItem>
-                                    <MenuItem value={7}>Last 7 Days</MenuItem>
-                                    <MenuItem value={30}>Last 30 Days</MenuItem>
-                                    <MenuItem value="custom">Custom</MenuItem>
-                                </Select>
-                            )}
-                        />
-                    </FormControl>
-                    {
-                        timeRange === "custom" ?
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <Controller
-                                control={control}
-                                name="start_time"
-                                rules={{ required: "Start Time is required" }}
-                                render={({ field, fieldState }) => (
-                                    <DateTimePicker
-                                        sx={{maxWidth: 500, minWidth: 250}}
-                                        label="From"
-                                        disableFuture
-                                        value={field.value || null}
-                                        inputRef={field.ref}
-                                        onChange={(date) => {
-                                            field.onChange(date);
-                                        }}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                control={control}
-                                name="end_time"
-                                rules={{ required: "End Time is required" }}
-                                render={({ field, fieldState }) => (
-                                    <DateTimePicker
-                                        sx={{maxWidth: 500, minWidth: 250}}
-                                        label="To"
-                                        disableFuture
-                                        value={field.value || null}
-                                        // defaultValue={dayjs()}
-                                        inputRef={field.ref}
-                                        onChange={(date) => {
-                                            field.onChange(date);
-                                        }}
-                                    />
-                                )} 
-                            />
-                        </LocalizationProvider>
-                        :
-                        null
-                    }
-                </Box>
-                <Box>
-                    <Button type='submit' variant='contained'>Generate</Button>
-                </Box>
-            </Box> */}
-            {/* <Modal open={false} onClose={handleModalClose}> */}
-            
             <Modal open={modalOpen} onClose={handleModalClose}>
                 <Box sx={style}>
                     <Card sx={{width: "auto", p: 2}}>
@@ -658,6 +540,7 @@ function AdminCouponReport({couponData}) {
                                 </Card>
                             :null
                             }
+
                             {couponData.applies_to !== "all" ?
                                 <Card variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -734,7 +617,6 @@ function AdminCouponReport({couponData}) {
                                 </Card>
                             :null
                             }
-
 
                             <Card variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -894,18 +776,12 @@ function AdminCouponReport({couponData}) {
                 <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2}}>
                     {chips && chips.length > 0 ?
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                            {/* {Object.entries(watchAllFields).map(([key, value]) => { */}
                             {chips.map((value, index) => {
                                 if (!value) return null;
                                 return (
                                     <Chip
                                         key={index}
                                         label={value}
-                                        // onDelete={() => {
-                                        //     setValue(key, "")
-                                        //     handleSubmit(handleFilter)()
-                                        // }}
-                                        // deleteIcon={<CloseIcon />}
                                         color="primary"
                                         variant="outlined"
                                     />
@@ -916,8 +792,7 @@ function AdminCouponReport({couponData}) {
                     }
                     <Button variant='contained' startIcon={<FilterAltIcon/>} onClick={() => setModalOpen(true)}>Filter</Button>
                 </Box>
-                {/* <Card sx={{p: 2}}> */}
-                <Card sx={{}}>
+                <Card>
                     <Box sx={{p: 2, pt: 0}}>
                         <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
                             <Divider flexItem></Divider>
@@ -960,22 +835,14 @@ function AdminCouponReport({couponData}) {
                             {dayjs(couponData.start_time).format("DD MMM YYYY")} - {dayjs(couponData.end_time).format("DD MMM YYYY")}
                         </Typography>
                     </Box>
-                    {
-                        report && report.totalUsage > 0?
+                    {report && report.totalUsage > 0?
                         <Box>
                         <Box sx={{p: 2, pt: 0}}>
                             <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
                                 <Divider flexItem></Divider>
-                                {
-                                report.days !== 0 ?
-                                    <Typography sx={{fontSize: 20, fontWeight: 500}}>Sales Summary 
-                                        <Typography component={"span"}> ({dayjs(report.fromTime).format("DD MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("DD MMM YYYY, hh:mm A")} )</Typography>
-                                    </Typography>
-                                :
                                 <Typography sx={{fontSize: 20, fontWeight: 500}}>Sales Summary 
-                                    <Typography component={"span"}> (Today)</Typography>
+                                    <Typography component={"span"}> ({dayjs(report.fromTime).format("DD MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("DD MMM YYYY, hh:mm A")} )</Typography>
                                 </Typography>
-                                }
                                 <Divider flexItem></Divider>
                             </Box>
 
@@ -992,8 +859,7 @@ function AdminCouponReport({couponData}) {
                                 {`${(report.totalLoss).toFixed(2)} $`}
                             </Typography>
 
-                            {
-                                couponData.applies_to !== "all" ?
+                            {couponData.applies_to !== "all" ?
                                 <Box>
                                     <Typography>
                                         <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue (Discount-Applicable): </Typography>
@@ -1012,7 +878,7 @@ function AdminCouponReport({couponData}) {
                                         {`${(report.grossAOV).toFixed(2)} $`}
                                     </Typography>
                                 </Box>
-                                :
+                            :
                                 <Box>
                                     <Typography>
                                         <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue: </Typography>
@@ -1024,10 +890,8 @@ function AdminCouponReport({couponData}) {
                                     </Typography>
                                 </Box>
                             }
-
                         </Box>
-                        {
-                            couponData.applies_to !== "all" ?
+                        {couponData.applies_to !== "all" ?
                             <Box>
                                 {products && products.products.length > 0 ?
                                     <Box sx={{p: 2, pt: 0}}>
@@ -1036,26 +900,12 @@ function AdminCouponReport({couponData}) {
                                             <Typography sx={{fontSize: 20, fontWeight: 500}}>Product-wise Usage</Typography>
                                             <Divider flexItem></Divider>
                                         </Box>
-                                        {/* <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}> */}
                                         <Box sx={{maxWidth: 1000, mx: "auto", overflowY: "auto"}}>
                                             <DataGrid
                                                 sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
                                                 rows={products.products}
-                                                // rows={
-                                                //     usages.map((usage, index) => ({
-                                                //         id: index + 1,
-                                                //         ...usage
-                                                //     }))}
                                                 columns={productColumns}
-                                                // rowCount={products.products.length}
-                                                // onRowClick={handleRowClick}
-                                                // pagination
-                                                // paginationMode="server"
-                                                // paginationModel={productsPaginationModel}
-                                                // onPaginationModelChange={handleProductPaginationChange}
-                                                // loading={loadingProducts}
                                                 rowHeight={38}
-                                                // pageSizeOptions={[5, 8, 10, 20, 100]}
                                                 disableRowSelectionOnClick
                                                 slots={{
                                                     footer: () => (
@@ -1067,38 +917,6 @@ function AdminCouponReport({couponData}) {
                                                     )
                                                 }}
                                             />
-                                            {/* <Table sx={{maxHeight: 50}}>
-                                                <TableHead>
-                                                <TableRow>
-                                                    <TableCell align="center" sx={{maxWidth: 70 }}>Product ID</TableCell>
-                                                    <TableCell align="left">Name</TableCell>
-                                                    <TableCell align="center">Units Sold</TableCell>
-                                                    <TableCell align="center">Discounts Given</TableCell>
-                                                    <TableCell align="center">Total Sales</TableCell>
-                                                </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                {products.products.map((row) => (
-                                                    <TableRow
-                                                        key={row.id}
-                                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                    >
-                                                    <TableCell align='center'>{row.id}</TableCell>
-                                                    <TableCell align="left">{row.title}</TableCell>
-                                                    <TableCell align="center">{row.total_quantity}</TableCell>
-                                                    <TableCell align="center">${(row.total_product_discount).toFixed(2)}</TableCell>
-                                                    <TableCell align="center">${(row.total_purchase_price).toFixed(2)}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                    <TableRow>
-                                                        <TableCell align='center' sx={{fontWeight: 700}}>Total</TableCell>
-                                                        <TableCell align="left" sx={{fontWeight: 700}}></TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>{products.totalProductsSold}</TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>${(products.totalProductsDiscounts).toFixed(2)}</TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>${(products.totalProductsSales).toFixed(2)}</TableCell>
-                                                    </TableRow>
-                                                </TableBody>
-                                            </Table> */}
                                         </Box>
                                     </Box>
                                 :null
@@ -1127,45 +945,12 @@ function AdminCouponReport({couponData}) {
                                                     )
                                                 }}
                                             />
-                                            {/* <Table sx={{maxHeight: 50}}>
-                                                <TableHead>
-                                                    <TableRow>
-                                                        <TableCell align="center" sx={{maxWidth: 70 }}>Category ID</TableCell>
-                                                        <TableCell align="left">Category</TableCell>
-                                                        <TableCell align="center">Products Quantity</TableCell>
-                                                        <TableCell align="center">Total Discount</TableCell>
-                                                        <TableCell align="center">Total Sales</TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                    {categories.categories.map((row) => (
-                                                        <TableRow
-                                                            key={row.id}
-                                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                        >
-                                                        <TableCell align='center'>{row.id}</TableCell>
-                                                        <TableCell align="left">{row.category}</TableCell>
-                                                        <TableCell align="center">{row.total_quantity}</TableCell>
-                                                        <TableCell align="center">${(row.total_product_discount).toFixed(2)}</TableCell>
-                                                        <TableCell align="center">${(row.total_purchase_price).toFixed(2)}</TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                    <TableRow>
-                                                        <TableCell align='center' sx={{fontWeight: 700}}>Total</TableCell>
-                                                        <TableCell align="left" sx={{fontWeight: 700}}></TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>{categories.totalCategoryProductsSold}</TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>${(categories.totalCategoryProductsDiscounts).toFixed(2)}</TableCell>
-                                                        <TableCell align="center" sx={{fontWeight: 700}}>${(categories.totalCategoryProductsSales).toFixed(2)}</TableCell>
-                                                    </TableRow>
-                                                </TableBody>
-                                            </Table> */}
                                         </Box>
                                     </Box>
                                 :null
                                 }
                             </Box>
-                            :
-                            null
+                        :null
                         }
                         {users && users.users.length > 0 ?
                             <Box sx={{p: 2, pt: 0}}>
@@ -1192,35 +977,6 @@ function AdminCouponReport({couponData}) {
                                             )
                                         }}
                                     />
-                                    {/* <Table sx={{maxHeight: 50}}>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell align="center" sx={{maxWidth: 70 }}>User ID</TableCell>
-                                                <TableCell align="center">Timed Used</TableCell>
-                                                <TableCell align="center">Total Discount</TableCell>
-                                                <TableCell align="center">Total Sales</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {users.users.map((row) => (
-                                                <TableRow
-                                                    key={row.user_id}
-                                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                >
-                                                <TableCell align='center'>{row.user_id}</TableCell>
-                                                <TableCell align="center">{row.total_redeems}</TableCell>
-                                                <TableCell align="center">${(row.total_discount).toFixed(2)}</TableCell>
-                                                <TableCell align="center">${(row.total_sales).toFixed(2)}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                            <TableRow>
-                                                <TableCell align='center' sx={{fontWeight: 700}}>Total</TableCell>
-                                                <TableCell align="center" sx={{fontWeight: 700}}>{users.totalUserRedeems}</TableCell>
-                                                <TableCell align="center" sx={{fontWeight: 700}}>${(users.totalUserDiscount).toFixed(2)}</TableCell>
-                                                <TableCell align="center" sx={{fontWeight: 700}}>${(users.totalUserSales).toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table> */}
                                 </Box>
                             </Box>
                         :null
@@ -1232,7 +988,6 @@ function AdminCouponReport({couponData}) {
                                     <Typography sx={{fontSize: 20, fontWeight: 500}}>Date-wise Usage</Typography>
                                     <Divider flexItem></Divider>
                                 </Box>
-                                {/* <Box sx={{maxWidth: 700, mx: "auto", maxHeight: 375, overflow: "auto"}}> */}
                                 <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
                                     <DataGrid
                                         sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
@@ -1240,7 +995,6 @@ function AdminCouponReport({couponData}) {
                                         columns={dateColumns}
                                         rowHeight={38}
                                         disableRowSelectionOnClick
-                                        // getRowId={(row) => row.internalId}
                                         slots={{
                                             footer: () => (
                                                 <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1}}>
@@ -1249,35 +1003,12 @@ function AdminCouponReport({couponData}) {
                                             )
                                         }}
                                     />
-                                    {/* <Table sx={{maxHeight: 50}}>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell align="center" sx={{maxWidth: 70 }}>Date</TableCell>
-                                                <TableCell align="center">Timed Used</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {dates.dates.map((row) => (
-                                                <TableRow
-                                                    key={row.id}
-                                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                                >
-                                                    <TableCell align="center">{dayjs(row.date).format("DD MMM YYYY")}</TableCell>
-                                                    <TableCell align="center">{row.total_redeems}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                            <TableRow>
-                                                <TableCell align='center' sx={{fontWeight: 700}}>Total</TableCell>
-                                                <TableCell align="center" sx={{fontWeight: 700}}>{dates.totalDateRedeems}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table> */}
                                 </Box>
                             </Box>
                         :null
                         }
                         </Box>
-                        :
+                    :
                         <Box sx={{p: 2}}>
                             <Typography>This coupon haven't been used in this time range</Typography>
                         </Box>
