@@ -7,6 +7,7 @@ const checkoutRoutes = require("./routes/checkoutRoutes")
 const orderRoutes = require("./routes/orderRoutes")
 const productRoutes = require("./routes/productRoutes")
 const wishlistRoutes = require("./routes/wishlistRoutes")
+const walletRoutes = require("./routes/walletRoutes")
 const authRoutes = require("./routes/authRoutes")
 const adminRoutes = require("./routes/adminRoutes")
 const path = require("path")
@@ -52,6 +53,7 @@ app.use("/checkout", verifyToken, checkoutRoutes);
 app.use("/cart", verifyToken, cartRoutes);
 app.use("/orders", verifyToken, orderRoutes);
 app.use("/wishlist", verifyToken, wishlistRoutes);
+app.use("/wallet", verifyToken, walletRoutes);
 
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);

@@ -35,6 +35,8 @@ import AdminCoupons from './components/AdminCoupons'
 import AdminCouponsAdd from './components/AdminCouponsAdd'
 import AdminCouponDetails from './components/AdminCouponDetails'
 import AdminCouponEdit from './components/AdminCouponEdit'
+import MyProfile from './components/MyProfile'
+import MyWallet from './components/MyWallet'
 
 function App() {
 
@@ -58,6 +60,8 @@ function App() {
                 <Route path='/signup' element={<Signup />} />
                 <Route path='/my-orders' element={<MyOrders />} />
                 <Route path='/my-wishlist' element={<MyWishlist />} />
+                <Route path='/my-profile' element={<MyProfile />} />
+                <Route path='/my-wallet' element={<MyWallet />} />
               </Route>
 
               <Route element={<AdminLayout />}>

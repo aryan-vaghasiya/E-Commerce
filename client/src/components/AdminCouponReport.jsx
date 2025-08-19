@@ -20,6 +20,11 @@ import Checkbox from '@mui/material/Checkbox';
 import Modal from '@mui/material/Modal';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import Chip from '@mui/material/Chip';
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import CouponReportPDF from './CouponReportPDF';
+import { Page, Text, View, Document, StyleSheet, pdf, PDFViewer } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 
 function AdminCouponReport({couponData}) {
 
@@ -35,6 +40,36 @@ function AdminCouponReport({couponData}) {
     const [chips, setChips] = useState(null)
 
     const timeRange = watch("timeRange")
+
+    const downloadPDF = () => {
+    const reportElement = document.getElementById("report-section");
+        html2canvas(reportElement).then(canvas => {
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+            const imgWidth = 210;
+            const pageHeight = 295;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save("coupon-report.pdf");
+        });
+    };
+
+    const generatePDF = async (data) => {
+        const blob = await pdf(<CouponReportPDF data={{couponData, report, products, categories, users, dates}}/>).toBlob()
+        saveAs(blob, `coupon report ${dayjs().format("DDMMYYHHmmss")}.pdf`)
+    }
 
     const handleReportFilter = async (formData) => {
         console.log(formData);
@@ -790,9 +825,15 @@ function AdminCouponReport({couponData}) {
                         </Box>
                     :null
                     }
-                    <Button variant='contained' startIcon={<FilterAltIcon/>} onClick={() => setModalOpen(true)}>Filter</Button>
+                    <Box sx={{display: "flex", gap: 1}}>
+                        <Button variant='contained' startIcon={<FilterAltIcon/>} onClick={() => setModalOpen(true)}>Filter</Button>
+                        {report && report.totalUsage > 0?
+                            <Button variant='contained' onClick={() => generatePDF(users)}>Download Report</Button>
+                            :null
+                        }
+                    </Box>
                 </Box>
-                <Card>
+                <Card id={"report-section"}>
                     <Box sx={{p: 2, pt: 0}}>
                         <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
                             <Divider flexItem></Divider>
@@ -837,176 +878,181 @@ function AdminCouponReport({couponData}) {
                     </Box>
                     {report && report.totalUsage > 0?
                         <Box>
-                        <Box sx={{p: 2, pt: 0}}>
-                            <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
-                                <Divider flexItem></Divider>
-                                <Typography sx={{fontSize: 20, fontWeight: 500}}>Sales Summary 
-                                    <Typography component={"span"}> ({dayjs(report.fromTime).format("DD MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("DD MMM YYYY, hh:mm A")} )</Typography>
+                            <Box sx={{p: 2, pt: 0}}>
+                                <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
+                                    <Divider flexItem></Divider>
+                                    <Typography sx={{fontSize: 20, fontWeight: 500}}>Coupon Report
+                                        <Typography component={"span"}> ({dayjs(report.fromTime).format("DD MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("DD MMM YYYY, hh:mm A")} )</Typography>
+                                    </Typography>
+                                    <Divider flexItem></Divider>
+                                </Box>
+
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Total Redeems: </Typography>
+                                    {report.totalUsage}
                                 </Typography>
-                                <Divider flexItem></Divider>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Unique Users: </Typography>
+                                    {report.totalUniqueUsers}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Discounts Given: </Typography>
+                                    {`${(report.totalLoss).toFixed(2)} $`}
+                                </Typography>
+
+                                {couponData.applies_to !== "all" ?
+                                    <Box>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue (Discount-Applicable): </Typography>
+                                            {`${(report.totalSales).toFixed(2)} $`}
+                                        </Typography>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value (Discount-Applicable): </Typography>
+                                            {`${(report.targetedAOV).toFixed(2)} $`}
+                                        </Typography>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue (Gross): </Typography>
+                                            {`${(report.totalGrossSales).toFixed(2)} $`}
+                                        </Typography>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value (Gross): </Typography>
+                                            {`${(report.grossAOV).toFixed(2)} $`}
+                                        </Typography>
+                                    </Box>
+                                :
+                                    <Box>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue: </Typography>
+                                            {`${(report.totalGrossSales).toFixed(2)} $`}
+                                        </Typography>
+                                        <Typography>
+                                            <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value: </Typography>
+                                            {`${(report.grossAOV).toFixed(2)} $`}
+                                        </Typography>
+                                    </Box>
+                                }
                             </Box>
-
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Total Redeems: </Typography>
-                                {report.totalUsage}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Unique Users: </Typography>
-                                {report.totalUniqueUsers}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Discounts Given: </Typography>
-                                {`${(report.totalLoss).toFixed(2)} $`}
-                            </Typography>
-
                             {couponData.applies_to !== "all" ?
                                 <Box>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue (Discount-Applicable): </Typography>
-                                        {`${(report.totalSales).toFixed(2)} $`}
-                                    </Typography>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value (Discount-Applicable): </Typography>
-                                        {`${(report.targetedAOV).toFixed(2)} $`}
-                                    </Typography>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue (Gross): </Typography>
-                                        {`${(report.totalGrossSales).toFixed(2)} $`}
-                                    </Typography>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value (Gross): </Typography>
-                                        {`${(report.grossAOV).toFixed(2)} $`}
-                                    </Typography>
+                                    {products && products.products.length > 0 ?
+                                        <Box sx={{p: 2, pt: 0}}>
+                                            <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
+                                                <Divider flexItem></Divider>
+                                                <Typography sx={{fontSize: 20, fontWeight: 500}}>Product-wise Usage</Typography>
+                                                <Divider flexItem></Divider>
+                                            </Box>
+                                            <Box sx={{maxWidth: 1000, mx: "auto", overflowY: "auto"}}>
+                                                <DataGrid
+                                                    sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
+                                                    rows={products.products}
+                                                    columns={productColumns}
+                                                    rowHeight={38}
+                                                    disableRowSelectionOnClick
+                                                    slots={{
+                                                        footer: () => (
+                                                            <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1  }}>
+                                                                Total: {products.totalProductsSold} Quantity | 
+                                                                ${products.totalProductsDiscounts.toFixed(2)} Discount | 
+                                                                ${products.totalProductsSales.toFixed(2)} Sales
+                                                            </Box>
+                                                        )
+                                                    }}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    :null
+                                    }
+                                    {categories && categories.categories.length > 0 ?
+                                        <Box sx={{p: 2, pt: 0}}>
+                                            <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
+                                                <Divider flexItem></Divider>
+                                                <Typography sx={{fontSize: 20, fontWeight: 500}}>Category-wise Usage</Typography>
+                                                <Divider flexItem></Divider>
+                                            </Box>
+                                            <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
+                                                <DataGrid
+                                                    sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
+                                                    rows={categories.categories}
+                                                    columns={categoryColumns}
+                                                    rowHeight={38}
+                                                    disableRowSelectionOnClick
+                                                    slots={{
+                                                        footer: () => (
+                                                            <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1 }}>
+                                                                Total: {categories.totalCategoryProductsSold} Quantity | 
+                                                                ${categories.totalCategoryProductsDiscounts.toFixed(2)} Discount | 
+                                                                ${categories.totalCategoryProductsSales.toFixed(2)} Sales
+                                                            </Box>
+                                                        )
+                                                    }}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    :null
+                                    }
                                 </Box>
-                            :
-                                <Box>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Total Revenue: </Typography>
-                                        {`${(report.totalGrossSales).toFixed(2)} $`}
-                                    </Typography>
-                                    <Typography>
-                                        <Typography component={'span'} sx={{fontWeight: 700}}>Average Order Value: </Typography>
-                                        {`${(report.grossAOV).toFixed(2)} $`}
-                                    </Typography>
-                                </Box>
+                            :null
                             }
-                        </Box>
-                        {couponData.applies_to !== "all" ?
-                            <Box>
-                                {products && products.products.length > 0 ?
-                                    <Box sx={{p: 2, pt: 0}}>
-                                        <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
-                                            <Divider flexItem></Divider>
-                                            <Typography sx={{fontSize: 20, fontWeight: 500}}>Product-wise Usage</Typography>
-                                            <Divider flexItem></Divider>
-                                        </Box>
-                                        <Box sx={{maxWidth: 1000, mx: "auto", overflowY: "auto"}}>
-                                            <DataGrid
-                                                sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
-                                                rows={products.products}
-                                                columns={productColumns}
-                                                rowHeight={38}
-                                                disableRowSelectionOnClick
-                                                slots={{
-                                                    footer: () => (
-                                                        <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1  }}>
-                                                            Total: {products.totalProductsSold} Quantity | 
-                                                            ${products.totalProductsDiscounts.toFixed(2)} Discount | 
-                                                            ${products.totalProductsSales.toFixed(2)} Sales
-                                                        </Box>
-                                                    )
-                                                }}
-                                            />
-                                        </Box>
+                            {users && users.users.length > 0 ?
+                                <Box sx={{p: 2, pt: 0}}>
+                                    <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
+                                        <Divider flexItem></Divider>
+                                        <Typography sx={{fontSize: 20, fontWeight: 500}}>User-wise Usage</Typography>
+                                        <Divider flexItem></Divider>
                                     </Box>
-                                :null
-                                }
-                                {categories && categories.categories.length > 0 ?
-                                    <Box sx={{p: 2, pt: 0}}>
-                                        <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
-                                            <Divider flexItem></Divider>
-                                            <Typography sx={{fontSize: 20, fontWeight: 500}}>Category-wise Usage</Typography>
-                                            <Divider flexItem></Divider>
-                                        </Box>
-                                        <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
-                                            <DataGrid
-                                                sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
-                                                rows={categories.categories}
-                                                columns={categoryColumns}
-                                                rowHeight={38}
-                                                disableRowSelectionOnClick
-                                                slots={{
-                                                    footer: () => (
-                                                        <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1 }}>
-                                                            Total: {categories.totalCategoryProductsSold} Quantity | 
-                                                            ${categories.totalCategoryProductsDiscounts.toFixed(2)} Discount | 
-                                                            ${categories.totalCategoryProductsSales.toFixed(2)} Sales
-                                                        </Box>
-                                                    )
-                                                }}
-                                            />
-                                        </Box>
+                                    <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
+                                        <DataGrid
+                                            sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
+                                            rows={users.users}
+                                            columns={userColumns}
+                                            rowHeight={38}
+                                            disableRowSelectionOnClick
+                                            getRowId={(row) => row.user_id}
+                                            slots={{
+                                                footer: () => (
+                                                    <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1 }}>
+                                                        Total: {users.totalUserRedeems} Redeems | 
+                                                        ${users.totalUserDiscount.toFixed(2)} Discount | 
+                                                        ${users.totalUserSales.toFixed(2)} Sales
+                                                    </Box>
+                                                )
+                                            }}
+                                        />
                                     </Box>
-                                :null
-                                }
-                            </Box>
-                        :null
-                        }
-                        {users && users.users.length > 0 ?
-                            <Box sx={{p: 2, pt: 0}}>
-                                <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
-                                    <Divider flexItem></Divider>
-                                    <Typography sx={{fontSize: 20, fontWeight: 500}}>User-wise Usage</Typography>
-                                    <Divider flexItem></Divider>
                                 </Box>
-                                <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
-                                    <DataGrid
-                                        sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
-                                        rows={users.users}
-                                        columns={userColumns}
-                                        rowHeight={38}
-                                        disableRowSelectionOnClick
-                                        getRowId={(row) => row.user_id}
-                                        slots={{
-                                            footer: () => (
-                                                <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1 }}>
-                                                    Total: {users.totalUserRedeems} Redeems | 
-                                                    ${users.totalUserDiscount.toFixed(2)} Discount | 
-                                                    ${users.totalUserSales.toFixed(2)} Sales
-                                                </Box>
-                                            )
-                                        }}
-                                    />
+                            :null
+                            }
+                            {dates && dates.dates.length > 0 ?    
+                                <Box sx={{p: 2, pt: 0}}>
+                                    <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
+                                        <Divider flexItem></Divider>
+                                        <Typography sx={{fontSize: 20, fontWeight: 500}}>Date-wise Usage</Typography>
+                                        <Divider flexItem></Divider>
+                                    </Box>
+                                    <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
+                                        <DataGrid
+                                            sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
+                                            rows={dates.dates}
+                                            columns={dateColumns}
+                                            rowHeight={38}
+                                            disableRowSelectionOnClick
+                                            slots={{
+                                                footer: () => (
+                                                    <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1}}>
+                                                        Total: {dates.totalDateRedeems} Redeems
+                                                    </Box>
+                                                )
+                                            }}
+                                        />
+                                    </Box>
                                 </Box>
-                            </Box>
-                        :null
-                        }
-                        {dates && dates.dates.length > 0 ?    
-                            <Box sx={{p: 2, pt: 0}}>
-                                <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
-                                    <Divider flexItem></Divider>
-                                    <Typography sx={{fontSize: 20, fontWeight: 500}}>Date-wise Usage</Typography>
-                                    <Divider flexItem></Divider>
-                                </Box>
-                                <Box sx={{maxWidth: 1000, mx: "auto", maxHeight: 375, overflow: "auto"}}>
-                                    <DataGrid
-                                        sx={{ maxHeight: 500, maxWidth: "100%", mr: 1.5}}
-                                        rows={dates.dates}
-                                        columns={dateColumns}
-                                        rowHeight={38}
-                                        disableRowSelectionOnClick
-                                        slots={{
-                                            footer: () => (
-                                                <Box sx={{ fontWeight: 'bold', p: 1, textAlign: 'center', borderTop: 1}}>
-                                                    Total: {dates.totalDateRedeems} Redeems
-                                                </Box>
-                                            )
-                                        }}
-                                    />
-                                </Box>
-                            </Box>
-                        :null
-                        }
+                            :null
+                            }
+                            {/* <div style={{ height: "100vh" }}>
+                                <PDFViewer width="100%" height="100%">
+                                    <CouponReportPDF data={{couponData, report, products, categories, users, dates}}/>
+                                </PDFViewer>
+                            </div> */}
                         </Box>
                     :
                         <Box sx={{p: 2}}>
@@ -1014,6 +1060,7 @@ function AdminCouponReport({couponData}) {
                         </Box>
                     }
                 </Card>
+                {/* <Button onClick={downloadPDF}>Download Report</Button> */}
             </Box>
         </Box>
     )

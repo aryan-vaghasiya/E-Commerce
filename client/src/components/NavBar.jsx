@@ -225,33 +225,42 @@ function NavBar() {
                                 onClose={handleClose}
                                 onClick={handleClose}
                                 slotProps={{
-                                paper: {
-                                    elevation: 0,
-                                    sx: {
-                                    overflow: 'visible',
-                                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                                    mt: 1.5,
-                                    '&::before': {
-                                        content: '""',
-                                        display: 'block',
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 14,
-                                        width: 10,
-                                        height: 10,
-                                        bgcolor: 'background.paper',
-                                        transform: 'translateY(-50%) rotate(45deg)',
-                                        zIndex: 0,
+                                    paper: {
+                                        elevation: 0,
+                                        sx: {
+                                            overflow: 'visible',
+                                            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                                            mt: 1.5,
+                                            '&::before': {
+                                                content: '""',
+                                                display: 'block',
+                                                position: 'absolute',
+                                                top: 0,
+                                                right: 14,
+                                                width: 10,
+                                                height: 10,
+                                                bgcolor: 'background.paper',
+                                                transform: 'translateY(-50%) rotate(45deg)',
+                                                zIndex: 0,
+                                            },
+                                        },
                                     },
-                                    },
-                                },
                                 }}
                                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                             >
                                 <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem>
-                                <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
                                 <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem>
+                                {
+                                    userState.userName ? 
+                                    <Box>
+                                        <MenuItem onClick={() => navigate("/my-wallet")}>My Wallet</MenuItem>
+                                        <MenuItem onClick={() => navigate("/my-profile")}>Profile</MenuItem>
+                                    </Box>
+                                    :
+                                    null
+                                }
+                                <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
                             </Menu>
                     </Box>
                 </Toolbar>

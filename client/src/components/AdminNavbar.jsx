@@ -38,7 +38,8 @@ function AdminNavBar() {
 
     const open = Boolean(anchorEl);
     const handleMenu = (event) => {
-        userState.userName ? setAnchorEl(event.currentTarget) : null
+        setAnchorEl(event.currentTarget)
+        // userState.userName ? setAnchorEl(event.currentTarget) : null
     }
     const handleClose = () => {
         setAnchorEl(null)
@@ -154,47 +155,39 @@ function AdminNavBar() {
                                 {/* <Avatar ></Avatar> */}
                             </IconButton>
                         </Tooltip>
-                        {
-                            userState.userName ?
-                            <Menu
-                                anchorEl={anchorEl}
-                                id="account-menu"
-                                open={open}
-                                onClose={handleClose}
-                                onClick={handleClose}
-                                slotProps={{
+                        <Menu
+                            anchorEl={anchorEl}
+                            id="account-menu"
+                            open={open}
+                            onClose={handleClose}
+                            onClick={handleClose}
+                            slotProps={{
                                 paper: {
                                     elevation: 0,
                                     sx: {
-                                    overflow: 'visible',
-                                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                                    mt: 1.5,
-                                    '&::before': {
-                                        content: '""',
-                                        display: 'block',
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 14,
-                                        width: 10,
-                                        height: 10,
-                                        bgcolor: 'background.paper',
-                                        transform: 'translateY(-50%) rotate(45deg)',
-                                        zIndex: 0,
-                                    },
+                                        overflow: 'visible',
+                                        filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                                        mt: 1.5,
+                                        '&::before': {
+                                            content: '""',
+                                            display: 'block',
+                                            position: 'absolute',
+                                            top: 0,
+                                            right: 14,
+                                            width: 10,
+                                            height: 10,
+                                            bgcolor: 'background.paper',
+                                            transform: 'translateY(-50%) rotate(45deg)',
+                                            zIndex: 0,
+                                        },
                                     },
                                 },
-                                }}
-                                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                            >
-                                {/* <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem> */}
-                                {/* <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem> */}
-                                <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
-                                {/* <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem> */}
-                            </Menu>
-                            :
-                            null
-                        }
+                            }}
+                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                        >
+                            <MenuItem onClick={handleAuth} id="login">{userState.userName? "Logout" : "Login"}</MenuItem>
+                        </Menu>
                     </Box>
                 </Toolbar>
             </Container>
