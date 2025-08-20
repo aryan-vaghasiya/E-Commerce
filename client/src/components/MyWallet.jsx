@@ -1,10 +1,122 @@
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
+import AddIcon from '@mui/icons-material/Add';
+import PaidIcon from '@mui/icons-material/Paid';
+import IconButton from '@mui/material/IconButton'
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import Modal from '@mui/material/Modal'
+import { useForm } from 'react-hook-form'
+import TextField from '@mui/material/TextField'
+import TableContainer from '@mui/material/TableContainer'
+import Table from '@mui/material/Table'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TableCell from '@mui/material/TableCell'
+import TableBody from '@mui/material/TableBody'
+import dayjs from 'dayjs'
+import Paper from '@mui/material/Paper'
+
+const modalStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: 400,
+    bgcolor: "background.paper",
+    borderRadius: "12px",
+    boxShadow: 24,
+    p: 4,
+};
 
 function MyWallet() {
 
     const userState = useSelector(state => state.userReducer)
+    const [wallet, setWallet] = useState(null)
+    const [visibleBalance, setVisibleBalance] = useState(false)
+    const [addModal, setAddModal] = useState(false);
+    const [withdrawModal, setWithdrawModal] = useState(false);
+    const [transactions, setTransactions] = useState([])
+
+    const { register, handleSubmit, reset, formState: { errors } } = useForm();
+
+    const handleOpenAddModal = () =>{
+        setAddModal(true)
+    }
+    const handleCloseAddModal = () => {
+        setAddModal(false);
+        reset();
+    };
+
+    const handleOpenWithdrawModal = () =>{
+        setWithdrawModal(true)
+    }
+    const handleCloseWithdrawModal = () => {
+        setWithdrawModal(false);
+        reset();
+    };
+
+    const handleAddFunds = async (data) => {
+        console.log(data);
+
+        try{
+            const response = await fetch(`http://localhost:3000/wallet/add-funds`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization : `Bearer ${userState.token}`
+                },
+                body: JSON.stringify({amount: data.amount})
+            })
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error)
+            }
+            setWallet(prev => ({...prev, balance: prev.balance + parseFloat(data.amount)}))
+
+            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "CREDIT", type: "DEPOSIT"}, ...transactions];
+            newTransactions.pop();
+            setTransactions(newTransactions);
+        }
+        catch(err){
+            console.error(err.message)
+        }
+        handleCloseAddModal();
+    };
+
+    const handleWithdrawFunds = async (data) => {
+        console.log(data);
+
+        try{
+            const response = await fetch(`http://localhost:3000/wallet/withdraw-funds`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization : `Bearer ${userState.token}`
+                },
+                body: JSON.stringify({amount: data.amount})
+            })
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error)
+            }
+            setWallet(prev => ({...prev, balance: prev.balance - parseFloat(data.amount)}))
+
+            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "DEBIT", type: "WITHDRAWAL"}, ...transactions];
+            newTransactions.pop();
+            setTransactions(newTransactions);
+        }
+        catch(err){
+            console.error(err.message)
+        }
+        handleCloseWithdrawModal();
+    };
 
     const fetchWallet = async () => {
         try{
@@ -19,6 +131,28 @@ function MyWallet() {
                 return console.log(error)
             }
             const result = await response.json()
+            setWallet(result)
+            console.log(result)
+        }
+        catch(err){
+            console.error(err.message)
+        }
+    }
+
+    const fetchWalletTransactions = async () => {
+        try{
+            const response = await fetch(`http://localhost:3000/wallet/get-transactions`, {
+                headers: {
+                    Authorization : `Bearer ${userState.token}`
+                }
+            })
+
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error)
+            }
+            const result = await response.json()
+            setTransactions(result)
             console.log(result)
         }
         catch(err){
@@ -28,11 +162,140 @@ function MyWallet() {
 
     useEffect(() => {
         fetchWallet()
+        fetchWalletTransactions()
     },[])
 
     return (
-        <Box>
-            My Wallet
+        <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+            <Modal open={addModal} onClose={handleCloseAddModal}>
+                <Box sx={modalStyle}>
+                    <Typography variant="h6" component="h2" sx={{mb: 2}} >
+                        Add Money to Wallet
+                    </Typography>
+                    <form onSubmit={handleSubmit(handleAddFunds)} noValidate>
+                        <TextField
+                            autoComplete='off'
+                            fullWidth
+                            type="number"
+                            label="Amount ($)"
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                            {...register
+                                ("amount", {
+                                    required: "Amount is required",
+                                    pattern: {
+                                        value: /^\d+(\.\d{1,2})?$/,
+                                        message: "Enter a valid amount"
+                                    },
+                                    min: { value: 1, message: "Minimum $1" },
+                                })
+                            }
+                            error={!!errors.amount}
+                            helperText={errors.amount ? errors.amount.message : ""}
+                        />
+
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button onClick={handleCloseAddModal} variant='contained' color='error'>Cancel</Button>
+                            <Button type="submit" variant="contained">Add Money</Button>
+                        </Box>
+                    </form>
+                </Box>
+            </Modal>
+            <Modal open={withdrawModal} onClose={handleCloseWithdrawModal}>
+                <Box sx={modalStyle}>
+                    <Typography variant="h6" component="h2" sx={{mb: 2}} >
+                        Withdraw Money from Wallet
+                    </Typography>
+                    <form onSubmit={handleSubmit(handleWithdrawFunds)} noValidate>
+                        <TextField
+                            autoComplete='off'
+                            fullWidth
+                            type="number"
+                            label="Amount ($)"
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                            {...register
+                                ("amount", {
+                                    required: "Amount is required",
+                                    pattern: {
+                                        value: /^\d+(\.\d{1,2})?$/,
+                                        message: "Enter a valid amount"
+                                    },
+                                    max: { value: wallet && wallet.balance, message: `Maximum $${wallet && wallet.balance}` },
+                                    min: { value: 1, message: `Minimum $1` },
+                                })
+                            }
+                            error={!!errors.amount}
+                            helperText={errors.amount ? errors.amount.message : ""}
+                        />
+
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button onClick={handleCloseWithdrawModal} variant='contained' color='error'>Cancel</Button>
+                            <Button type="submit" variant="contained">Withdraw Money</Button>
+                        </Box>
+                    </form>
+                </Box>
+            </Modal>
+            {wallet ?
+            <>
+                <Card sx={{borderRadius: 3, mb: 2}}>
+                    <CardContent>
+                        <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+                            <Box sx={{display: "flex", gap: 2}}>
+                                <Box sx={{display: "flex", flexDirection: "column", alignItems: 'flex-end'}}>
+                                    <Typography color='primary' sx={{fontSize: 35}}>
+                                        {visibleBalance ? (wallet.balance).toFixed(2) : `x.xx`}
+                                        <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
+                                        <IconButton onClick={() => setVisibleBalance(prev => !prev)} sx={{mx: 0.5}}>{visibleBalance ? <VisibilityIcon fontSize={'small'}/> : <VisibilityOffIcon fontSize={'small'}/>}</IconButton>
+                                    </Typography>
+                                    <Typography sx={{mr: "auto"}}>Wallet Balance</Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{display: "flex", gap: 2, justifyContent: "center", alignItems: "center"}}>
+                                <Button variant='contained' startIcon={<AddIcon/>} onClick={handleOpenAddModal}>Add Funds</Button>
+                                <Button variant='contained' startIcon={<PaidIcon/>} onClick={handleOpenWithdrawModal}>Withdraw Funds</Button>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
+                <Card sx={{borderRadius: 3}}>
+                    <CardContent>
+                        <Typography>{transactions.length > 0 ? "Last 10 Transactions" : "No Transactions"}</Typography>
+                        <TableContainer component={Paper} sx={{ maxWidth: "500px", my: 2}} elevation={3}>
+                            <Table sx={{ tableLayout: "fixed", width: "100%" }}>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell align="center" sx={{ width: "30%", bgcolor: "#F0F0F0" }}>Type</TableCell>
+                                        <TableCell align="center" sx={{ width: "40%", bgcolor: "#F0F0F0" }}>Time</TableCell>
+                                        <TableCell align="center" sx={{ width: "30%", bgcolor: "#F0F0F0" }}>Amount</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {transactions.map((row, index) => (
+                                        <TableRow
+                                            key={index}
+                                            sx={{ 
+                                                "& td, & th": {borderRight: "1px solid rgba(224, 224, 224, 1)"},
+                                                '&:last-child td, &:last-child th': { borderBottom: 0 } 
+                                            }}
+                                        >
+                                            <TableCell align='left'>{row.type}</TableCell>
+                                            <TableCell sx={{textAlign: 'right'}}>{dayjs(row.created_at).format("DD-MM-YYYY, hh:mm A")} {row.last_name}</TableCell>
+                                            <TableCell sx={{textAlign: 'right'}}>
+                                                {/* {(row.amount).toFixed(2)} */}
+                                                <Box sx={{display: "flex", justifyContent: "flex-end", alignItems: "center", height: "100%"}}>
+                                                    <Typography color={row.transaction === "CREDIT" ? 'success' : 'error'}>{row.transaction === "CREDIT" ? '+' : '-'}{(row.amount).toFixed(2)}$</Typography>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </CardContent>
+                </Card>
+            </>
+            : null}
         </Box>
     )
 }

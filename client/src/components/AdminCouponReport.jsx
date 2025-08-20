@@ -25,6 +25,7 @@ import html2canvas from "html2canvas";
 import CouponReportPDF from './CouponReportPDF';
 import { Page, Text, View, Document, StyleSheet, pdf, PDFViewer } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 
 function AdminCouponReport({couponData}) {
 
@@ -828,8 +829,8 @@ function AdminCouponReport({couponData}) {
                     <Box sx={{display: "flex", gap: 1}}>
                         <Button variant='contained' startIcon={<FilterAltIcon/>} onClick={() => setModalOpen(true)}>Filter</Button>
                         {report && report.totalUsage > 0?
-                            <Button variant='contained' onClick={() => generatePDF(users)}>Download Report</Button>
-                            :null
+                            <Button variant='contained' startIcon={<CloudDownloadIcon/>} onClick={() => generatePDF(users)}>Report PDF</Button>
+                        :null
                         }
                     </Box>
                 </Box>

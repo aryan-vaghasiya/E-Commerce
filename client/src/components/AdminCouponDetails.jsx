@@ -313,73 +313,61 @@ function AdminCouponDetails() {
                 <Box>
                     <Stack spacing={3}>
                         <Card>
-                        <CardContent>
-                            <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                                <Box>
-                                    <Typography variant="h5" sx={{ mb: 1 }}>{data.name}</Typography>
-                                    <Box sx={{display: "flex"}}>
-                                        <Chip label={`Code: ${data.code}`} color="primary" sx={{ mr: 1, fontSize: 16 }} />
-                                        <Chip label={data.is_active ? "Active" : "Inactive"} color={data.is_active ? "success" : "error"} sx={{fontSize: 14}}/>
+                            <CardContent>
+                                <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                    <Box>
+                                        <Typography variant="h5" sx={{ mb: 1 }}>{data.name}</Typography>
+                                        <Box sx={{display: "flex"}}>
+                                            <Chip label={`Code: ${data.code}`} color="primary" sx={{ mr: 1, fontSize: 16 }} />
+                                            <Chip label={data.is_active ? "Active" : "Inactive"} color={data.is_active ? "success" : "error"} sx={{fontSize: 14}}/>
+                                        </Box>
                                     </Box>
-                                </Box>
-                                {
-                                    totalLoss > 0 && totalSales > 0?
                                     <Box sx={{display: "flex", gap: 2}}>
-                                        <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
+                                        <Box sx={{display: "flex", flexDirection: "column", alignItems: 'flex-end'}}>
                                             <Typography color='error' sx={{fontSize: 35}}>
-                                                {(totalLoss).toFixed(2)}
+                                                {totalLoss > 0 ? (totalLoss).toFixed(2) : `0.00`}
                                                 <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
                                             </Typography>
                                             <Typography sx={{ml: "auto"}}>Total Discounts</Typography>
                                         </Box>
                                         <Divider variant='middle' orientation='vertical' flexItem/>
-                                        <Box sx={{display: "flex", flexDirection: "column", justifyContent: "flex-end"}}>
+                                        <Box sx={{display: "flex", flexDirection: "column", alignItems: 'flex-end'}}>
                                             <Typography color='success' sx={{fontSize: 35}}>
-                                                {(totalSales).toFixed(2)}
+                                                {totalSales > 0 ? (totalSales).toFixed(2) : `0.00`}
                                                 <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
                                             </Typography>
                                             <Typography sx={{ml: "auto"}}>Total Sales</Typography>
                                         </Box>
                                     </Box>
-                                    :
-                                    null
-                                }
-                                {/* {
-                                    totalSales > 0 ?
-                                    
-                                    :
-                                    null
-                                } */}
-                                
-                            </Box>
-                            <Divider sx={{ my: 2 }} />
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Discount: </Typography>
-                                {data.discount_type === "percent" ? `${data.discount_value}%` : `$${(data.discount_value).toFixed(2)}`}
-                                {data.threshold_amount ? ` (upto $${data.threshold_amount})` : null}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Applicable on: </Typography>
-                                {data.applies_to === "all" ? `Cart` : data.applies_to === "product" ? `Product(s)` : `Categories`}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Min. Cart Value: </Typography>
-                                {data.min_cart_value ? `$${(data.min_cart_value).toFixed(2)}` : "No minimum value needed"}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Limit per user: </Typography>
-                                {data.limit_per_user ?? "Unlimited"}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Total Coupons: </Typography>
-                                {data.total_coupons ?? "Unlimited"} 
-                                {data.coupons_left ? ` (${data.coupons_left} left)` : null}
-                            </Typography>
-                            <Typography>
-                                <Typography component={'span'} sx={{fontWeight: 700}}>Validity: </Typography> 
-                                {dayjs(data.start_time).format("DD MMM YYYY")} - {dayjs(data.end_time).format("DD MMM YYYY")}
-                            </Typography>
-                        </CardContent>
+                                </Box>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Discount: </Typography>
+                                    {data.discount_type === "percent" ? `${data.discount_value}%` : `$${(data.discount_value).toFixed(2)}`}
+                                    {data.threshold_amount ? ` (upto $${data.threshold_amount})` : null}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Applicable on: </Typography>
+                                    {data.applies_to === "all" ? `Cart` : data.applies_to === "product" ? `Product(s)` : `Categories`}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Min. Cart Value: </Typography>
+                                    {data.min_cart_value ? `$${(data.min_cart_value).toFixed(2)}` : "No minimum value needed"}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Limit per user: </Typography>
+                                    {data.limit_per_user ?? "Unlimited"}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Total Coupons: </Typography>
+                                    {data.total_coupons ?? "Unlimited"} 
+                                    {data.coupons_left ? ` (${data.coupons_left} left)` : null}
+                                </Typography>
+                                <Typography>
+                                    <Typography component={'span'} sx={{fontWeight: 700}}>Validity: </Typography> 
+                                    {dayjs(data.start_time).format("DD MMM YYYY")} - {dayjs(data.end_time).format("DD MMM YYYY")}
+                                </Typography>
+                            </CardContent>
                         </Card>
 
                         <Card>
