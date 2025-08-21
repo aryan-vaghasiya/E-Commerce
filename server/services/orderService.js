@@ -1,20 +1,34 @@
 const runQuery = require("../db")
+const walletService = require("./walletService")
 
 exports.addOrder = async(userId, order, coupon) => {
-    const checkCart = await runQuery("SELECT * FROM cart WHERE user_id = ? AND status = 'active'", [userId]);
+    const checkCart = await runQuery(`SELECT 
+                                        * 
+                                    FROM cart 
+                                    WHERE user_id = ? 
+                                        AND status = 'active'`, [userId]);
     if (checkCart.length === 0) {
         throw new Error("No active cart found");
     }
     const cartId = checkCart[0].id; 
 
-    const itemsToOrder = await runQuery(
-        `SELECT ci.product_id, ci.quantity
-        FROM cart_item ci
-        WHERE ci.user_id = ? AND ci.cart_id = ?`, [userId, cartId]);
+    const itemsToOrder = await runQuery(`SELECT 
+                                            ci.product_id, 
+                                            ci.quantity
+                                        FROM cart_item ci
+                                        WHERE ci.user_id = ? 
+                                            AND ci.cart_id = ?`, [userId, cartId]);
+
+    const userWallet = await walletService.getWallet(userId)
+    const currentCartValue = order.newCartValue ? order.newCartValue : order.cartValue
+    const isBalanceSufficient = await walletService.compareBalance(userWallet)
+
+    if(!isBalanceSufficient){
+        throw new Error("Insufficient balance in Wallet")
+    }
 
     for (const item of itemsToOrder) {
         const [checkStock] = await runQuery(`SELECT stock FROM product_inventory WHERE product_id =?`, [item.product_id]);
-        // console.log(checkStock);
 
         if (!checkStock || checkStock.stock === undefined) {
             throw new Error(`Inventory not found for Product ID: ${item.product_id}`);
@@ -35,9 +49,6 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
-
-
-
     // console.log(coupon);
     let orderItems = []
     if(coupon.code){
@@ -49,7 +60,6 @@ exports.addOrder = async(userId, order, coupon) => {
         }
         const orderId = insert.insertId;
 
-        // console.log(newCart);
         orderItems = newCart.items.map(item => {
             if(item.coupon_discount && item.coupon_discount > 0){
                 const item_price = item.price - (item.coupon_discount/item.quantity)
@@ -65,7 +75,6 @@ exports.addOrder = async(userId, order, coupon) => {
             
             await runQuery(`INSERT INTO order_item (order_id, product_id, quantity, purchase_price) VALUES (?, ?, ?, ?)`, [orderId,orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price])
         }
-        // console.log(orderItems);
 
         const updateDiscount = await runQuery(`UPDATE orders SET 
                                                     total = ?,
@@ -78,13 +87,14 @@ exports.addOrder = async(userId, order, coupon) => {
             throw new Error("Couldn't update Total");
         }
 
+        await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
+
         const couponUsage = await runQuery(`INSERT INTO coupon_usages (coupon_id, user_id, order_id) VALUES (?, ?, ?)`, [couponData.id, userId, orderId])
 
         const couponUsed = await runQuery(`UPDATE coupons SET times_used = times_used + ? WHERE id = ?`, [1, couponData.id])
     }
 
     else{
-
         const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
         if (insert.affectedRows === 0) {
             throw new Error("Couldn't insert Order");
@@ -131,38 +141,15 @@ exports.addOrder = async(userId, order, coupon) => {
         if (setTotal.affectedRows === 0) {
             throw new Error("Couldn't update Total");
         }
+        await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
     }
-
-
 
     const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
     if (emptyCart.affectedRows === 0) {
         throw new Error("Couldn't empty Cart");
     }
-
-
-
-
-    // const insertItem = await runQuery(`
-    //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
-    //     SELECT 
-    //     ?, 
-    //     ci.product_id, 
-    //     ci.quantity, 
-    //     pp.price
-
-    //     FROM cart_item ci 
-    //     JOIN product_pricing pp ON ci.product_id = pp.product_id
-    //     WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
-
-    // const insertItem = await runQuery(`
-    //     INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
-    //     SELECT ?, ci.product_id, ci.quantity, pp.price 
-    //     FROM cart_item ci 
-    //     JOIN products p ON ci.product_id = p.id
-    //     JOIN product_pricing pp on pp.product_id = p.id
-    //     WHERE ci.user_id = ? AND ci.cart_id = ? AND NOW() BETWEEN pp.start_time AND pp.end_time`,[orderId, userId, cartId]);
 }
+
 
 exports.getOrdersService = async (userId) => {
     const getOrders = await runQuery(`SELECT

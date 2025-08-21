@@ -7,5 +7,7 @@ router.get("/get-wallet", walletController.getUserWallet);
 router.post("/add-funds", walletController.addBalance);
 router.post("/withdraw-funds", walletController.withdrawBalance);
 router.get("/get-transactions", walletController.getWalletTransactions);
+router.get("/compare-balance", walletController.compareWalletBalance);
+router.get("/verify-balance", walletController.verifyWalletBalance);
 
 module.exports = router;

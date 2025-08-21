@@ -16,5 +16,12 @@ const runQuery = async (query, values) => {
     return results;
 }
 
+// const runNow = async (query, values) => {
+//     const results = await pool.query(query, values);
+//     console.log(results);
+//     return results;
+// }
+// runNow(`SELECT * FROM wallets`)
+
 module.exports = runQuery;
 // module.exports = pool;

@@ -8,78 +8,81 @@ exports.getWallet = async (userId) => {
     return wallet
 }
 
-exports.addAmount = async (userId, amount) => {
-    const userWallet = await this.getWallet(userId)
-    const walletId = userWallet.id
+exports.addAmount = async (wallet, amount, type) => {
+    const walletId = wallet.id
+    const userId = wallet.user_id
+
+    const isVerified = await this.verifyBalance(wallet);
+    if (!isVerified) {
+        throw new Error("Wallet balance mismatch");
+    }
 
     const updateBalance = await runQuery(`UPDATE wallets SET balance = balance + ? WHERE user_id = ?`,[amount, userId])
-
     if(updateBalance.affectedRows === 0){
         throw new Error("Could not update balance")
     }
 
-    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'CREDIT', 'DEPOSIT'])
-
+    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'CREDIT', type])
     if(addTransaction.affectedRows === 0){
-        throw new Error("Could not add funds entry")
-    }
-
-    const [{calculated_balance}] = await runQuery(`SELECT 
-                                                    SUM(CASE WHEN transaction = 'CREDIT' THEN amount ELSE 0 END) -
-                                                    SUM(CASE WHEN transaction = 'DEBIT' THEN amount ELSE 0 END) AS calculated_balance
-                                                FROM wallet_transactions
-                                                WHERE wallet_id = ?`, [walletId]);
-
-    const [{newBalance}] = await runQuery(`SELECT balance AS newBalance FROM wallets WHERE id = ? AND user_id = ?`,[walletId, userId])
-
-    // console.log(calculated_balance, newBalance);
-
-    if(calculated_balance !== newBalance){
-        throw new Error("Balance mismatch in Wallet")
+        throw new Error("Could not record transaction")
     }
 }
 
-exports.getTransactions = async (userId) => {
-    const userWallet = await this.getWallet(userId)
-    const walletId = userWallet.id
+exports.withdrawAmount = async (wallet, amount, type) => {
+    const walletId = wallet.id
+    const userId = wallet.user_id
+    const currentBalance = wallet.balance
 
-    let transactions = []
-    transactions = await runQuery(`SELECT * FROM wallet_transactions WHERE wallet_id = ? ORDER BY created_at DESC LIMIT 10`, [walletId])
-    return transactions
-}
-
-exports.withdrawAmount = async (userId, amount) => {
-    const userWallet = await this.getWallet(userId)
-    const walletId = userWallet.id
-    const currentBalance = userWallet.balance
-
-    // console.log(currentBalance, parseFloat(amount));
     if(currentBalance < parseFloat(amount)){
         throw new Error("Balance is less than withdrawal amount")
     }
 
-    const updateBalance = await runQuery(`UPDATE wallets SET balance = balance - ? WHERE user_id = ?`,[amount, userId])
+    const isVerified = await this.verifyBalance(wallet);
+    if (!isVerified) {
+        throw new Error("Wallet balance mismatch");
+    }
 
+    const updateBalance = await runQuery(`UPDATE wallets SET balance = balance - ? WHERE user_id = ?`,[amount, userId])
     if(updateBalance.affectedRows === 0){
         throw new Error("Could not update balance")
     }
 
-    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'DEBIT', 'WITHDRAWAL'])
-
+    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'DEBIT', type])
     if(addTransaction.affectedRows === 0){
-        throw new Error("Could not add funds entry")
+        throw new Error("Could not record transaction")
     }
+}
 
-    const [{calculated_balance}] = await runQuery(`SELECT 
+exports.getTransactions = async (wallet) => {
+    const walletId = wallet.id
+
+    let transactions = []
+    transactions = await runQuery(`SELECT * 
+                                    FROM wallet_transactions 
+                                    WHERE wallet_id = ? 
+                                    ORDER BY created_at DESC 
+                                    LIMIT 10`, [walletId]);
+    return transactions
+}
+
+exports.verifyBalance = async (wallet) =>{
+    const walletId = wallet.id
+    const cacheBalance = wallet.balance
+
+    const [{calculated_balance}] = await runQuery(`SELECT
                                                     SUM(CASE WHEN transaction = 'CREDIT' THEN amount ELSE 0 END) -
                                                     SUM(CASE WHEN transaction = 'DEBIT' THEN amount ELSE 0 END) AS calculated_balance
                                                 FROM wallet_transactions
                                                 WHERE wallet_id = ?`, [walletId]);
 
-    const [{newBalance}] = await runQuery(`SELECT balance AS newBalance FROM wallets WHERE id = ? AND user_id = ?`,[walletId, userId])
+    return calculated_balance === cacheBalance
+}
 
-    // console.log(calculated_balance, newBalance);
-    if(calculated_balance !== newBalance){
-        throw new Error("Balance mismatch in Wallet")
+exports.compareBalance = async (wallet, amount) => {
+    const isVerified = await this.verifyBalance(wallet);
+    if (!isVerified) {
+        throw new Error("Wallet balance mismatch");
     }
+
+    return wallet.balance >= parseFloat(amount);
 }

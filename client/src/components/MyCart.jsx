@@ -20,49 +20,39 @@ function MyCart() {
     const snackbarState = useSelector(state => state.snackbarReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
-
     const [loading, setLoading] = useState(true)
 
     const checkOutNavigate = async () => {
-
         if (userState.token) {
             const res = await fetch("http://localhost:3000/auth/check", {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
-                    // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`
                 }
             });
-            if (res.status === 200) {
-                // console.log("Checked");
-                
-                navigate("/checkout")
-                // if(productState.some(item => item.stock === 0)){
-                //     navigate("/cart")
-                // }
-                // else{
-                //     navigate("/checkout")
-                // }
-            }
-            // else if(res.status === 402){
-            //     dispatch(showSnack({message: "Please Login to access this Section", severity: "warning"}))
-            //     navigate("/login", {state: "/my-orders"})
-            // }
-            else {
-                dispatch(showSnack({ message: "Session Expired, Login Again", severity: "warning" }))
+            if(!res.ok){
                 navigate("/login", { state: "/checkout" })
+                return dispatch(showSnack({ message: "Session Expired, Login Again", severity: "warning" }))
             }
+
+            const compareWalletBalance = await fetch(`http://localhost:3000/wallet/compare-balance?amount=${cartValue}`, {
+                headers: {
+                    Authorization: `Bearer ${userState.token}`
+                }
+            })
+            if(!compareWalletBalance.ok){
+                return dispatch(showSnack({ message: "Wallet balance mismatch/Server Error", severity: "warning" }))
+            }
+            const canAfford = await compareWalletBalance.json()
+            if(!canAfford){
+                return dispatch(showSnack({ message: "Insufficient wallet balance", severity: "warning" }))
+            }
+
+            navigate("/checkout")
         }
         else {
-            dispatch(showSnack({ message: "Please Login to access this Section", severity: "warning" }))
-            return navigate("/login", { state: "/checkout" })
+            navigate("/login", { state: "/checkout" })
+            return dispatch(showSnack({ message: "Please Login to access this Section", severity: "warning" }))
         }
-
-        // if(userState.userName){
-        //     navigate("/checkout")
-        // }
-        // else{
-        //     return navigate("/login", { state: "/checkout"  })
-        // }
     }
 
     useEffect(() => {
@@ -78,86 +68,78 @@ function MyCart() {
 
     return (
         <Box>
-            {
-                loading ?
-                    (
-                        <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
-                            {
-                                Array.from(Array(5)).map((_, index) => (
-                                    <Card key={index} sx={{ display: "inline-flex", width: "70%", mx: "auto", mt: 2 }}>
-                                        <Skeleton variant='rounded' sx={{ minHeight: 250, minWidth: 200, m: 1 }} animation="wave"></Skeleton>
-                                        <Box sx={{ width: "100%", mx: 1, mt: 1.5 }}>
-                                            <Skeleton variant='text' sx={{ fontSize: 28, width: "95%" }} animation="wave"></Skeleton>
-                                            <Skeleton variant='text' sx={{ fontSize: 60, width: "95%", mt: -2.5 }} animation="wave"></Skeleton>
-                                            <Skeleton variant='text' sx={{ fontSize: 15, width: "25%", mt: -1.5 }} animation="wave"></Skeleton>
-                                            <Skeleton variant='text' sx={{ fontSize: 15, width: "10%" }} animation="wave"></Skeleton>
-                                            <Skeleton variant='text' sx={{ fontSize: 18, width: "25%" }} animation="wave"></Skeleton>
-                                            <Skeleton variant='text' sx={{ fontSize: 18, width: "25%" }}animation="wave"></Skeleton>
-                                            <Box>
-                                                <Skeleton variant='rounded' height={37} width={"12%"} sx={{ mx: "auto" }} animation="wave"></Skeleton>
-                                            </Box>
-                                        </Box>
-                                    </Card>
-                                ))
-                            }
-                        </Box>
-                    )
-                    :
-                    (
-                        <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
-                            <Snackbar
-                                open={snackbarState.show}
-                                anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                                autoHideDuration={2000}
-                                onClose={() => dispatch(hideSnack())}
-                                sx={{
-                                    '&.MuiSnackbar-root': { top: '70px' },
-                                }}
-                            >
-                                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
-                                    {snackbarState.message}
-                                </Alert>
-                            </Snackbar>
-                            {
-                                productState.length === 0 ?
-                                    (
-                                        <Box sx={{ display: "block", margin: "auto" }}>
-                                            <Typography component="h1">Your Cart is Empty...</Typography>
-                                            <Button variant="contained" onClick={() => navigate("/")} sx={{ width: "100%", my: 1 }}>Buy Something</Button>
-                                        </Box>
-                                    )
-                                    :
-                                    (
-                                        <Typography sx={{ mt: 1 }}>({noOfItems}) Items in Cart</Typography>
-                                    )
-                            }
-                            {
-                                productState.map(item =>
-                                    <Box key={item.id}>
-                                        <CartItem item={item} />
-                                    </Box>
-                                )
-                            }
-                            {
-                                productState.length > 0 ?
-                                    <Box textAlign="center">
-                                        <Typography>Cart Value: ${cartValue}</Typography>
-                                        {/* {productState.some(item => item.stock === 0)? */}
-                                        {productState.some(item => item.stock < item.quantity || item.status != "active")?
-                                        
+            {loading ?
+                (
+                    <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
+                        {
+                            Array.from(Array(5)).map((_, index) => (
+                                <Card key={index} sx={{ display: "inline-flex", width: "70%", mx: "auto", mt: 2 }}>
+                                    <Skeleton variant='rounded' sx={{ minHeight: 250, minWidth: 200, m: 1 }} animation="wave"></Skeleton>
+                                    <Box sx={{ width: "100%", mx: 1, mt: 1.5 }}>
+                                        <Skeleton variant='text' sx={{ fontSize: 28, width: "95%" }} animation="wave"></Skeleton>
+                                        <Skeleton variant='text' sx={{ fontSize: 60, width: "95%", mt: -2.5 }} animation="wave"></Skeleton>
+                                        <Skeleton variant='text' sx={{ fontSize: 15, width: "25%", mt: -1.5 }} animation="wave"></Skeleton>
+                                        <Skeleton variant='text' sx={{ fontSize: 15, width: "10%" }} animation="wave"></Skeleton>
+                                        <Skeleton variant='text' sx={{ fontSize: 18, width: "25%" }} animation="wave"></Skeleton>
+                                        <Skeleton variant='text' sx={{ fontSize: 18, width: "25%" }}animation="wave"></Skeleton>
                                         <Box>
-                                            <Typography color='error'>Some of the Items in your cart are either Out Of Stock or Unlisted, Please remove them to Checkout</Typography>
-                                            <Button variant='contained' disabled onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
+                                            <Skeleton variant='rounded' height={37} width={"12%"} sx={{ mx: "auto" }} animation="wave"></Skeleton>
                                         </Box>
-                                        :
-                                        <Button variant='contained' onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
-                                        }
                                     </Box>
-                                    :
-                                    null
-                            }
-                        </Box>
-                    )
+                                </Card>
+                            ))
+                        }
+                    </Box>
+                )
+                :
+                (
+                    <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
+                        <Snackbar
+                            open={snackbarState.show}
+                            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                            autoHideDuration={2000}
+                            onClose={() => dispatch(hideSnack())}
+                            sx={{
+                                '&.MuiSnackbar-root': { top: '70px' },
+                            }}
+                        >
+                            <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                                {snackbarState.message}
+                            </Alert>
+                        </Snackbar>
+                        {productState.length === 0 ?
+                            <Box sx={{ display: "block", margin: "auto" }}>
+                                <Typography component="h1">Your Cart is Empty...</Typography>
+                                <Button variant="contained" onClick={() => navigate("/")} sx={{ width: "100%", my: 1 }}>Buy Something</Button>
+                            </Box>
+                            :
+                            <Typography sx={{ mt: 1 }}>({noOfItems}) Items in Cart</Typography>
+                        }
+                        {productState.map(item =>
+                            <Box key={item.id}>
+                                <CartItem item={item} />
+                            </Box>
+                            )
+                        }
+                        {productState.length > 0 ?
+                            <Box textAlign="center">
+                                <Typography>Cart Value: ${cartValue}</Typography>
+                                {/* {productState.some(item => item.stock === 0)? */}
+                                {productState.some(item => item.stock < item.quantity || item.status != "active")?
+                                
+                                <Box>
+                                    <Typography color='error'>Some of the Items in your cart are either Out Of Stock or Unlisted, Please remove them to Checkout</Typography>
+                                    <Button variant='contained' disabled onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
+                                </Box>
+                                :
+                                <Button variant='contained' onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button >
+                                }
+                            </Box>
+                            :
+                            null
+                        }
+                    </Box>
+                )
             }
         </Box>
     )

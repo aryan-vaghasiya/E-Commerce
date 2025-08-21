@@ -44,14 +44,16 @@ function MyWallet() {
     const [withdrawModal, setWithdrawModal] = useState(false);
     const [transactions, setTransactions] = useState([])
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm();
+    // const { register, handleSubmit, reset, formState: { errors } } = useForm();
+    const { register: registerAdd, handleSubmit: handleSubmitAdd, reset: resetAdd, formState: { errors: errorsAdd } } = useForm();
+    const { register: registerWithdraw, handleSubmit: handleSubmitWithdraw, reset: resetWithdraw, formState: { errors: errorsWithdraw } } = useForm();
 
     const handleOpenAddModal = () =>{
         setAddModal(true)
     }
     const handleCloseAddModal = () => {
         setAddModal(false);
-        reset();
+        resetAdd();
     };
 
     const handleOpenWithdrawModal = () =>{
@@ -59,8 +61,14 @@ function MyWallet() {
     }
     const handleCloseWithdrawModal = () => {
         setWithdrawModal(false);
-        reset();
+        resetWithdraw();
     };
+
+    const getTransactionType = (type) => {
+        const transactionType = type === "DEPOSIT" ? "Wallet Deposit" : type === "WITHDRAWAL" ? "Wallet Withdrawal" : type === "PAYMENT" ? "Order Payment" : type === "REFUND" ? "Refund" : type === "CASHBACK" ? "Cashback" : null
+
+        return transactionType
+    }
 
     const handleAddFunds = async (data) => {
         console.log(data);
@@ -87,7 +95,9 @@ function MyWallet() {
         catch(err){
             console.error(err.message)
         }
-        handleCloseAddModal();
+        finally{
+            handleCloseAddModal();
+        }
     };
 
     const handleWithdrawFunds = async (data) => {
@@ -172,7 +182,7 @@ function MyWallet() {
                     <Typography variant="h6" component="h2" sx={{mb: 2}} >
                         Add Money to Wallet
                     </Typography>
-                    <form onSubmit={handleSubmit(handleAddFunds)} noValidate>
+                    <form onSubmit={handleSubmitAdd(handleAddFunds)} noValidate>
                         <TextField
                             autoComplete='off'
                             fullWidth
@@ -180,7 +190,7 @@ function MyWallet() {
                             label="Amount ($)"
                             variant="outlined"
                             sx={{ mb: 2 }}
-                            {...register
+                            {...registerAdd
                                 ("amount", {
                                     required: "Amount is required",
                                     pattern: {
@@ -190,8 +200,8 @@ function MyWallet() {
                                     min: { value: 1, message: "Minimum $1" },
                                 })
                             }
-                            error={!!errors.amount}
-                            helperText={errors.amount ? errors.amount.message : ""}
+                            error={!!errorsAdd.amount}
+                            helperText={errorsAdd.amount?.message}
                         />
 
                         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
@@ -206,7 +216,7 @@ function MyWallet() {
                     <Typography variant="h6" component="h2" sx={{mb: 2}} >
                         Withdraw Money from Wallet
                     </Typography>
-                    <form onSubmit={handleSubmit(handleWithdrawFunds)} noValidate>
+                    <form onSubmit={handleSubmitWithdraw(handleWithdrawFunds)} noValidate>
                         <TextField
                             autoComplete='off'
                             fullWidth
@@ -214,19 +224,23 @@ function MyWallet() {
                             label="Amount ($)"
                             variant="outlined"
                             sx={{ mb: 2 }}
-                            {...register
+                            {...registerWithdraw
                                 ("amount", {
                                     required: "Amount is required",
                                     pattern: {
                                         value: /^\d+(\.\d{1,2})?$/,
                                         message: "Enter a valid amount"
                                     },
-                                    max: { value: wallet && wallet.balance, message: `Maximum $${wallet && wallet.balance}` },
+                                    max: { 
+                                        value: wallet?.balance || 0, 
+                                        message: `Maximum $${wallet?.balance || 0}`
+                                    },
+                                    // max: { value: wallet && wallet.balance, message: `Maximum $${wallet && wallet.balance}` },
                                     min: { value: 1, message: `Minimum $1` },
                                 })
                             }
-                            error={!!errors.amount}
-                            helperText={errors.amount ? errors.amount.message : ""}
+                            error={!!errorsWithdraw.amount}
+                            helperText={errorsWithdraw.amount?.message}
                         />
 
                         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
@@ -279,7 +293,8 @@ function MyWallet() {
                                                 '&:last-child td, &:last-child th': { borderBottom: 0 } 
                                             }}
                                         >
-                                            <TableCell align='left'>{row.type}</TableCell>
+                                            {/* <TableCell align='left'>{row.type}</TableCell> */}
+                                            <TableCell align='left'>{getTransactionType(row.type)}</TableCell>
                                             <TableCell sx={{textAlign: 'right'}}>{dayjs(row.created_at).format("DD-MM-YYYY, hh:mm A")} {row.last_name}</TableCell>
                                             <TableCell sx={{textAlign: 'right'}}>
                                                 {/* {(row.amount).toFixed(2)} */}

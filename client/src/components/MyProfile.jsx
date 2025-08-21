@@ -1,9 +1,10 @@
+import Box from "@mui/material/Box"
 
 function MyProfile() {
     return (
-        <div>
+        <Box>
             Profile
-        </div>
+        </Box>
     )
 }
 

@@ -15,7 +15,7 @@ export const ordersFromDb = (orderItems) => {
 }
 
 export const addOrders = (order, coupon) => {
-    // console.log(order);
+    console.log(order);
     
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
@@ -33,14 +33,14 @@ export const addOrders = (order, coupon) => {
             if(!response.ok){
                 const error = await response.json();
                 console.error("Order can't be placed:", error.error)
-                return false
+                return {error: true, message: error.error}
             }
             dispatch({type: ADD_ORDERS, payload: order})
-            return true
+            return {error: false}
         }
         catch(err){
             console.error("Error placing order:", err.message);
-            return false
+            return {error: true, message: "Server Error"}
         }
     }
 }

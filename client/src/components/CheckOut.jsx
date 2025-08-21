@@ -51,7 +51,6 @@ function CheckOut() {
 
     const handleCouponQuery = async () => {
         // console.log(couponQuery);
-
         if(!couponQuery) return
 
         const response = await fetch("http://localhost:3000/orders/check-coupon", {
@@ -64,7 +63,6 @@ function CheckOut() {
         })
 
         if(!response.ok && couponQuery){
-            // dispatch(showSnack({message: "Invalid Coupon Code", severity: "warning"}))
             setIsCouponApplied(false)
             setCouponQuery("")
 
@@ -82,24 +80,6 @@ function CheckOut() {
         }
 
         const couponRes = await response.json()
-
-        // if(couponRes.couponData?.min_cart_value > cartReducer.cartValue){
-        //     dispatch(showSnack({message: "Insufficient Cart value", severity: "warning"}))
-        //     setIsCouponApplied(false)
-        //     setCouponQuery("")
-        //     return
-        // }
-
-        // const discountProductsInCart = cartReducer.products.filter(item => couponRes.couponData.products.includes(item.id))
-        // console.log(discountProductsInCart);
-        
-
-        // if(couponRes.couponData.applies_to === "product" && discountProductsInCart.length < 1){
-        //     dispatch(showSnack({message: "Coupon not applicable", severity: "warning"}))
-        //     setIsCouponApplied(false)
-        //     setCouponQuery("")
-        //     return
-        // }
 
         dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
         setCouponData(couponRes.couponData)
@@ -134,9 +114,10 @@ function CheckOut() {
             
             const added = await dispatch(addOrders(isCouponApplied ? newCart : cartReducer, isCouponApplied ? couponData : {}))
             // console.log(added);
-            if(!added){
-                dispatch(showSnack({message: "Some Products went Out Of Stock", severity: "warning"}))
+
+            if(added.error){
                 navigate("/cart")
+                dispatch(showSnack({message: added.message, severity: "warning"}))
                 console.log("Order Failed");
                 return
             }
