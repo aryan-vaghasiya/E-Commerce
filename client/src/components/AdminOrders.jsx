@@ -28,7 +28,6 @@ function AdminOrders() {
         pageSize: 10,
     });
     const [selected, setSelected] = useState({})
-    // console.log(selected);
 
     const fetchOrders = async (page, pageSize) => {
         setLoading(true);
@@ -47,7 +46,6 @@ function AdminOrders() {
 
             const result = await response.json();
             // console.log(result);
-            
             setOrders(result.orders);
             setTotalOrders(result.total);
         } 
@@ -62,7 +60,6 @@ function AdminOrders() {
 
     const handlePaginationChange = (newModel) => {
         // console.log(newModel);
-        
         setPaginationModel(newModel);
         // dispatch(fetchAdminOrders(newModel.page + 1, newModel.pageSize));
         fetchOrders(newModel.page + 1, newModel.pageSize);
@@ -70,9 +67,7 @@ function AdminOrders() {
 
     const handleSelection = (item) => {
         setSelected(item.ids)
-        // console.log(item);
     }
-    // console.log(selected);
 
     const handleAccept = () => {
         dispatch(updateOrderStatus(selected, "accepted"))
@@ -80,8 +75,6 @@ function AdminOrders() {
     }
 
     useEffect(() => {
-        // console.log("fetching...");
-        // dispatch(fetchAdminOrders(1, 5));
         fetchOrders(paginationModel.page + 1, paginationModel.pageSize);
     }, [paginationModel]);
     
@@ -136,27 +129,17 @@ function AdminOrders() {
         {/* <Box sx={{ height: 370 , mx: "auto", textAlign: "center"}}> */}
             <DataGrid
                 sx={{maxWidth: 897, maxHeight: 630}}
-                // rows={adminOrdersState.orders}
                 rows={orders}
                 columns={columns}
-                // rowCount={adminOrdersState.total}
                 rowCount={totalOrders}
                 pagination
                 paginationMode="server"
                 paginationModel={paginationModel}
                 onPaginationModelChange={handlePaginationChange}
                 loading={loading}
-                // onRowSelectionModelChange={(item) => setSelected(item.ids)}
-                onRowSelectionModelChange={handleSelection}
-                // initialState={{
-                // pagination: {
-                //     paginationModel: {
-                //     pageSize: 5,
-                //     },
-                // },
-                // }}
+                // onRowSelectionModelChange={handleSelection}
                 pageSizeOptions={[5, 10, 20]}
-                checkboxSelection
+                // checkboxSelection
                 disableRowSelectionOnClick
             />
             <Box sx={{pt: 2}}>
@@ -164,7 +147,6 @@ function AdminOrders() {
                 selected.size > 0?
                 <Button disabled={false} variant='contained' onClick={handleAccept}>Accept Orders</Button>
                 :
-                // <Button disabled>Accept Orders</Button>
                 null
             }
             </Box>

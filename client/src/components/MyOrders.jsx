@@ -36,6 +36,14 @@ function MyOrders() {
         return () => clearInterval(timeOut)
     },[])   
 
+    const handleRepeatOrder = (products)=> {
+        // console.log(products);
+        const newItems = products.map(item => ({productId: item.id, quantity: item.quantity}))
+        console.log(newItems);
+
+        
+    }
+
     const getCurrentStatus = (status) => {
         // if(status === "delivered"){
         //     const index = allStatus.indexOf(status)
@@ -98,18 +106,24 @@ function MyOrders() {
                     (
                     ordersState.map((order, index) => (
                         <Card key={index} sx={{mx: "auto", bgcolor: "white", width: "80%", my: 2}} >
-                            <Box sx={{textAlign: "left", pt: 2, px: 3}}>
+                            {/* <Box sx={{textAlign: "left", pt: 2, px: 3}}> */}
+                            <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 3}}>
                                 {/* <Typography>Order Number: {ordersState.length - index}</Typography> */}
-                                <Typography>Order Value: ${order.cartValue}</Typography>
-                                {
-                                    order.final_total && order.discount > 0?
-                                    <Box>
-                                        <Typography color='success' sx={{fontWeight: 500}}>Coupon: -${order.discount}</Typography>
-                                        <Typography>Order Total: ${order.final_total}</Typography>
-                                    </Box>
-                                    :
-                                    null
-                                }
+                                <Box>
+                                    <Typography>Order Value: ${order.cartValue}</Typography>
+                                    {
+                                        order.final_total && order.discount > 0?
+                                        <Box>
+                                            <Typography color='success' sx={{fontWeight: 500}}>Coupon: -${order.discount}</Typography>
+                                            <Typography>Order Total: ${order.final_total}</Typography>
+                                        </Box>
+                                        :
+                                        null
+                                    }
+                                </Box>
+                                <Box>
+                                    <Button variant='contained' onClick={() => handleRepeatOrder(order.products)}>Repeat Order</Button>
+                                </Box>
                             </Box>
                             {order.products.map(item => (
                                 <Card key={item.id} sx={{display: "flex",bgcolor: "#EEEEEE", my: 2, mx: 3}} >

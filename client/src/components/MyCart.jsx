@@ -40,7 +40,7 @@ function MyCart() {
                 }
             })
             if(!compareWalletBalance.ok){
-                return dispatch(showSnack({ message: "Wallet balance mismatch/Server Error", severity: "warning" }))
+                return dispatch(showSnack({ message: "Wallet balance mismatch/Server Error", severity: "error" }))
             }
             const canAfford = await compareWalletBalance.json()
             if(!canAfford){

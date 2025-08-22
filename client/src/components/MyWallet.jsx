@@ -66,7 +66,6 @@ function MyWallet() {
 
     const getTransactionType = (type) => {
         const transactionType = type === "DEPOSIT" ? "Wallet Deposit" : type === "WITHDRAWAL" ? "Wallet Withdrawal" : type === "PAYMENT" ? "Order Payment" : type === "REFUND" ? "Refund" : type === "CASHBACK" ? "Cashback" : null
-
         return transactionType
     }
 
@@ -156,7 +155,6 @@ function MyWallet() {
                     Authorization : `Bearer ${userState.token}`
                 }
             })
-
             if(!response.ok){
                 const error = await response.json()
                 return console.log(error)
@@ -275,13 +273,14 @@ function MyWallet() {
                 <Card sx={{borderRadius: 3}}>
                     <CardContent>
                         <Typography>{transactions.length > 0 ? "Last 10 Transactions" : "No Transactions"}</Typography>
-                        <TableContainer component={Paper} sx={{ maxWidth: "500px", my: 2}} elevation={3}>
+                        <TableContainer component={Paper} sx={{ maxWidth: "600px", my: 2}} elevation={3}>
                             <Table sx={{ tableLayout: "fixed", width: "100%" }}>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell align="center" sx={{ width: "30%", bgcolor: "#F0F0F0" }}>Type</TableCell>
-                                        <TableCell align="center" sx={{ width: "40%", bgcolor: "#F0F0F0" }}>Time</TableCell>
-                                        <TableCell align="center" sx={{ width: "30%", bgcolor: "#F0F0F0" }}>Amount</TableCell>
+                                        <TableCell align="center" sx={{ width: "20%", bgcolor: "#F0F0F0" }}>Type</TableCell>
+                                        <TableCell align="center" sx={{ width: "35%", bgcolor: "#F0F0F0" }}>Description</TableCell>
+                                        <TableCell align="center" sx={{ width: "25%", bgcolor: "#F0F0F0" }}>Time</TableCell>
+                                        <TableCell align="center" sx={{ width: "20%", bgcolor: "#F0F0F0" }}>Amount</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -293,11 +292,18 @@ function MyWallet() {
                                                 '&:last-child td, &:last-child th': { borderBottom: 0 } 
                                             }}
                                         >
-                                            {/* <TableCell align='left'>{row.type}</TableCell> */}
                                             <TableCell align='left'>{getTransactionType(row.type)}</TableCell>
-                                            <TableCell sx={{textAlign: 'right'}}>{dayjs(row.created_at).format("DD-MM-YYYY, hh:mm A")} {row.last_name}</TableCell>
+                                            <TableCell align='left' sx={{ 
+                                                    // wordWrap: "break-word",
+                                                    overflowWrap: "anywhere"
+                                                }}
+                                            >
+                                                {row.description || "-"}
+                                            </TableCell>
                                             <TableCell sx={{textAlign: 'right'}}>
-                                                {/* {(row.amount).toFixed(2)} */}
+                                                {dayjs(row.created_at).format("DD-MM-YYYY, hh:mm A")} {row.last_name}
+                                            </TableCell>
+                                            <TableCell sx={{textAlign: 'right'}}>
                                                 <Box sx={{display: "flex", justifyContent: "flex-end", alignItems: "center", height: "100%"}}>
                                                     <Typography color={row.transaction === "CREDIT" ? 'success' : 'error'}>{row.transaction === "CREDIT" ? '+' : '-'}{(row.amount).toFixed(2)}$</Typography>
                                                 </Box>

@@ -4,6 +4,7 @@ const router = express.Router();
 const cartController = require("../controllers/cartController");
 
 router.post("/add", cartController.addToCart);
+router.post("/bulk-add", cartController.addToCartBulk);
 router.post("/remove", cartController.removeFromCart);
 router.post("/remove-item", cartController.removeCartItem);
 router.get("/get-cart", cartController.getCartItems);

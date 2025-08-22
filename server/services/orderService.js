@@ -21,7 +21,7 @@ exports.addOrder = async(userId, order, coupon) => {
 
     const userWallet = await walletService.getWallet(userId)
     const currentCartValue = order.newCartValue ? order.newCartValue : order.cartValue
-    const isBalanceSufficient = await walletService.compareBalance(userWallet)
+    const isBalanceSufficient = await walletService.compareBalance(userWallet, currentCartValue)
 
     if(!isBalanceSufficient){
         throw new Error("Insufficient balance in Wallet")
@@ -39,6 +39,8 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
+    let orderId;
+    // make this stock update modular, so won't have to execute outside the conditions
     for (const item of itemsToOrder) {
         const updateStock = await runQuery(
             `UPDATE product_inventory SET stock = stock - ? WHERE product_id = ?`, [item.quantity, item.product_id]
@@ -49,16 +51,19 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
-    // console.log(coupon);
     let orderItems = []
     if(coupon.code){
         const {newCart, couponData} = await this.checkCouponCode(userId, coupon.code)
+        // console.log(currentCartValue, newCart.newCartValue);
+        if(currentCartValue !== newCart.newCartValue){
+            throw new Error("Cart value mismatch")
+        }
 
         const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
         if (insert.affectedRows === 0) {
             throw new Error("Couldn't insert Order");
         }
-        const orderId = insert.insertId;
+        orderId = insert.insertId;
 
         orderItems = newCart.items.map(item => {
             if(item.coupon_discount && item.coupon_discount > 0){
@@ -87,8 +92,6 @@ exports.addOrder = async(userId, order, coupon) => {
             throw new Error("Couldn't update Total");
         }
 
-        await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
-
         const couponUsage = await runQuery(`INSERT INTO coupon_usages (coupon_id, user_id, order_id) VALUES (?, ?, ?)`, [couponData.id, userId, orderId])
 
         const couponUsed = await runQuery(`UPDATE coupons SET times_used = times_used + ? WHERE id = ?`, [1, couponData.id])
@@ -99,7 +102,7 @@ exports.addOrder = async(userId, order, coupon) => {
         if (insert.affectedRows === 0) {
             throw new Error("Couldn't insert Order");
         }
-        const orderId = insert.insertId;
+        orderId = insert.insertId;
 
         const insertItem = await runQuery(`
             INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
@@ -141,8 +144,11 @@ exports.addOrder = async(userId, order, coupon) => {
         if (setTotal.affectedRows === 0) {
             throw new Error("Couldn't update Total");
         }
-        await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
     }
+
+    console.log(currentCartValue);
+    await walletService.orderWalletPayment(userWallet, orderId, currentCartValue)
+    // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
     const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
     if (emptyCart.affectedRows === 0) {

@@ -8,7 +8,7 @@ exports.getWallet = async (userId) => {
     return wallet
 }
 
-exports.addAmount = async (wallet, amount, type) => {
+exports.addAmount = async (wallet, amount, type, paymentId = null, description = null) => {
     const walletId = wallet.id
     const userId = wallet.user_id
 
@@ -22,13 +22,16 @@ exports.addAmount = async (wallet, amount, type) => {
         throw new Error("Could not update balance")
     }
 
-    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'CREDIT', type])
+    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type, order_payment_id, description) VALUES (?, ?, ?, ?, ?, ?)`, [walletId, amount, 'CREDIT', type, paymentId, description])
     if(addTransaction.affectedRows === 0){
         throw new Error("Could not record transaction")
     }
+    if(type === "REFUND"){
+        return addTransaction.insertId
+    }
 }
 
-exports.withdrawAmount = async (wallet, amount, type) => {
+exports.withdrawAmount = async (wallet, amount, type, paymentId = null, description = null) => {
     const walletId = wallet.id
     const userId = wallet.user_id
     const currentBalance = wallet.balance
@@ -47,9 +50,12 @@ exports.withdrawAmount = async (wallet, amount, type) => {
         throw new Error("Could not update balance")
     }
 
-    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type) VALUES (?, ?, ?, ?)`, [walletId, amount, 'DEBIT', type])
+    const addTransaction = await runQuery(`INSERT INTO wallet_transactions (wallet_id, amount, transaction, type, order_payment_id, description) VALUES (?, ?, ?, ?, ?, ?)`, [walletId, amount, 'DEBIT', type, paymentId, description])
     if(addTransaction.affectedRows === 0){
         throw new Error("Could not record transaction")
+    }
+    if(type === "PAYMENT"){
+        return addTransaction.insertId
     }
 }
 
@@ -74,7 +80,7 @@ exports.verifyBalance = async (wallet) =>{
                                                     SUM(CASE WHEN transaction = 'DEBIT' THEN amount ELSE 0 END) AS calculated_balance
                                                 FROM wallet_transactions
                                                 WHERE wallet_id = ?`, [walletId]);
-
+    // console.log(calculated_balance, cacheBalance);
     return calculated_balance === cacheBalance
 }
 
@@ -83,6 +89,25 @@ exports.compareBalance = async (wallet, amount) => {
     if (!isVerified) {
         throw new Error("Wallet balance mismatch");
     }
-
+    // console.log(wallet.balance, parseFloat(amount));
+    // console.log(wallet.balance >= parseFloat(amount));
     return wallet.balance >= parseFloat(amount);
+}
+
+exports.orderWalletPayment = async (wallet, orderId, amount) => {
+    const pendingPayment = await runQuery(`INSERT INTO order_payments (order_id, method, amount, status) VALUES (?, ?, ?, ?)`, [orderId, "wallet", amount, "pending"])
+    if(pendingPayment.affectedRows === 0){
+        throw new Error("Couldn't initiate payment")
+    }
+    const paymentId = pendingPayment.insertId
+
+    const walletTransactionId = await this.withdrawAmount(wallet, amount, "PAYMENT", paymentId, `payment/orderId:${orderId}/paymentId:${paymentId}`)
+    if(!walletTransactionId){
+        throw new Error("Couldn't get wallet transaction id")
+    }
+
+    const updatePayment = await runQuery(`UPDATE order_payments SET status = ?, transaction_id = ? WHERE id = ?`, ["paid", walletTransactionId, paymentId])
+        if(updatePayment.affectedRows === 0){
+        throw new Error("Couldn't record transaction")
+    }
 }

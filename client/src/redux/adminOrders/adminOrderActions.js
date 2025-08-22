@@ -61,9 +61,8 @@ export const updateOrderStatus = (ids, status) => {
 
         // const idArray = Array.from(id) || [id]
         // console.log(idArray);
-        
         try{
-            const response = await fetch(`http://localhost:3000/admin/accept-orders`, {
+            const response = await fetch(`http://localhost:3000/admin/order-status`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -14,6 +14,21 @@ exports.addToCart = async (req, res) => {
     }
 }
 
+exports.addToCartBulk = async (req, res) => {
+    const userId = req.user.id;
+    const { items } = req.body;
+
+    try{
+        // await cartService.addCartService(productId, userId);
+        await cartService.addCartBulkService(productId, userId);
+        res.status(200).json({ message: "Items added successfully"});
+    }
+    catch(err){
+        console.error("Bulk add to cart failed:", err.message);
+        res.status(501).json({error : err.message});
+    }
+}
+
 exports.removeFromCart = async (req, res) => {
     const { productId } = req.body;
     const userId = req.user.id;

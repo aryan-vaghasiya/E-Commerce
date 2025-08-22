@@ -9,7 +9,7 @@ exports.addCartService = async (productId, userId) => {
         cartId = checkResult[0].id;
         // console.log(checkResult);
         await cartUtils.addQuantity(cartId, productId, userId);
-    } 
+    }
     else {
         const addResult = await runQuery("INSERT INTO cart (user_id, status) VALUES (?, 'active')", [userId])
         if(addResult.affectedRows === 0){
@@ -18,6 +18,25 @@ exports.addCartService = async (productId, userId) => {
         cartId = addResult.insertId;
         await cartUtils.addQuantity(cartId, productId, userId);
     }
+}
+
+exports.addCartBulkService = async (productId, userId) => {
+    let cartId;
+
+    // const checkResult = await runQuery("SELECT id FROM cart WHERE user_id = ? AND status = 'active'",[userId])
+    // if (checkResult.length > 0) {
+    //     cartId = checkResult[0].id;
+    //     // console.log(checkResult);
+    //     await cartUtils.addQuantity(cartId, productId, userId);
+    // }
+    // else {
+    //     const addResult = await runQuery("INSERT INTO cart (user_id, status) VALUES (?, 'active')", [userId])
+    //     if(addResult.affectedRows === 0){
+    //         throw new Error("Error Adding Cart")
+    //     }
+    //     cartId = addResult.insertId;
+    //     await cartUtils.addQuantity(cartId, productId, userId);
+    // }
 }
 
 exports.removeCartService = async (productId, userId) => {

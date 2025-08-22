@@ -6,6 +6,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const dayjs = require('dayjs')
 const adminUtils = require("../utils/adminUtils")
+const walletService = require("./walletService")
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -94,10 +95,10 @@ exports.getAllOrders = async(page, limit, offset) => {
     return adminOrders
 }
 
-exports.setOrderStatus = async(id, status) => {
+exports.setOrderStatus = async(ids, status) => {
     // console.log(id, status);
     
-    const setAccept = await runQuery(`UPDATE orders SET status = ? WHERE id IN ?`, [status, [id]])
+    const setAccept = await runQuery(`UPDATE orders SET status = ? WHERE id IN ?`, [status, [ids]])
     if(setAccept.affectedRows === 0){
         throw new Error("Could not Update Order Status")
     }
@@ -106,6 +107,7 @@ exports.setOrderStatus = async(id, status) => {
 exports.getOrderData = async (orderId) => {
     const [result] = await runQuery(`SELECT
                                     o.id, 
+                                    o.user_id,
                                     o.status,
                                     DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
                                     DATE_FORMAT(o.order_date, '%H:%i:%s') as order_time,
@@ -160,6 +162,46 @@ exports.getOrderData = async (orderId) => {
     result.products = products
     // console.log(result);
     return result;
+}
+
+exports.orderRefund = async (orderId, userId) => {
+    const [orderPayment] = await runQuery(`SELECT 
+                                        o.id AS order_id,
+                                        o.user_id,
+                                        o.status AS order_status,
+                                        o.final_total,
+                                        op.id AS payment_id,
+                                        op.method,
+                                        op.amount,
+                                        op.status AS payment_status,
+                                        op.transaction_id
+                                    FROM orders o 
+                                    JOIN order_payments op
+                                        ON o.id = op.order_id
+                                    WHERE o.id = ? AND o.user_id = ?`, [orderId, userId])
+    if(!orderPayment){
+        throw new Error ("Could not find order payment record")
+    }
+
+    const isEligibleForRefund = orderPayment.order_status !== "delivered" 
+                            && orderPayment.order_status !== "cancelled" 
+                            && orderPayment.final_total === orderPayment.amount 
+                            && orderPayment.payment_status === "paid";
+    if(!isEligibleForRefund){
+        throw new Error ("Order not eligible for refund")
+    }
+
+    const userWallet = await walletService.getWallet(userId)
+
+    const refundId = await walletService.addAmount(userWallet, orderPayment.amount, "REFUND", orderPayment.payment_id, `refund/orderId:${orderPayment.order_id}/of_paymentId:${orderPayment.payment_id}`)
+
+    const refundSuccessful = await runQuery(`INSERT INTO order_payments (order_id, method, amount, status, transaction_id) VALUES (?, ?, ?, ?, ?)`, [orderPayment.order_id, "wallet", orderPayment.amount, "refunded", refundId])
+
+    if(refundSuccessful.length === 0){
+        throw new Error ("Could not add refund record")
+    }
+
+    await this.setOrderStatus([orderPayment.order_id], "cancelled")
 }
 
 exports.getAllProducts = async(page, limit, offset) => {

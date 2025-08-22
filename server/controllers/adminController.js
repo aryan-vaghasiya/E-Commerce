@@ -70,6 +70,21 @@ exports.getSingleOrder = async (req,res) => {
     }
 }
 
+exports.orderCancelRefund = async (req, res) => {
+    const {orderId} = req.body
+    const {userId} = req.body
+    // console.log(orderId, userId);
+
+    try{
+        const data = await adminServices.orderRefund(orderId, userId);
+        res.status(200).json(data);
+    }
+    catch(err){
+        console.error("Error accepting Orders: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 exports.getProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit);

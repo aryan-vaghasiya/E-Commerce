@@ -24,12 +24,11 @@ function AdminOrderPage() {
     const token = useSelector(state => state.userReducer.token)
     const allStatus = ["pending", "accepted", "dispatched", "delivered", "cancelled"]
     // const orderParam = useParams()
-    // console.log(orderParam); 
+    // console.log(orderParam);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // console.log("fetching...");
                 const response = await fetch(`http://localhost:3000/admin/order?orderId=${orderId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -53,16 +52,8 @@ function AdminOrderPage() {
         fetchData()
     }, [orderId])
 
-    const getStatus = (status) => {
+    const getDisplayStatus = (status) => {
         return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-        // const newStatus = status === "pending" ? "Pending" : 
-        //                 status === "accepted" ? "Accepted" :
-        //                 status === "dispatched" ? "Dispatched" :
-        //                 status === "delivered" ? "Delivered" :
-        //                 status === "cancelled" ? "Cancelled" :
-        //                 null;
-        // console.log(newStatus);
-        // return newStatus
     }
 
     const getNextStatus = (status) => {
@@ -74,19 +65,35 @@ function AdminOrderPage() {
     }
 
     const handleStatus = () => {
-        // console.log(getNextStatus(data.status));
-        // console.log(orderId);
-        
         dispatch(updateOrderStatus(parseInt(orderId), getNextStatus(data.status)))
-        // window.location.href = `/admin/order/${orderId}`
-        // window.location.reload();
-
         setData(prev => ({...prev, status: getNextStatus(data.status)}))
     }
-    const handleCancel = () => {
-        dispatch(updateOrderStatus(parseInt(orderId), "cancelled"))
+
+    const handleCancel = async () => {
+        // dispatch(updateOrderStatus(parseInt(orderId), "cancelled"))
+        try{
+            const response = await fetch(`http://localhost:3000/admin/order-cancellation`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    orderId,
+                    userId: data.user_id
+                })
+            })
+            if(!response.ok){
+                const error = await adminOrders.json()
+                console.error("Could not cancel Order:", error.error);
+                return
+            }
+        }
+        catch (err){
+            // dispatch(adminOrdersFailed(err.message))
+            console.error("Could not cancel Order:", err.message);
+        }
         setData(prev => ({...prev, status: "cancelled"}))
-        // window.location.href = `/admin/order/${orderId}`
     }
 
     if (error) {
@@ -104,13 +111,16 @@ function AdminOrderPage() {
                     <Typography>Order Status</Typography>
                 </Box>
                 <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                    <Typography sx={{fontSize: 30}}>{getStatus(data.status)}</Typography>
+                    <Typography sx={{fontSize: 30}}>{getDisplayStatus(data.status)}</Typography>
                     {
-                        data.status === "delivered"?
+                        data.status === "delivered" || data.status === "cancelled" ?
+                        // data.status === "delivered" ?
                         null
-                        :
-                        data.status === "cancelled"?
-                        <Button variant='contained' onClick={handleStatus}>Mark as {getNextStatus(data.status)}</Button>
+                        // :
+                        // data.status === "cancelled"?
+                        // <Box>
+                        //     <Button variant='contained' onClick={handleStatus}>Mark as {getNextStatus(data.status)}</Button>
+                        // </Box>
                         :
                         <Box>
                             <Button variant='contained' onClick={handleCancel} sx={{mr: 1}} color='error'>Cancel Order</Button>

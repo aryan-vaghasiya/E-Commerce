@@ -8,8 +8,10 @@ const upload = require("../middlewares/uploadProductImages")
 router.post("/login", adminController.login);
 router.get("/get-dashboard", verifyAdminToken, adminController.getDashboard);
 router.get("/get-orders", verifyAdminToken, adminController.getOrders);
-router.post("/accept-orders", verifyAdminToken, adminController.orderStatus);
+router.post("/order-status", verifyAdminToken, adminController.orderStatus);
 router.get("/order", verifyAdminToken, adminController.getSingleOrder);
+router.post("/order-cancellation", verifyAdminToken, adminController.orderCancelRefund);
+
 router.get("/get-products", verifyAdminToken, adminController.getProducts);
 router.get("/product", verifyAdminToken, adminController.getSingleProduct);
 router.get("/product/categories", verifyAdminToken, adminController.getAllCategories);
