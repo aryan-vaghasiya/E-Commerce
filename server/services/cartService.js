@@ -20,23 +20,61 @@ exports.addCartService = async (productId, userId) => {
     }
 }
 
-exports.addCartBulkService = async (productId, userId) => {
+exports.addCartBulkService = async (userId, items) => {
     let cartId;
 
-    // const checkResult = await runQuery("SELECT id FROM cart WHERE user_id = ? AND status = 'active'",[userId])
-    // if (checkResult.length > 0) {
-    //     cartId = checkResult[0].id;
-    //     // console.log(checkResult);
-    //     await cartUtils.addQuantity(cartId, productId, userId);
-    // }
-    // else {
-    //     const addResult = await runQuery("INSERT INTO cart (user_id, status) VALUES (?, 'active')", [userId])
-    //     if(addResult.affectedRows === 0){
-    //         throw new Error("Error Adding Cart")
-    //     }
-    //     cartId = addResult.insertId;
-    //     await cartUtils.addQuantity(cartId, productId, userId);
-    // }
+    const checkResult = await runQuery(
+        "SELECT id FROM cart WHERE user_id = ? AND status = 'active'",
+        [userId]
+    );
+
+    if (checkResult.length > 0) {
+        cartId = checkResult[0].id;
+    } 
+    else {
+        const addResult = await runQuery(
+            "INSERT INTO cart (user_id, status) VALUES (?, 'active')",
+            [userId]
+        )
+        if (addResult.affectedRows === 0) {
+            throw new Error("Error creating cart");
+        }
+        cartId = addResult.insertId
+    }
+
+    const existingItems = await runQuery(
+        "SELECT product_id, quantity FROM cart_item WHERE user_id = ? AND cart_id = ?",
+        [userId, cartId]
+    );
+    const existingMap = new Map(existingItems.map(i => [i.product_id, i.quantity]));
+
+    const inserts = [];
+    const updates = [];
+
+    for (const { productId, quantity } of items) {
+        if (existingMap.has(productId)) {
+            updates.push(
+                runQuery(
+                    "UPDATE cart_item SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?",
+                    [quantity, userId, productId]
+                )
+            );
+        } 
+        else {
+            inserts.push(
+                runQuery(
+                    "INSERT INTO cart_item (cart_id, user_id, product_id, quantity) VALUES (?, ?, ?, ?)",
+                    [cartId, userId, productId, quantity]
+                )
+            );
+        }
+    }
+
+    const results = await Promise.all([...updates, ...inserts]);
+    // console.log(results);
+    
+
+    return { cartId, added: items.length };
 }
 
 exports.removeCartService = async (productId, userId) => {

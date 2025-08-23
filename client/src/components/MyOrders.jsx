@@ -36,12 +36,29 @@ function MyOrders() {
         return () => clearInterval(timeOut)
     },[])   
 
-    const handleRepeatOrder = (products)=> {
+    const handleRepeatOrder = async (products)=> {
         // console.log(products);
         const newItems = products.map(item => ({productId: item.id, quantity: item.quantity}))
         console.log(newItems);
 
-        
+        try{
+            const response = await fetch(`http://localhost:3000/cart/bulk-add`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization : `Bearer ${userState.token}`
+                },
+                body: JSON.stringify({items: newItems})
+            })
+            if(!response.ok){
+                const error = await response.json()
+                return console.log(error)
+            }
+            navigate("/cart")
+        }
+        catch(err){
+            console.error(err.message)
+        }
     }
 
     const getCurrentStatus = (status) => {
@@ -122,7 +139,7 @@ function MyOrders() {
                                     }
                                 </Box>
                                 <Box>
-                                    <Button variant='contained' onClick={() => handleRepeatOrder(order.products)}>Repeat Order</Button>
+                                    <Button variant='outlined' size='small' onClick={() => handleRepeatOrder(order.products)}>Repeat Order</Button>
                                 </Box>
                             </Box>
                             {order.products.map(item => (

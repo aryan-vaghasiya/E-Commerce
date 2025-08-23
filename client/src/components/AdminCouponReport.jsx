@@ -873,7 +873,9 @@ function AdminCouponReport({couponData}) {
                             {couponData.coupons_left ? ` (${couponData.coupons_left} left)` : null}
                         </Typography>
                         <Typography>
-                            <Typography component={'span'} sx={{fontWeight: 700}}>Validity: </Typography> 
+                            <Typography component={'span'} sx={{fontWeight: 700}}>
+                                {`Validity: `}
+                            </Typography> 
                             {dayjs(couponData.start_time).format("DD MMM YYYY")} - {dayjs(couponData.end_time).format("DD MMM YYYY")}
                         </Typography>
                     </Box>

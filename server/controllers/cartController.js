@@ -20,7 +20,7 @@ exports.addToCartBulk = async (req, res) => {
 
     try{
         // await cartService.addCartService(productId, userId);
-        await cartService.addCartBulkService(productId, userId);
+        await cartService.addCartBulkService(userId, items);
         res.status(200).json({ message: "Items added successfully"});
     }
     catch(err){

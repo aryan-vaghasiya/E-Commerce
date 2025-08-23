@@ -273,7 +273,7 @@ function MyWallet() {
                 <Card sx={{borderRadius: 3}}>
                     <CardContent>
                         <Typography>{transactions.length > 0 ? "Last 10 Transactions" : "No Transactions"}</Typography>
-                        <TableContainer component={Paper} sx={{ maxWidth: "600px", my: 2}} elevation={3}>
+                        <TableContainer component={Paper} sx={{ minWidth: "400px", maxWidth: "600px", my: 2}} elevation={3}>
                             <Table sx={{ tableLayout: "fixed", width: "100%" }}>
                                 <TableHead>
                                     <TableRow>
@@ -289,21 +289,23 @@ function MyWallet() {
                                             key={index}
                                             sx={{ 
                                                 "& td, & th": {borderRight: "1px solid rgba(224, 224, 224, 1)"},
+                                                "& td:last-of-type" : {borderRight: 0},
                                                 '&:last-child td, &:last-child th': { borderBottom: 0 } 
                                             }}
                                         >
-                                            <TableCell align='left'>{getTransactionType(row.type)}</TableCell>
-                                            <TableCell align='left' sx={{ 
-                                                    // wordWrap: "break-word",
-                                                    overflowWrap: "anywhere"
-                                                }}
+                                            <TableCell align='left' sx={{overflowWrap: "anywhere"}}>{getTransactionType(row.type)}</TableCell>
+                                            <TableCell align='left' 
+                                                sx={{
+                                                        // wordWrap: "break-word",
+                                                        overflowWrap: "anywhere"
+                                                    }}
                                             >
                                                 {row.description || "-"}
                                             </TableCell>
-                                            <TableCell sx={{textAlign: 'right'}}>
+                                            <TableCell sx={{textAlign: 'right', overflowWrap: "anywhere"}}>
                                                 {dayjs(row.created_at).format("DD-MM-YYYY, hh:mm A")} {row.last_name}
                                             </TableCell>
-                                            <TableCell sx={{textAlign: 'right'}}>
+                                            <TableCell sx={{textAlign: 'right', overflowWrap: "anywhere"}}>
                                                 <Box sx={{display: "flex", justifyContent: "flex-end", alignItems: "center", height: "100%"}}>
                                                     <Typography color={row.transaction === "CREDIT" ? 'success' : 'error'}>{row.transaction === "CREDIT" ? '+' : '-'}{(row.amount).toFixed(2)}$</Typography>
                                                 </Box>

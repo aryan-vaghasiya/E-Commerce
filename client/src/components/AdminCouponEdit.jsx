@@ -282,9 +282,9 @@ function AdminCouponEdit() {
                         {"Deactivate Coupon ?"}
                         </DialogTitle>
                         <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                            This coupon offer will be ended now, and could no longer be edited.
-                        </DialogContentText>
+                            <DialogContentText id="alert-dialog-description">
+                                This coupon offer will be ended now, and could no longer be edited.
+                            </DialogContentText>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={handleClose} color='error'>No</Button>
