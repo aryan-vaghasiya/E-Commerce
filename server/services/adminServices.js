@@ -1,6 +1,5 @@
 const runQuery = require("../db")
 const jwt = require("jsonwebtoken");
-const secretKey = "abcde12345";
 const bcrypt = require("bcrypt")
 const fs = require("fs-extra");
 const path = require("path");
@@ -26,7 +25,7 @@ exports.loginAdmin = async(username, password) => {
                 username: user.username,
                 role: "admin"
             },
-            secretKey,
+            process.env.JWT_SECRET,
             { expiresIn: "10h" }
         );
         return token

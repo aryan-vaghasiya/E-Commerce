@@ -13,9 +13,11 @@ const adminRoutes = require("./routes/adminRoutes")
 const path = require("path")
 const cron = require("node-cron")
 const runQuery = require("./db")
+const dotenv = require('dotenv');
 
+dotenv.config();
 const app = express();
-const port = 3000;
+const port = process.env.EXPRESS_PORT;
 
 app.use(cors());
 app.use(express.json());

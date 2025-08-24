@@ -71,10 +71,7 @@ exports.getSingleOrder = async (req,res) => {
 }
 
 exports.orderCancelRefund = async (req, res) => {
-    const {orderId} = req.body
-    const {userId} = req.body
-    const {reason} = req.body
-    // console.log(orderId, userId);
+    const {orderId, userId, reason} = req.body
 
     try{
         const data = await adminServices.orderRefund(orderId, userId, reason);

@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const secretKey = "abcde12345";
 
 module.exports = (req, res, next) => {
     const authHeader = req.headers["authorization"];
@@ -11,7 +10,7 @@ module.exports = (req, res, next) => {
     }
 
     try{
-        const verified = jwt.verify(token, secretKey);
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
 
         if(verified.role !== "admin"){
             return res.status(403).json({ message: "Access Denied. Admins only." });

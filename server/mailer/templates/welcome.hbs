@@ -1,0 +1,47 @@
+{{!-- <!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Welcome Email</title>
+    </head>
+    <body>
+        <h1>Welcome, {{name}}!</h1>
+        <p>We’re glad to have you join MyApp.</p>
+        <p>Your email: {{email}}</p>
+    </body>
+</html> --}}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            font-size: 14px;
+            color: #555;
+        }
+    </style>  
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, {{fName}} {{lName}} 🎉</h1>
+        <p>We're excited to have you join us, {{fName}}!</p>
+        <p>Your username is: {{username}}</p>
+        <p style="margin-top: 20px;">Thanks,<br/>Team Cartify</p>
+    </div>
+</body>
+</html>

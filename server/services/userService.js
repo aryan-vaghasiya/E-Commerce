@@ -1,7 +1,7 @@
 const runQuery = require("../db")
 const jwt = require("jsonwebtoken");
-const secretKey = "abcde12345";
 const bcrypt = require("bcrypt")
+const {sendMail} = require("../mailer/sendMail")
 
 exports.loginUser = async(username, password) => {
     const result = await runQuery("SELECT * FROM users WHERE username = ?", [username])
@@ -18,7 +18,7 @@ exports.loginUser = async(username, password) => {
                 username: user.username,
                 role: "user"
             },
-            secretKey,
+            process.env.JWT_SECRET,
             { expiresIn: "10h" }
         );
         return token
@@ -40,19 +40,29 @@ exports.signupUser = async(username, password, fName, lName, email) => {
         throw new Error ("Can't Signup User")
     }
 
+    sendMail({
+        to: email,
+        subject: "Welcome to Cartify🎉",
+        template: "welcome.hbs",
+        replacements: { fName, lName, username }
+    })
+        .catch(err => {
+            console.error("Failed to send welcome email:", err);
+        });
+
     const userId = result.insertId;
 
     const addWallet = await runQuery(`INSERT INTO wallets (user_id, balance) VALUES (?, ?)`, [userId, 0.00])
-    if(addWallet.affectedRows === 0){
-        throw new Error ("Couldn't add wallet")
-    }
+    // if(addWallet.affectedRows === 0){
+    //     throw new Error ("Couldn't add wallet")
+    // }
 
     const token = jwt.sign(
         {
             id: userId,
             username: username,
         },
-        secretKey,
+        process.env.JWT_SECRET,
         { expiresIn: "10h" }
     );
     return token
