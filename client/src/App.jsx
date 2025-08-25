@@ -37,6 +37,7 @@ import AdminCouponDetails from './components/AdminCouponDetails'
 import AdminCouponEdit from './components/AdminCouponEdit'
 import MyProfile from './components/MyProfile'
 import MyWallet from './components/MyWallet'
+import HomePage from './components/HomePage'
 
 function App() {
 
@@ -50,7 +51,8 @@ function App() {
             <Routes>
 
               <Route element={<UserLayout />}>
-                <Route path='/' element={<Products />} />
+                <Route path='/' element={<HomePage />} />
+                {/* <Route path='/' element={<Products />} /> */}
                 <Route path='/products/:productId' element={<ProductPage />}/>
                 <Route path='/products' element={<ProductsSearched />}/>
                 <Route path='/cart' element={<MyCart />} />
