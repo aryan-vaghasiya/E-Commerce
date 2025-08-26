@@ -1,18 +1,5 @@
 {{!-- <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <title>Welcome Email</title>
-    </head>
-    <body>
-        <h1>Welcome, {{name}}!</h1>
-        <p>We’re glad to have you join MyApp.</p>
-        <p>Your email: {{email}}</p>
-    </body>
-</html> --}}
-
-<!DOCTYPE html>
-<html>
 <head>
     <meta charset="UTF-8">
     <title>Welcome Email</title>
@@ -42,6 +29,390 @@
         <p>We're excited to have you join us, {{fName}}!</p>
         <p>Your username is: {{username}}</p>
         <p style="margin-top: 20px;">Thanks,<br/>Team Cartify</p>
+    </div>
+</body>
+</html> --}}
+
+{{!-- <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header img {
+            max-width: 120px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .btn {
+            display: inline-block;
+            background: #1976d2;
+            color: #fff;
+            padding: 12px 24px;
+            margin: 20px 0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .features {
+            margin: 20px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .features li {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- Replace with your logo -->
+            <img src="https://freevector-images.s3.amazonaws.com/uploads/vector/preview/36682/36682.png" alt="Cartify Logo">
+        </div>
+        <h1>Welcome, {{fName}} {{lName}} 🎉</h1>
+        <p>Hi {{fName}}, we’re thrilled to have you on board!</p>
+        <p>Your username is: <strong>{{username}}</strong></p>
+
+        <a href="{{loginLink}}" class="btn">Start Shopping</a>
+
+        <p>Here’s what you’ll enjoy with Cartify:</p>
+        <ul class="features">
+            <li>✔ Exclusive discounts and offers</li>
+            <li>✔ Secure payments with multiple options</li>
+            <li>✔ Easy order tracking and returns</li>
+            <li>✔ Wallet for quick checkouts</li>
+        </ul>
+
+        <p style="margin-top: 20px;">Thanks,<br/>Team Cartify</p>
+
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+            <p>© 2025 Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> --}}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Email</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .header img {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+        
+        .user-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .user-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .user-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .start-shopping-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+            font-size: 16px;
+        }
+        
+        .start-shopping-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .features-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .features-section h3 {
+            color: #28a745;
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            font-size: 15px;
+            color: #333;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-icon {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .feature-text {
+            flex: 1;
+        }
+        
+        .closing-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .closing-message p {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .team-signature {
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .features-list li {
+                font-size: 14px;
+            }
+            
+            .user-detail {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <img src="https://freevector-images.s3.amazonaws.com/uploads/vector/preview/36682/36682.png" alt="Cartify Logo">
+            <h1>Welcome, {{fName}} {{lName}} 🎉</h1>
+            <p>We're thrilled to have you on board!</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{fName}}, welcome to the Cartify family!
+            </div>
+            
+            <!-- User Information -->
+            <div class="user-info">
+                <h3>Your Account Details</h3>
+                <div class="user-detail">
+                    <span class="detail-label">Username:</span>
+                    <span class="detail-value">{{username}}</span>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="cta-section">
+                <a href="{{loginLink}}" class="start-shopping-button">Start Shopping</a>
+            </div>
+            
+            <!-- Features Section -->
+            <div class="features-section">
+                <h3>Here's what you'll enjoy with Cartify:</h3>
+                <ul class="features-list">
+                    <li>
+                        <div class="feature-icon">✓</div>
+                        <div class="feature-text">Exclusive discounts and offers</div>
+                    </li>
+                    <li>
+                        <div class="feature-icon">✓</div>
+                        <div class="feature-text">Secure payments with multiple options</div>
+                    </li>
+                    <li>
+                        <div class="feature-icon">✓</div>
+                        <div class="feature-text">Easy order tracking and returns</div>
+                    </li>
+                    <li>
+                        <div class="feature-icon">✓</div>
+                        <div class="feature-text">Wallet for quick checkouts</div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Closing Message -->
+            <div class="closing-message">
+                <p>Thanks for joining us!</p>
+                <p class="team-signature">Team Cartify</p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+            <p>&copy; 2025 Cartify. All rights reserved.</p>
+        </div>
     </div>
 </body>
 </html>

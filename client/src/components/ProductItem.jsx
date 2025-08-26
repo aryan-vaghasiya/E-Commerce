@@ -80,7 +80,8 @@ function ProductItem({product, loading}) {
             <Box>
                 {
                     loading? (
-                        <Card sx={{mb: 2.5, height: "100%", minWidth: "200px" /* ,  display: "flex", alignItems: "stretch" */}}>
+                        // <Card sx={{mb: 2.5, height: "100%", minWidth: "200px" /* ,  display: "flex", alignItems: "stretch" */}}>
+                        <Card sx={{height: "100%", minWidth: "200px" /* ,  display: "flex", alignItems: "stretch" */}}>
                             <CardContent>
                                 <Skeleton variant='rounded' height={300} animation="wave"></Skeleton>
                                 <Skeleton variant='text' sx={{fontSize: 16, mt: 0.5}} animation="wave"></Skeleton>
@@ -96,7 +97,13 @@ function ProductItem({product, loading}) {
                     )
                     :
                     (
-                        <Card sx={{mb: 2.5, /* height: "100%",  display: "flex", alignItems: "stretch" */}}>
+                        // <Card sx={{mb: 2.5, /* height: "100%",  display: "flex", alignItems: "stretch" */}}>
+                        <Card 
+                            sx={{
+                                transition: "transform .15s ease, box-shadow .15s ease",
+                                "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
+                            }}
+                        >
                         <CardContent>
                         <Link to={`/products/${product.id}`}>
                         <CardActionArea>

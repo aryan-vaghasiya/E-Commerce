@@ -14,6 +14,7 @@ const path = require("path")
 const cron = require("node-cron")
 const runQuery = require("./db")
 const dotenv = require('dotenv');
+const { sendMail } = require("./mailer/sendMail")
 
 dotenv.config();
 const app = express();
@@ -60,3 +61,77 @@ app.use("/wallet", verifyToken, walletRoutes);
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);
 });
+
+    // sendMail({
+    //     to: "demo@demo.com",
+    //     subject: "Order Update",
+    //     template: "order-status.hbs",
+    //     replacements: {
+    //         customerName: "John Doe",
+    //         orderNumber: "#12345",
+    //         orderDate: "August 20, 2025",
+    //         orderTotal: "$149.99",
+    //         currentStatus: "Dispatched",
+    //         progressPercentage: 75,
+    //         orderSteps: [
+    //             {
+    //                 label: "Order Placed",
+    //                 status: "completed",
+    //                 icon: "✓",
+    //                 stepNumber: "1"
+    //             },
+    //             {
+    //                 label: "Accepted",
+    //                 status: "completed",
+    //                 icon: "✓",
+    //                 stepNumber: "2"
+    //             },
+    //             {
+    //                 label: "Dispatched",
+    //                 status: "completed",
+    //                 icon: "✓",
+    //                 stepNumber: "3"
+    //             },
+    //             {
+    //                 label: "Delivered",
+    //                 status: "pending",
+    //                 stepNumber: "4"
+    //             }
+    //         ],
+    //         estimatedDelivery: "August 26, 2025",
+    //         trackingNumber: "1Z999AA1234567890",
+    //         trackingUrl: "https://yourtrackingurl.com/track/1Z999AA1234567890",
+    //         supportEmail: "support@yourstore.com",
+    //         supportPhone: "1-800-123-4567",
+    //         currentYear: "2025",
+    //         additionalMessage: "Your package is currently in transit and should arrive soon!"
+    //     }
+
+    // })
+    //     .catch(err => {
+    //         console.error("Failed to send welcome email:", err);
+    //     });
+
+    //     sendMail({
+    //     to: "demo@demo.com",
+    //     subject: "Order Cancelled",
+    //     template: "order-cancel-refunded.hbs",
+    //     replacements: {
+    //             customerName: "John Doe",
+    //             orderNumber: "#12345",
+    //             orderDate: "August 20, 2025",
+    //             noOfItems: "3 items",
+    //             cancellationDate: "August 25, 2025",
+    //             cancellationReason: "Unfortunately, one of the items in your order is currently out of stock and we're unable to fulfill it within the expected timeframe. Rather than delay your entire order, we've decided to cancel it and process a full refund.",
+    //             refundAmount: "149.99",
+    //             orderValue: "139.99",
+    //             discountValue: "10.00", // Optional
+    //             taxes: "20.00", // Optional
+    //             supportLink: "https://cartify.com/support",
+    //             supportPhone: "1-800-123-4567",
+    //             currentYear: "2025"
+    //         }
+    // })
+    //     .catch(err => {
+    //         console.error("Failed to send welcome email:", err);
+    //     });

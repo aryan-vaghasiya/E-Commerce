@@ -5,7 +5,8 @@ const fs = require("fs-extra");
 const path = require("path");
 const dayjs = require('dayjs')
 const adminUtils = require("../utils/adminUtils")
-const walletService = require("./walletService")
+const walletService = require("./walletService");
+const { sendMail } = require("../mailer/sendMail");
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -101,7 +102,85 @@ exports.setOrderStatus = async(ids, status) => {
     if(setAccept.affectedRows === 0){
         throw new Error("Could not Update Order Status")
     }
+
+    this.sendOrderStatusEmail(ids[0])
 }
+
+exports.sendOrderStatusEmail = async (id, status) => {
+    const allDisplayStatuses = ["Pending", "Accepted", "Dispatched", "Delivered", "Cancelled"]
+
+    const [getOrder] = await runQuery(`SELECT * FROM orders WHERE id = ?`, [id])
+    const index = allDisplayStatuses.indexOf(getOrder.status.charAt(0).toUpperCase() + getOrder.status.slice(1).toLowerCase())
+    if(index === 4){
+        return console.log("order cancelled")
+    }
+    const currentStatus = allDisplayStatuses[index]
+    const progressPercentage = parseInt((100/4) * (index + 1))
+
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [getOrder.user_id])
+
+    const orderSteps = [
+                {
+                    label: "Order Placed",
+                    status: "pending",
+                    stepNumber: "1"
+                },
+                {
+                    label: "Accepted",
+                    status: "pending",
+                    stepNumber: "2"
+                },
+                {
+                    label: "Dispatched",
+                    status: "pending",
+                    stepNumber: "3"
+                },
+                {
+                    label: "Delivered",
+                    status: "pending",
+                    stepNumber: "4"
+                }
+            ]
+
+    for(let i = 0; i < orderSteps.length; i++){
+        if(i <= index){
+            orderSteps[i].status = "completed"
+            orderSteps[i].icon = "✓"
+        }
+    }
+
+    const deliveryDate = dayjs(getOrder.order_date).add(7, "day");
+    const estimatedDelivery = 
+        index === 3 ? getOrder.last_updated 
+        : deliveryDate.isBefore(dayjs()) ? dayjs().add(7, "day")
+        : deliveryDate;
+
+    const replacements = {
+        fName: getUser.first_name,
+        lName: getUser.last_name,
+        orderId: getOrder.id,
+        orderDate: dayjs(getOrder.order_date).format("MMMM DD, YYYY"),
+        orderTotal: (getOrder.final_total).toFixed(2),
+        currentStatus,
+        progressPercentage,
+        orderSteps,
+        estimatedDelivery: dayjs(estimatedDelivery).format("MMMM DD, YYYY"),
+        trackingNumber: "1Z999AA1234567890",
+        trackingUrl: "https://yourtrackingurl.com/track/1Z999AA1234567890",
+    }
+
+    sendMail({
+        to: getUser.email,
+        subject: `Order Update - ${currentStatus}`,
+        template: "order-status.hbs",
+        replacements
+    })
+        .catch(err => {
+            console.error("Failed to send welcome email:", err);
+        });
+}
+
+// this.sendOrderStatusEmail(87)
 
 exports.getOrderData = async (orderId) => {
     const [orderRow] = await runQuery(`SELECT
@@ -242,6 +321,10 @@ exports.orderRefund = async (orderId, userId, reason = "") => {
         const flagUsageReverse = await runQuery(`UPDATE coupon_usages SET is_reversed = ?, reversed_on = NOW() WHERE coupon_id = ? AND order_id = ?`, [true, orderPayment.coupon_id, orderId])
         const decrementUsage = await runQuery(`UPDATE coupons SET times_used = times_used - 1 WHERE id = ?`, [orderPayment.coupon_id])
     }
+}
+
+exports.sendOrderCancelRefundEmail = async (orderId, userId, reason = "") => {
+
 }
 
 exports.getAllProducts = async(page, limit, offset) => {

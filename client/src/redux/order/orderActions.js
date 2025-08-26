@@ -15,12 +15,11 @@ export const ordersFromDb = (orderItems) => {
 }
 
 export const addOrders = (order, coupon) => {
-    console.log(order);
+    // console.log(order);
+    // console.log(coupon);
     
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
-        // console.log(token);
-        // const productId = product.id
         try{
             const response = await fetch("http://localhost:3000/orders/add-order", {
                 method: "POST",

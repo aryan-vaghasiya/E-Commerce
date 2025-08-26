@@ -1,0 +1,517 @@
+{{!-- <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 650px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .summary {
+            margin: 20px 0;
+        }
+        .summary p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #444;
+        }
+        .items {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .items th, .items td {
+            border-bottom: 1px solid #eee;
+            padding: 10px;
+            font-size: 14px;
+            text-align: left;
+        }
+        .items th {
+            background: #fafafa;
+            color: #333;
+        }
+        .items td img {
+            width: 50px;
+            border-radius: 4px;
+        }
+        .totals {
+            margin-top: 20px;
+            font-size: 15px;
+        }
+        .totals p {
+            margin: 5px 0;
+        }
+        .totals strong {
+            font-size: 16px;
+        }
+        .btn {
+            display: inline-block;
+            background: #1976d2;
+            color: #fff;
+            padding: 12px 24px;
+            margin: 20px 0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Thank you for your order, {{fName}} 🎉</h1>
+            <p>Your order has been placed successfully.</p>
+        </div>
+
+        <div class="summary">
+            <p><strong>Order Summary</strong></p>
+            <p>Items: {{noOfItems}}</p>
+            <p>Order Date: {{orderDate}}</p>
+            <p>Order ID: {{orderId}}</p>
+        </div>
+
+        <table class="items">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>
+                        <table style="border: none; width: 100%; vertical-align: middle;">
+                            <tr>
+                                <td style="width: 60px; vertical-align: middle; padding: 0; border: none;">
+                                    <img src="https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp" alt="{{title}}" style="width: 50px; border-radius: 4px;"/>
+                                </td>
+                                <td style="vertical-align: middle; padding: 0; border: none;">
+                                    <div style="font-weight: bold; color: #333;">{{title}}</div>
+                                    <div style="font-size: 13px; color: #777;">{{brand}}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>{{quantity}}</td>
+                    <td>${{price}}</td>
+                    <td>${{priceValue}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <p>Order Value: ${{cartValue}}</p>
+            {{#if discountValue}}
+            <p>Discount Applied: -${{discountValue}} (Coupon: {{couponCode}})</p>
+            {{/if}}
+            <p><strong>Total Payable: ${{newCartValue}}</strong></p>
+        </div>
+
+        <a href="{{orderLink}}" class="btn">Track Your Order</a>
+
+        <p>We’ll notify you when your items are shipped.</p>
+
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+            <p>© 2025 Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> --}}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+        
+        .order-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .order-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        
+        .items-section {
+            margin: 30px 0;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .items-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .items-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 14px;
+        }
+        
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .items-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .product-cell {
+            border: none !important;
+            width: 100%;
+            vertical-align: middle;
+        }
+        
+        .product-cell tr {
+            border: none !important;
+        }
+        
+        .product-cell td {
+            border: none !important;
+            padding: 0 !important;
+        }
+        
+        .product-image {
+            width: 50px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .product-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .product-brand {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .totals-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .totals-section h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .total-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .total-item.final {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            margin-top: 10px;
+        }
+        
+        .track-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+            font-size: 16px;
+        }
+        
+        .track-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .notification-text {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 15px;
+            color: #1565c0;
+        }
+        
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .items-table th,
+            .items-table td {
+                padding: 10px 8px;
+            }
+            
+            .items-table {
+                font-size: 13px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Thank you for your order, {{fName}} 🎉</h1>
+            <p>Your order has been placed successfully.</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Order Information -->
+            <div class="order-info">
+                <h3>Order Summary</h3>
+                <div class="order-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Items:</span>
+                        <span class="detail-value">{{noOfItems}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Order Date:</span>
+                        <span class="detail-value">{{orderDate}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Order ID:</span>
+                        <span class="detail-value">{{orderId}}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Items Section -->
+            <div class="items-section">
+                <h2 class="section-title">Order Items</h2>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each items}}
+                        <tr>
+                            <td>
+                                <table class="product-cell">
+                                    <tr>
+                                        <td style="width: 60px; vertical-align: middle;">
+                                            <img src="https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/thumbnail.webp" alt="{{title}}" class="product-image"/>
+                                        </td>
+                                        <td style="vertical-align: middle;">
+                                            <div class="product-title">{{title}}</div>
+                                            <div class="product-brand">{{brand}}</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td>{{quantity}}</td>
+                            <td>${{price}}</td>
+                            <td>${{priceValue}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Totals Section -->
+            <div class="totals-section">
+                <h3>Order Total</h3>
+                <div class="total-item">
+                    <span>Order Value:</span>
+                    <span>${{cartValue}}</span>
+                </div>
+                {{#if discountValue}}
+                <div class="total-item">
+                    <span>Discount Applied ({{couponCode}}):</span>
+                    <span>-${{discountValue}}</span>
+                </div>
+                {{/if}}
+                <div class="total-item final">
+                    <span>Total Payment:</span>
+                    <span>${{newCartValue}}</span>
+                </div>
+            </div>
+            
+            <!-- Track Order Button -->
+            <div style="text-align: center;">
+                <a href="{{orderLink}}" class="track-button">Track Your Order</a>
+            </div>
+            
+            <!-- Notification -->
+            <div class="notification-text">
+                We'll notify you when your items are shipped.
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+            <p>&copy; 2025 Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

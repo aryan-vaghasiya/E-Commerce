@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Status Update</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+        
+        .order-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .order-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        
+        .progress-section {
+            margin: 30px 0;
+        }
+        
+        .progress-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .progress-bar-container {
+            background-color: #e9ecef;
+            border-radius: 20px;
+            height: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            position: relative;
+        }
+        
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .step.completed .step-circle {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .step.active .step-circle {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .step.pending .step-circle {
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+        
+        .step-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .step.completed .step-label {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .step.active .step-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .estimated-delivery {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .estimated-delivery h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .delivery-date {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .tracking-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .tracking-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: transform 0.2s ease;
+        }
+        
+        .tracking-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-steps {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .step {
+                display: flex;
+                align-items: center;
+                text-align: left;
+            }
+            
+            .step-circle {
+                margin: 0 15px 0 0;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Order Status Update 🚚</h1>
+            <p>Cartify</p>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                Hi {{fName}} {{lName}},
+            </div>
+            <p>Great news! We have an update on your order. Here's what's happening:</p>
+            <br>
+            <div class="order-info">
+                <h3>Order Details</h3>
+                <div class="order-details">
+                    <div class="detail-item">
+                      <span class="detail-label">Order Number:</span>
+                      <span class="detail-value">#{{orderId}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Order Date:</span>
+                        <span class="detail-value">{{orderDate}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total Amount:</span>
+                        <span class="detail-value">${{orderTotal}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Current Status:</span>
+                        <span class="detail-value">{{currentStatus}}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-section">
+                <h2 class="progress-title">Order Progress: {{currentStatus}}</h2>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{progressPercentage}}%"></div>
+                </div>
+
+                <!-- Progress Steps -->
+                <div class="progress-steps">
+                    {{#each orderSteps}}
+                    <div class="step {{this.status}}">
+                        <div class="step-circle">
+                            {{!-- {{#if this.icon}}{{this.icon}}{{else}}{{this.stepNumber}}{{/if}} --}}
+                            {{#if this.icon}}{{this.icon}}{{else}}{{this.stepNumber}}{{/if}}
+                        </div>
+                        <div class="step-label">{{this.label}}</div>
+                        {{!-- {{#if this.date}}
+                        <div style="font-size: 11px; color: #999;">{{this.date}}</div>
+                        {{/if}} --}}
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            
+            <!-- Estimated Delivery -->
+            {{!-- {{#if estimatedDelivery}} --}}
+            {{#if_eq currentStatus "Delivered"}}
+              <div class="estimated-delivery">
+                  <h3>Order Delivered</h3>
+                  <div class="delivery-date">{{estimatedDelivery}}</div>
+              </div>
+            {{else}}
+              <div class="estimated-delivery">
+                <h3>Estimated Delivery</h3>
+                <div class="delivery-date">{{estimatedDelivery}}</div>
+              </div>
+              <div class="tracking-section">
+                <h3>Track Your Package</h3>
+                <p>Tracking Number: <strong>{{trackingNumber}}</strong></p>
+                <a href="{{trackingUrl}}" class="tracking-button">Track Package</a>
+              </div>
+            {{/if_eq}}
+
+            <p style="margin-top: 30px;">
+              {{!-- {{#if additionalMessage}}
+                {{additionalMessage}}
+              {{else}}
+                We'll keep you updated as your order progresses. If you have any questions, please don't hesitate to contact our customer service team.
+              {{/if}} --}}
+
+              {{#if_eq currentStatus "Delivered"}}
+                {{#if_eq currentStatus "Delivered"}}Your order has been successfully delivered.{{/if_eq}}
+              {{else}}
+                {{#if_eq currentStatus "Pending"}}Your order is pending confirmation.{{/if_eq}}
+                {{#if_eq currentStatus "Accepted"}}Your order has been accepted and is being prepared.{{/if_eq}}
+                {{#if_eq currentStatus "Dispatched"}}Your order has been dispatched and is on the way!{{/if_eq}}
+                <br>
+                We'll keep you updated as your order progresses. If you have any questions, please don't hesitate to contact our customer service team.
+              {{/if_eq}}
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for choosing Cartify!</p>
+            <p>Questions? Contact us at <a href="support@cartify.com" style="color: white;">support@cartify.com</a></p>
+            <p>&copy; 2025 Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

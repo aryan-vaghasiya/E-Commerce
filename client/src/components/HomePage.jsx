@@ -40,7 +40,7 @@ const HorizontalScroller = ({ children, ariaLabel }) => {
   );
 
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ position: "relative", mb: 0}}>
       <IconButton
         aria-label="scroll-left"
         onClick={() => scrollBy(-Math.min(800, window.innerWidth * 0.8))}
@@ -129,11 +129,12 @@ const ProductCarousel = ({ title, subtitle, products }) => {
           <Box
             key={product.id}
             sx={{
+              mb: "auto",
               minWidth: { xs: 220, sm: 240, md: 260 },
               flexShrink: 0,
               scrollSnapAlign: "start",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              "&:hover": { transform: "translateY(-4px)", boxShadow: 6 },
+              // transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              // "&:hover": { transform: "translateY(-4px)", boxShadow: 6 },
             }}
           >
             <ProductItem product={product} loading={false} />
@@ -208,7 +209,7 @@ const HomePage = () => {
       >
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={7}>
+            <Grid size={{xs: 12, md: 7}}>
               <Stack spacing={2}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <ShoppingBagRoundedIcon sx={{ color: "secondary.main" }} />
@@ -293,7 +294,7 @@ const HomePage = () => {
             </Grid>
 
             {/* Decorative right column, hidden on small screens */}
-            <Grid item xs={12} md={5} sx={{ display: { xs: "none", md: "block" } }}>
+            <Grid size={{xs: 12, md: 5}} sx={{ display: { xs: "none", md: "block" } }}>
               <Box
                 sx={{
                   height: { md: 360, lg: 420 },
@@ -379,7 +380,7 @@ const HomePage = () => {
         <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
           {(productsState.isLoading || searchState.isLoading) &&
             Array.from({ length: 12 }).map((_, index) => (
-              <Grid key={index} item xs={12} sm={6} md={4} lg={3}>
+              <Grid key={index} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                 <ProductItem loading={true} />
               </Grid>
             ))}
@@ -388,20 +389,21 @@ const HomePage = () => {
             !searchState.isLoading &&
             (productsToShow?.length ? (
               productsToShow.map((product) => (
-                <Grid key={product.id} item xs={12} sm={6} md={4} lg={3} xl={2.4}>
+                <Grid key={product.id} size={{xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4}}>
                   <Box
-                    sx={{
-                      height: "100%",
-                      transition: "transform .15s ease, box-shadow .15s ease",
-                      "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
-                    }}
+                    // sx={{
+                    //   mb: "auto",
+                    //   height: "100%",
+                    //   transition: "transform .15s ease, box-shadow .15s ease",
+                    //   "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
+                    // }}
                   >
                     <ProductItem product={product} loading={false} />
                   </Box>
                 </Grid>
               ))
             ) : (
-              <Grid item xs={12}>
+              <Grid size={{xs: 12}}>
                 <Box
                   sx={{
                     textAlign: "center",
@@ -446,7 +448,7 @@ const HomePage = () => {
       <Box sx={{ bgcolor: "#0b0d0f", color: "#fff", pt: 6, pb: 4, mt: 2 }}>
         <Container maxWidth="lg">
           <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{xs: 12, md: 4}}>
               <Typography variant="h6" fontWeight={800}>
                 MyShop
               </Typography>
@@ -454,7 +456,7 @@ const HomePage = () => {
                 Your destination for quality products and great deals, delivered fast.
               </Typography>
             </Grid>
-            <Grid item xs={6} md={4}>
+            <Grid size={{xs: 6, md: 4}}>
               <Typography variant="subtitle1" fontWeight={700}>
                 Quick Links
               </Typography>
@@ -470,7 +472,7 @@ const HomePage = () => {
                 </Typography>
               </Stack>
             </Grid>
-            <Grid item xs={6} md={4}>
+            <Grid size={{xs: 6, md: 4}}>
               <Typography variant="subtitle1" fontWeight={700}>
                 Follow Us
               </Typography>

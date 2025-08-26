@@ -50,7 +50,6 @@ function CheckOut() {
     })
 
     const handleCouponQuery = async () => {
-        // console.log(couponQuery);
         if(!couponQuery) return
 
         const response = await fetch("http://localhost:3000/orders/check-coupon", {
@@ -97,10 +96,7 @@ function CheckOut() {
 
     const handleCheckout = async (data) => {
         console.log(data)
-        // console.log(coupon);
-        
-        // console.log(getValues())
-        
+
         const response = await fetch("http://localhost:3000/checkout", {
             method: "POST",
             headers: {
@@ -110,11 +106,7 @@ function CheckOut() {
             body: JSON.stringify({username: userState.userName, ...data})
         })
         if (response.status === 200){
-            // console.log(cartReducer);
-            
             const added = await dispatch(addOrders(isCouponApplied ? newCart : cartReducer, isCouponApplied ? couponData : {}))
-            // console.log(added);
-
             if(added.error){
                 navigate("/cart")
                 dispatch(showSnack({message: added.message, severity: "warning"}))
@@ -131,7 +123,6 @@ function CheckOut() {
     return (
         <Box sx={{ display: { sm: "flex", xs: "block" }, justifyContent: "center", py: 3, bgcolor: "#EEEEEE" }}>
             {/* <div className='pt-16 pb-6 flex justify-center bg-gray-100 font-[Inter] min-h-screen '> */}
-
             <Snackbar
                 open={snackbarState.show}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}

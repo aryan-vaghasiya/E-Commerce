@@ -1,4 +1,6 @@
-const runQuery = require("../db")
+const dayjs = require("dayjs");
+const runQuery = require("../db");
+const { sendMail } = require("../mailer/sendMail");
 const walletService = require("./walletService")
 
 exports.addOrder = async(userId, order, coupon) => {
@@ -146,7 +148,6 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
-    console.log(currentCartValue);
     await walletService.orderWalletPayment(userWallet, orderId, currentCartValue)
     // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
@@ -154,6 +155,8 @@ exports.addOrder = async(userId, order, coupon) => {
     if (emptyCart.affectedRows === 0) {
         throw new Error("Couldn't empty Cart");
     }
+
+    this.sendOrderEmail(userId, orderId, order, coupon)
 }
 
 
@@ -435,4 +438,32 @@ exports.checkCouponCode = async (userId, code) => {
     }
 
     return {newCart, couponData} // Manage what to send on frontend, revealing coupons left and for new users only
+}
+
+exports.sendOrderEmail = async (userId, orderId, order, coupon) => {
+    const [userDetails] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+
+    try{
+        await sendMail({
+            to: userDetails.email,
+            subject: "Your Cartify Order has been successfully placed",
+            template: "order-confirmation.hbs",
+            replacements: 
+                {
+                    fName : userDetails.first_name, 
+                    noOfItems: order.noOfItems,
+                    orderDate: dayjs().format("DD MMM YYYY, HH:mm a"), 
+                    orderId,
+                    items: order.items,
+                    cartValue: order.cartValue,
+                    discountValue: order.discountValue,
+                    couponCode: coupon.code.toUpperCase(),
+                    newCartValue: order.newCartValue,
+                    orderLink: "http://localhost:5173/my-orders"
+                }
+        })
+    }
+    catch(err){
+        console.error("Failed to send order confirmation email:", err);
+    }
 }
