@@ -6,29 +6,36 @@ const orderInitState = []
 const orderReducer = (state=orderInitState, action) => {
     switch(action.type){
         case ADD_ORDERS:
-            return[
-                {
+            return{
+                orders: {
                     noOfItems: action.payload.noOfItems,
-                    products: action.payload.products || action.payload.items,
+                    items: action.payload.products || action.payload.items,
                     cartValue: action.payload.cartValue
                 },
                 ...state
-            ]
+            }
 
         case ORDERS_FROM_DB:
-            const OrderData = action.payload.map(order => (
-                {
-                    noOfItems: order.noOfItems,
-                    products: order.products,
-                    cartValue: order.cartValue,
-                    status: order.status,
-                    final_total : order.final_total,
-                    discount : order.discount
-                }
-            ))
-            // console.log("State:", OrderData);
+            // const OrderData = action.payload.orders.map(order => (
+            //     {
+            //         order_id: order.order_id,
+            //         noOfItems: order.noOfItems,
+            //         items: order.products,
+            //         cartValue: order.cartValue,
+            //         status: order.status,
+            //         final_total : order.final_total,
+            //         discount : order.discount
+            //     }
+            // ))
             
-            return OrderData.reverse();
+            // return OrderData.reverse();
+
+            return{
+                currentPage: action.payload.currentPage,
+                pages : action.payload.pages,
+                total:action.payload.total,
+                orders: action.payload.orders.reverse()
+            }
 
         default:
             return state

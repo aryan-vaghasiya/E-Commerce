@@ -32,7 +32,7 @@ function CheckOut() {
     const [finalTotal, setFinalTotal] = useState(cartReducer.cartValue)
     const [newCart, setNewCart] = useState(null)
     const [isCouponApplied, setIsCouponApplied] = useState(false)
-    const cartItems = newCart ? newCart.items : cartReducer.products
+    const cartItems = newCart ? newCart.items : cartReducer.items
 
 
     const { register, handleSubmit, control, getValues, formState: { errors } } = useForm({
@@ -79,11 +79,12 @@ function CheckOut() {
         }
 
         const couponRes = await response.json()
+        console.log(couponRes);
 
-        dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
         setCouponData(couponRes.couponData)
         setNewCart(couponRes.newCart)
         setIsCouponApplied(true)
+        dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
         // console.log(couponRes)
     }
 
@@ -95,7 +96,7 @@ function CheckOut() {
     }
 
     const handleCheckout = async (data) => {
-        console.log(data)
+        // console.log(data)
 
         const response = await fetch("http://localhost:3000/checkout", {
             method: "POST",

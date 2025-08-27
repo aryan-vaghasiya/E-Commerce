@@ -74,11 +74,11 @@ exports.orderCancelRefund = async (req, res) => {
     const {orderId, userId, reason} = req.body
 
     try{
-        const data = await adminServices.orderRefund(orderId, userId, reason);
+        const data = await adminServices.orderRefund(orderId, userId, reason, "admin");
         res.status(200).json(data);
     }
     catch(err){
-        console.error("Error accepting Orders: ", err.message);
+        console.error("Error cancelling Order: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

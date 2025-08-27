@@ -2,9 +2,12 @@ const orderService = require("../services/orderService")
 
 exports.getOrders = async (req, res) => {
     const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
 
     try{
-        const ordersData = await orderService.getOrdersService(userId);
+        const ordersData = await orderService.getOrdersService(userId, page, limit, offset);
         return res.status(200).json(ordersData);
     }
     catch(err){
@@ -53,6 +56,22 @@ exports.addToOrders = async (req, res) => {
     }
     catch(err){
         console.error("Error in addToOrders:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.cancelOrderByUser = async (req, res) => {
+    const userId = req.user.id;
+    const {orderId} = req.body
+
+    console.log(orderId, userId);
+
+    try{
+        await orderService.orderRefundByUser(orderId, userId, "cancelled by user");
+        res.status(200).json({ message: "Order cancelled successfully"});
+    }
+    catch(err){
+        console.error("Error cancelling Order: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

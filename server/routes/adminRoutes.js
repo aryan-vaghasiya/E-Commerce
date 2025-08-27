@@ -10,7 +10,7 @@ router.get("/get-dashboard", verifyAdminToken, adminController.getDashboard);
 router.get("/get-orders", verifyAdminToken, adminController.getOrders);
 router.post("/order-status", verifyAdminToken, adminController.orderStatus);
 router.get("/order", verifyAdminToken, adminController.getSingleOrder);
-router.post("/order-cancellation", verifyAdminToken, adminController.orderCancelRefund);
+router.post("/order-cancel-admin", verifyAdminToken, adminController.orderCancelRefund);
 
 router.get("/get-products", verifyAdminToken, adminController.getProducts);
 router.get("/product", verifyAdminToken, adminController.getSingleProduct);

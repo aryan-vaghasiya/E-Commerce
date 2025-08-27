@@ -13,7 +13,7 @@ import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 
 function MyCart() {
-    const productState = useSelector(state => state.cartReducer.products)
+    const productState = useSelector(state => state.cartReducer.items)
     const noOfItems = useSelector(state => state.cartReducer.noOfItems)
     const cartValue = useSelector(state => state.cartReducer.cartValue)
     const userState = useSelector(state => state.userReducer)

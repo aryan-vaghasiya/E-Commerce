@@ -273,7 +273,7 @@ function MyWallet() {
                 <Card sx={{borderRadius: 3}}>
                     <CardContent>
                         <Typography>{transactions.length > 0 ? "Last 10 Transactions" : "No Transactions"}</Typography>
-                        <TableContainer component={Paper} sx={{ minWidth: "400px", maxWidth: "600px", my: 2}} elevation={3}>
+                        <TableContainer component={Paper} sx={{ minWidth: "400px", maxWidth: "700px", my: 2}} elevation={3}>
                             <Table sx={{ tableLayout: "fixed", width: "100%" }}>
                                 <TableHead>
                                     <TableRow>

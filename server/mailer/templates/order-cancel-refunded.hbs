@@ -267,7 +267,7 @@
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{customerName}},
+                Hi {{fName}} {{lName}},
             </div>
             
             <!-- Apology Section -->
@@ -281,8 +281,8 @@
                 <h3>Cancelled Order Details</h3>
                 <div class="order-details">
                     <div class="detail-item">
-                        <span class="detail-label">Order Number:</span>
-                        <span class="detail-value">{{orderNumber}}</span>
+                        <span class="detail-label">Order ID:</span>
+                        <span class="detail-value">{{orderId}}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Order Date:</span>
@@ -319,18 +319,6 @@
                     <span>Order Value:</span>
                     <span>${{orderValue}}</span>
                 </div>
-                {{#if discountValue}}
-                <div class="refund-item">
-                    <span>Discount Applied:</span>
-                    <span>${{discountValue}}</span>
-                </div>
-                {{/if}}
-                {{#if taxes}}
-                <div class="refund-item">
-                    <span>Taxes & Fees:</span>
-                    <span>${{taxes}}</span>
-                </div>
-                {{/if}}
                 <div class="refund-item final">
                     <span>Total Refunded:</span>
                     <span>${{refundAmount}}</span>
@@ -351,15 +339,15 @@
             <div class="support-section">
                 <h3>Need Assistance?</h3>
                 <p>If you have any questions about this cancellation or need help with a new order, our support team is here to help.</p>
-                <a href="{{supportLink}}" class="support-button">Contact Support</a>
+                <a href="mailto:support@cartify.com" class="support-button">Contact Support</a>
             </div>
         </div>
         
         <!-- Footer -->
         <div class="footer">
             <p>Thank you for choosing Cartify!</p>
-            <p>Questions? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a> or {{supportPhone}}</p>
-            <p>&copy; {{currentYear}} Cartify. All rights reserved.</p>
+            <p>Questions? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+            <p>&copy; 2025 Cartify. All rights reserved.</p>
         </div>
     </div>
 </body>

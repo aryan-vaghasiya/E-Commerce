@@ -15,20 +15,31 @@ import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import { fetchOrders } from '../redux/order/orderActions'
 import { getImageUrl } from '../utils/imageUrl'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogActions from '@mui/material/DialogActions'
+import Pagination from '@mui/material/Pagination'
 
 function MyOrders() {
 
-    const ordersState = useSelector(state => state.orderReducer)
+    const ordersState = useSelector(state => state.orderReducer.orders)
+    const currentPage = useSelector(state => state.orderReducer.currentPage)
+    const totalPages = useSelector(state => state.orderReducer.pages)
+    const totalOrders = useSelector(state => state.orderReducer.total)
     const userState = useSelector(state => state.userReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
-    const [loading, setLoading] = useState  (true)
+    const [loading, setLoading] = useState(true)
+    const [openDialog, setOpenDialog] = useState(false)
+    const [selectedOrderId, setSelectedOrderId] = useState(null)
     const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
-    const cancelledSteps = ["Order Placed", "Order Cancelled by Seller"]
+    const cancelledSteps = ["Order Placed", "Order Cancelled"]
     const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
     useEffect(() => {
-        dispatch(fetchOrders(userState.token))
+        dispatch(fetchOrders(userState.token, 1, 10))
         const timeOut = setTimeout(() => {
             setLoading(false)
         },1000)
@@ -61,6 +72,45 @@ function MyOrders() {
         }
     }
 
+    const handleCancel = async () => {
+        console.log(selectedOrderId);
+        if(!selectedOrderId) return
+        try{
+            const response = await fetch(`http://localhost:3000/orders/cancel-user`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${userState.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({orderId: selectedOrderId})
+            })
+            if(!response.ok){
+                const error = await adminOrders.json()
+                console.error("Could not cancel Order:", error.error);
+                return
+            }
+            handleDialogClose()
+            dispatch(fetchOrders(userState.token, 1, 10))
+        }
+        catch (err){
+            console.error("Could not cancel Order:", err.message);
+        }
+    }
+
+    const handleDialogOpen = (orderId) => {
+        setSelectedOrderId(orderId)
+        setOpenDialog(true)
+    }
+    const handleDialogClose = () => {
+        setOpenDialog(false)
+        setSelectedOrderId(null)
+    }
+
+    const handlePageChange = (event, value) => {
+        dispatch(fetchOrders(userState.token, value, 10))
+        window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
+    }
+
     const getCurrentStatus = (status) => {
         // if(status === "delivered"){
         //     const index = allStatus.indexOf(status)
@@ -82,6 +132,28 @@ function MyOrders() {
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
+            <Dialog
+                open={openDialog}
+                onClose={handleDialogClose}
+            >
+                <DialogTitle>
+                    Cancel this order ?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to cancel this order?
+                    </DialogContentText>
+                    <DialogContentText>
+                        If this is a prepaid order, you will get a refund in you wallet.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' onClick={handleDialogClose}>Back</Button>
+                    <Button onClick={handleCancel} autoFocus variant='contained' color='error'>
+                        Confirm Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
             {
             ordersState.length === 0 ?
             (
@@ -92,7 +164,7 @@ function MyOrders() {
             )
             :
             (
-            <Container >
+            <Container>
                 {
                     loading? (
                         Array.from(Array(5)).map((_, index) => (
@@ -127,9 +199,9 @@ function MyOrders() {
                             <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 3}}>
                                 {/* <Typography>Order Number: {ordersState.length - index}</Typography> */}
                                 <Box>
+                                    <Typography>Order ID: {order.order_id}</Typography>
                                     <Typography>Order Value: ${order.cartValue}</Typography>
-                                    {
-                                        order.final_total && order.discount > 0?
+                                    {order.final_total && order.discount > 0?
                                         <Box>
                                             <Typography color='success' sx={{fontWeight: 500}}>Coupon: -${order.discount}</Typography>
                                             <Typography>Order Total: ${order.final_total}</Typography>
@@ -138,11 +210,17 @@ function MyOrders() {
                                         null
                                     }
                                 </Box>
-                                <Box>
-                                    <Button variant='outlined' size='small' onClick={() => handleRepeatOrder(order.products)}>Repeat Order</Button>
+                                <Box sx={{display: "flex", gap: 1}}>
+                                    {
+                                        order.status === "pending" || order.status === "accepted" ?
+                                        <Button variant='outlined' size='small' color='error' onClick={() => handleDialogOpen(order.order_id)}>Cancel Order</Button>
+                                        :
+                                        null
+                                    }
+                                    <Button variant='outlined' size='small' onClick={() => handleRepeatOrder(order.items)}>Repeat Order</Button>
                                 </Box>
                             </Box>
-                            {order.products.map(item => (
+                            {order.items.map(item => (
                                 <Card key={item.id} sx={{display: "flex",bgcolor: "#EEEEEE", my: 2, mx: 3}} >
                                     <CardMedia
                                         component="img"
@@ -198,6 +276,9 @@ function MyOrders() {
                     ))
                 )
                 }
+                <Box sx={{display: "flex", justifyContent: "center", pb: 2}}>
+                    <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} color="primary" showFirstButton showLastButton/>
+                </Box>
             </Container>
             )
             }

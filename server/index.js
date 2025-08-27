@@ -118,7 +118,7 @@ app.listen(port, () => {
     //     template: "order-cancel-refunded.hbs",
     //     replacements: {
     //             customerName: "John Doe",
-    //             orderNumber: "#12345",
+    //             orderId: "#12345",
     //             orderDate: "August 20, 2025",
     //             noOfItems: "3 items",
     //             cancellationDate: "August 25, 2025",
@@ -126,7 +126,6 @@ app.listen(port, () => {
     //             refundAmount: "149.99",
     //             orderValue: "139.99",
     //             discountValue: "10.00", // Optional
-    //             taxes: "20.00", // Optional
     //             supportLink: "https://cartify.com/support",
     //             supportPhone: "1-800-123-4567",
     //             currentYear: "2025"

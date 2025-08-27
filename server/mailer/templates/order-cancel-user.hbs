@@ -1,0 +1,491 @@
+{{!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title>Order Cancellation Requested</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Header: consistent gradient */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content { padding: 40px; }
+
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 18px;
+            color: #444;
+        }
+
+        /* Neutral confirmation card */
+        .status-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0 24px 0;
+            border-left: 4px solid #667eea;
+        }
+        .status-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .status-card p { color: #555; }
+
+        /* Order info block */
+        .order-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid #667eea;
+        }
+        .order-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .detail-item { display: flex; justify-content: space-between; }
+        .detail-label { font-weight: 600; color: #666; }
+        .detail-value { color: #333; }
+
+        /* Refund highlight (green, like success) */
+        .refund-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 26px 0;
+        }
+        .refund-section h3 { margin-bottom: 8px; font-size: 18px; }
+        .refund-amount { font-size: 22px; font-weight: bold; margin-top: 6px; }
+
+        /* Wallet note (info) */
+        .wallet-note {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 14px 18px;
+            margin: 18px 0 26px 0;
+            border-radius: 0 8px 8px 0;
+            color: #1565c0;
+            font-size: 14px;
+        }
+
+        /* Feedback and support */
+        .actions {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 26px 0;
+            text-align: center;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 26px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 10px 10px 0 10px;
+            transition: transform 0.2s ease;
+            font-size: 15px;
+        }
+        .button:hover { transform: translateY(-2px); }
+        .link-muted { display:block; margin-top: 12px; color:#667eea; text-decoration: none; font-size: 14px; }
+
+        /* Footer */
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        .footer p { margin-bottom: 10px; opacity: 0.8; }
+        .footer a { color: #667eea; text-decoration: none; }
+
+        @media (max-width: 600px) {
+            .content { padding: 20px; }
+            .order-details { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Cancellation Requested</h1>
+            <p>We’ve received the request and are processing it</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{customerName}},
+            </div>
+
+            <!-- Neutral status -->
+            <div class="status-card">
+                <h3>Request Confirmed</h3>
+                <p>You initiated a cancellation for the order listed below. If the order meets the cancellation criteria, it will be cancelled and the applicable amount will be processed instantly as per the payment method used.</p>
+            </div>
+
+            <!-- Order Information -->
+            <div class="order-info">
+                <h3>Order Details</h3>
+                <div class="order-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Order Number:</span>
+                        <span class="detail-value">{{orderNumber}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Order Date:</span>
+                        <span class="detail-value">{{orderDate}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Items:</span>
+                        <span class="detail-value">{{noOfItems}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Cancellation Request Date:</span>
+                        <span class="detail-value">{{cancellationRequestDate}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refund highlight (shown when prepaid and cancellation succeeds) -->
+            {{#if isPrepaid}}
+            <div class="refund-section">
+                <h3>Wallet Refund on Cancellation</h3>
+                <p>If eligible and once cancelled, the full order amount will be refunded instantly to your wallet.</p>
+                <div class="refund-amount">${{refundAmount}}</div>
+            </div>
+            <div class="wallet-note">
+                For prepaid orders, refunds are credited to the Wallet for instant availability. Wallet balance can be used for future purchases or managed from the account section.
+            </div>
+            {{/if}}
+
+            <!-- Optional reason provided by the user -->
+            {{#if cancellationReason}}
+            <div class="status-card" style="border-left-color:#764ba2;">
+                <h3>Cancellation Reason</h3>
+                <p>{{cancellationReason}}</p>
+            </div>
+            {{/if}}
+
+            <!-- Actions -->
+            <div class="actions">
+                <p style="color:#555; margin-bottom:12px;">Have a moment to share why the cancellation was initiated?</p>
+                <a href="{{feedbackLink}}" class="button">Share Feedback</a>
+                {{#if orderLink}}
+                <a href="{{orderLink}}" class="link-muted">View order details</a>
+                {{/if}}
+            </div>
+
+            <!-- Support note -->
+            <p style="margin: 8px 0 0; font-size: 14px; color: #666;">
+                If the order is already too far along in processing or has shipped, cancellation may not be possible and the request could be declined. In such cases, return options will be available after delivery.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a> or {{supportPhone}}</p>
+            <p>&copy; {{currentYear}} Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> --}}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Cancellation Confirmation</title>
+    <style>
+        /* Reset and basics */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Layout */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Header (consistent gradient) */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* Content wrapper */
+        .content { padding: 40px; }
+
+        /* Intro confirmation */
+        .confirmation-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .confirmation-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .confirmation-section p { font-size: 15px; color: #555; }
+
+        /* Order info card (consistent with other emails) */
+        .order-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .order-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .detail-item { display: flex; justify-content: space-between; }
+        .detail-label { font-weight: 600; color: #666; }
+        .detail-value { color: #333; }
+
+        /* Refund info (green success styling) */
+        .refund-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .refund-section h3 { margin-bottom: 8px; font-size: 18px; }
+        .refund-amount { font-size: 24px; font-weight: bold; margin: 6px 0; }
+        .refund-note { font-size: 14px; opacity: 0.95; }
+
+        /* Refund breakdown (optional sections) */
+        .refund-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .refund-details h3 {
+            color: #28a745;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        .refund-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .refund-item.final {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+            margin-top: 10px;
+        }
+
+        /* Wallet info (neutral blue info band) */
+        .wallet-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .wallet-info h4 { color: #1565c0; margin-bottom: 6px; font-size: 16px; }
+        .wallet-info p { color: #1976d2; font-size: 14px; margin: 0; }
+
+        /* Feedback callout and button */
+        .feedback-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .feedback-section h3 { font-size: 18px; color: #333; margin-bottom: 8px; }
+        .feedback-section p { font-size: 14px; color: #555; margin-bottom: 15px; }
+        .primary-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            font-size: 15px;
+        }
+        .primary-button:hover { transform: translateY(-2px); }
+
+        /* Footer (consistent dark style) */
+        .footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 30px;
+        }
+        .footer p { margin-bottom: 10px; opacity: 0.8; }
+        .footer a { color: #667eea; text-decoration: none; }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .content { padding: 20px; }
+            .order-details { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+            .detail-item { flex-direction: column; gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Cancellation Request Confirmed</h1>
+            <p>Cartify</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Confirmation -->
+            <div class="confirmation-section">
+                <h3>Request Received</h3>
+                <p>{{fName}}, the cancellation request for the order below has been processed as the eligibility conditions were met.</p>
+            </div>
+
+            <!-- Order Information -->
+            <div class="order-info">
+                <h3>Order Details</h3>
+                <div class="order-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Order ID:</span>
+                        <span class="detail-value">{{orderId}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Order Date:</span>
+                        <span class="detail-value">{{orderDate}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Items:</span>
+                        <span class="detail-value">{{noOfItems}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Cancellation Date:</span>
+                        <span class="detail-value">{{cancellationDate}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refund (for prepaid) -->
+            <div class="refund-section">
+                <h3>Refund Initiated</h3>
+                <div class="refund-amount">${{refundAmount}}</div>
+                <p class="refund-note">If this was a prepaid order, the amount has been instantly credited to the Cartify wallet.</p>
+            </div>
+
+            <!-- Refund details (optional sections supported) -->
+            <div class="refund-details">
+                <h3>Refund Summary</h3>
+                <div class="refund-item">
+                    <span>Order Value:</span>
+                    <span>${{orderValue}}</span>
+                </div>
+                <div class="refund-item final">
+                    <span>Total Refunded:</span>
+                    <span>${{refundAmount}}</span>
+                </div>
+            </div>
+
+            <!-- Wallet info -->
+            <div class="wallet-info">
+                <h4>Wallet Credit</h4>
+                <p>Refunds for eligible prepaid orders are added to the Cartify wallet instantly and can be used on future purchases or withdrawn to the original payment method as per policy.</p>
+            </div>
+
+            <!-- Feedback -->
+            <div class="feedback-section">
+                <h3>Help Us Improve</h3>
+                <p>Sharing quick feedback helps improve the experience for future orders.</p>
+                <a href="mailto:support@cartify.com" class="primary-button">Give Feedback</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Questions? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a> or {{supportPhone}}</p>
+            <p>&copy; 2025 Cartify. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

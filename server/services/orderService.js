@@ -2,6 +2,7 @@ const dayjs = require("dayjs");
 const runQuery = require("../db");
 const { sendMail } = require("../mailer/sendMail");
 const walletService = require("./walletService")
+const adminServices = require("./adminServices")
 
 exports.addOrder = async(userId, order, coupon) => {
     const checkCart = await runQuery(`SELECT 
@@ -160,7 +161,12 @@ exports.addOrder = async(userId, order, coupon) => {
 }
 
 
-exports.getOrdersService = async (userId) => {
+exports.getOrdersService = async (userId, page, limit, offset) => {
+
+    const limitedOrders = await runQuery(`SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
+
+    const orderIds = limitedOrders.map(order => order.id)
+
     const getOrders = await runQuery(`SELECT
                                         oi.order_id,
                                         oi.product_id AS id,
@@ -177,10 +183,13 @@ exports.getOrdersService = async (userId) => {
                                         o.final_total,
                                         o.status
                                     FROM order_item oi 
-                                    JOIN products p ON oi.product_id = p.id
-                                    JOIN categories c ON c.id = p.category_id
-                                    JOIN orders o ON oi.order_id = o.id
-                                    WHERE o.user_id = ?`, [userId]);
+                                        JOIN products p 
+                                            ON oi.product_id = p.id
+                                        JOIN categories c 
+                                            ON c.id = p.category_id
+                                        JOIN orders o 
+                                            ON oi.order_id = o.id
+                                        WHERE o.id IN (?)`, [orderIds]);
     if(getOrders.length < 0){
         console.error("No Orders Exist");
         return{};
@@ -193,14 +202,14 @@ exports.getOrdersService = async (userId) => {
             grouped[item.order_id] = {
                                         order_id: item.order_id,
                                         noOfItems: 0,
-                                        products: [],
+                                        items: [],
                                         final_total: item.final_total,
                                         cartValue: item.total,
                                         discount: item.discount_amount,
                                         status: item.status
                                     }
         }
-        grouped[item.order_id].products.push({
+        grouped[item.order_id].items.push({
             id: item.id,
             quantity: item.quantity,
             price: item.price,
@@ -215,8 +224,15 @@ exports.getOrdersService = async (userId) => {
 
     const orders = Object.values(grouped);
     // console.log(orders);
-    
-    return orders;
+
+    const [{total}] = await runQuery(`SELECT COUNT(*) as total FROM orders WHERE user_id = ?`, [userId])
+
+    return {
+        orders,
+        currentPage : page,
+        pages: Math.ceil (total / limit),
+        total
+    }
 }
 
 
@@ -443,12 +459,17 @@ exports.checkCouponCode = async (userId, code) => {
 exports.sendOrderEmail = async (userId, orderId, order, coupon) => {
     const [userDetails] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
 
+    let couponCode = "";
+    if(coupon.code){
+        couponCode = coupon.code.toUpperCase()
+    }
+
     try{
         await sendMail({
             to: userDetails.email,
             subject: "Your Cartify Order has been successfully placed",
             template: "order-confirmation.hbs",
-            replacements: 
+            replacements:
                 {
                     fName : userDetails.first_name, 
                     noOfItems: order.noOfItems,
@@ -457,7 +478,7 @@ exports.sendOrderEmail = async (userId, orderId, order, coupon) => {
                     items: order.items,
                     cartValue: order.cartValue,
                     discountValue: order.discountValue,
-                    couponCode: coupon.code.toUpperCase(),
+                    couponCode,
                     newCartValue: order.newCartValue,
                     orderLink: "http://localhost:5173/my-orders"
                 }
@@ -466,4 +487,8 @@ exports.sendOrderEmail = async (userId, orderId, order, coupon) => {
     catch(err){
         console.error("Failed to send order confirmation email:", err);
     }
+}
+
+exports.orderRefundByUser = async (orderId, userId, reason = "") => {
+    await adminServices.orderRefund(orderId, userId, reason, "user")
 }

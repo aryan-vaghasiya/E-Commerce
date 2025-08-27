@@ -270,13 +270,16 @@ exports.getOrderData = async (orderId) => {
     return result;
 }
 
-exports.orderRefund = async (orderId, userId, reason = "") => {
-    const [orderPayment] = await runQuery(`SELECT 
+exports.orderRefund = async (orderId, userId, reason = "", cancelledBy) => {
+    const [orderPayment] = await runQuery(`SELECT
                                             o.id AS order_id,
                                             o.user_id,
                                             o.status AS order_status,
                                             o.final_total,
                                             o.coupon_id,
+                                            o.order_date as orderDate,
+                                            o.last_updated as cancellationDate,
+                                            o.discount_amount,
                                             op.id AS payment_id,
                                             op.method,
                                             op.amount,
@@ -290,17 +293,25 @@ exports.orderRefund = async (orderId, userId, reason = "") => {
         throw new Error ("Could not find order payment record")
     }
 
-    const isEligibleForRefund = orderPayment.order_status !== "delivered" 
-                            && orderPayment.order_status !== "cancelled" 
+    let isEligibleForRefund = orderPayment.order_status !== "delivered" 
+                            && orderPayment.order_status !== "cancelled"
                             && orderPayment.final_total === orderPayment.amount 
                             && orderPayment.payment_status === "paid";
+
+    if (cancelledBy === "user") {
+        isEligibleForRefund = isEligibleForRefund && orderPayment.order_status !== "dispatched";
+    }
+
     if(!isEligibleForRefund){
         throw new Error ("Order not eligible for refund")
     }
 
-    const userWallet = await walletService.getWallet(userId)
-    const refundId = await walletService.addAmount(userWallet, orderPayment.amount, "REFUND", orderPayment.payment_id, `refund/orderId:${orderPayment.order_id}/of_paymentId:${orderPayment.payment_id}` + `/reason:${reason}`)
-    const refundSuccessful = await runQuery(`INSERT INTO order_payments (order_id, method, amount, status, transaction_id) VALUES (?, ?, ?, ?, ?)`, [orderPayment.order_id, "wallet", orderPayment.amount, "refunded", refundId])
+    const userWallet = await walletService.getWallet(userId);
+
+    const refundId = await walletService.addAmount(userWallet, orderPayment.amount, "REFUND", orderPayment.payment_id, `refund/orderId:${orderPayment.order_id}/of_paymentId:${orderPayment.payment_id}` + `/reason:${reason}`);
+
+    const refundSuccessful = await runQuery(`INSERT INTO order_payments (order_id, method, amount, status, transaction_id) VALUES (?, ?, ?, ?, ?)`, [orderPayment.order_id, "wallet", orderPayment.amount, "refunded", refundId]);
+
     if(refundSuccessful.length === 0){
         throw new Error ("Could not add refund record")
     }
@@ -318,13 +329,42 @@ exports.orderRefund = async (orderId, userId, reason = "") => {
     }
 
     if(orderPayment.coupon_id){
-        const flagUsageReverse = await runQuery(`UPDATE coupon_usages SET is_reversed = ?, reversed_on = NOW() WHERE coupon_id = ? AND order_id = ?`, [true, orderPayment.coupon_id, orderId])
-        const decrementUsage = await runQuery(`UPDATE coupons SET times_used = times_used - 1 WHERE id = ?`, [orderPayment.coupon_id])
+        await runQuery(`UPDATE coupon_usages SET is_reversed = ?, reversed_on = NOW() WHERE coupon_id = ? AND order_id = ?`, [true, orderPayment.coupon_id, orderId])
+        await runQuery(`UPDATE coupons SET times_used = times_used - 1 WHERE id = ?`, [orderPayment.coupon_id])
     }
+
+    this.sendOrderCancelRefundEmail(orderId, userId, reason, orderPayment, orderItems, cancelledBy)
 }
 
-exports.sendOrderCancelRefundEmail = async (orderId, userId, reason = "") => {
+exports.sendOrderCancelRefundEmail = async (orderId, userId, reason = "", order, orderItems, cancelledBy) => {
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
 
+    let noOfItems = 0
+    for(let item of orderItems){
+        noOfItems += item.quantity
+    }
+
+    const template = cancelledBy === "admin" ? "order-cancel-refunded.hbs" : "order-cancel-user.hbs"
+
+    sendMail({
+        to: getUser.email,
+        subject: "Order Cancelled - Cartify",
+        template,
+        replacements: {
+                fName: getUser.first_name,
+                lName: getUser.last_name,
+                orderId,
+                orderDate: dayjs(order.orderDate).format("MMMM DD, YYYY"),
+                cancellationDate: dayjs(order.cancellationDate).format("MMMM DD, YYYY"),
+                noOfItems,
+                cancellationReason: reason,
+                refundAmount: order.amount,
+                orderValue: order.amount,
+            }
+    })
+        .catch(err => {
+            console.error("Failed to send cancellation email:", err);
+        });
 }
 
 exports.getAllProducts = async(page, limit, offset) => {

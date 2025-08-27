@@ -17,7 +17,7 @@ export const ordersFromDb = (orderItems) => {
 export const addOrders = (order, coupon) => {
     // console.log(order);
     // console.log(coupon);
-    
+
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
         try{
@@ -44,12 +44,12 @@ export const addOrders = (order, coupon) => {
     }
 }
 
-export const fetchOrders = (token) => {
+export const fetchOrders = (token, page, limit) => {
     return async (dispatch) => {
         // console.log("Token : ", token);
         // const token = getState().userReducer.token
         try {
-            const res = await fetch("http://localhost:3000/orders/get-orders", {
+            const res = await fetch(`http://localhost:3000/orders/get-orders?page=${page}&limit=${limit}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

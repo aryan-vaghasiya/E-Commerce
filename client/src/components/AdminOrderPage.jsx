@@ -105,7 +105,7 @@ function AdminOrderPage() {
 
         console.log(formData);
         try{
-            const response = await fetch(`http://localhost:3000/admin/order-cancellation`, {
+            const response = await fetch(`http://localhost:3000/admin/order-cancel-admin`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -267,7 +267,7 @@ function AdminOrderPage() {
                             <Typography fontSize={16} fontWeight={500}>
                                 ORDER TOTAL:
                                 <Typography variant='span' color='success' fontSize={26} fontWeight={500}>
-                                    {` ${order.total}`} 
+                                    {` $${order.total}`} 
                                 </Typography>
                             </Typography>
                         }

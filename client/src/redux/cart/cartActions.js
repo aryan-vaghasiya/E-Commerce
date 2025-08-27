@@ -30,8 +30,8 @@ export const cartFromDb = (cartItems) => {
 
 export const addToCart = (product) => {
     return async (dispatch, getState) => {
-        if(getState().cartReducer.products.some(item => item.id === product.id)){
-            const [quantity] = getState().cartReducer.products.filter(item => item.id === product.id)
+        if(getState().cartReducer.items.some(item => item.id === product.id)){
+            const [quantity] = getState().cartReducer.items.filter(item => item.id === product.id)
             // console.log(quantity.quantity);
             
             if(product.stock<=quantity.quantity){

@@ -1,7 +1,6 @@
 const runQuery = require("../db");
 
 exports.getAllProducts = async(page, limit, offset) => {
-    const status = "active"
     const results = await runQuery(`SELECT 
         p.*, 
         c.category,
