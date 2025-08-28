@@ -33,6 +33,32 @@ exports.searchProduct = async (req, res) => {
     }
 }
 
+exports.trendingProducts = async (req, res) => {
+    const limit = parseInt(req.query.limit);
+
+    try{
+        const trendingProducts = await productService.getTrendingProducts(limit);
+        res.status(200).json(trendingProducts);
+    }
+    catch (err){
+        console.error("Error fetching trending products: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.recentlyOrderedProducts = async (req, res) => {
+    const limit = parseInt(req.query.limit);
+
+    try{
+        const trendingProducts = await productService.getRecentlyOrderedProducts(limit);
+        res.status(200).json(trendingProducts);
+    }
+    catch (err){
+        console.error("Error fetching recently ordered products: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 exports.singleProduct = async (req, res) => {
     const productId = req.params.id;
 

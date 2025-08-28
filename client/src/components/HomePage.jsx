@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts, setPageAll } from "../redux/products/productActions";
 import ProductItem from "./ProductItem";
@@ -129,7 +129,6 @@ const ProductCarousel = ({ title, subtitle, products }) => {
           <Box
             key={product.id}
             sx={{
-              mb: "auto",
               minWidth: { xs: 220, sm: 240, md: 260 },
               flexShrink: 0,
               scrollSnapAlign: "start",
@@ -151,7 +150,43 @@ const HomePage = () => {
   const productsState = useSelector((state) => state.productReducer);
   const searchState = useSelector((state) => state.searchReducer);
   const snackbarState = useSelector((state) => state.snackbarReducer);
+  const [trendingProducts, setTrendingProducts] = useState([])
+  const [recentProducts, setRecentProducts] = useState([])
   const dispatch = useDispatch();
+
+  const getTrendingProducts = async (limit = 10) => {
+    try {
+      const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`);
+        if(!res.ok){
+          const error = await res.json()
+          console.error("Could not fetch Trending Products:", error.error);
+          return
+        }
+      const data = await res.json();
+      // console.log(data);
+      setTrendingProducts(data);
+    } 
+    catch (err) {
+      console.error("Trending products fetch failed:", err.message);
+    }
+  };
+
+  const getRecentlyOrderedProducts = async (limit = 10) => {
+    try {
+      const res = await fetch(`http://localhost:3000/products/recently-ordered?limit=${limit}`);
+        if(!res.ok){
+          const error = await res.json()
+          console.error("Could not fetch Recently Ordered Products:", error.error);
+          return
+        }
+      const data = await res.json();
+      // console.log(data);
+      setRecentProducts(data);
+    } 
+    catch (err) {
+      console.error("Recently ordered products fetch failed:", err.message);
+    }
+  };
 
   const handlePage = (event, value) => {
     if (searchState.query.trim() !== "") {
@@ -167,16 +202,21 @@ const HomePage = () => {
 
   useEffect(() => {
     if (searchState.query.trim() !== "") {
+      console.log("I ran");
       dispatch(searchProducts(searchState.query));
-    } else {
+    }
+    else {
+      console.log("I ran 2");
       dispatch(fetchProducts());
     }
+    getTrendingProducts()
+    getRecentlyOrderedProducts()
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage, dispatch, searchState.query]);
 
   // Slicing to create "sections" without changing data logic
-  const trendingProducts = productsToShow?.slice(0, 10) || [];
-  const recentProducts = productsToShow?.slice(10, 20) || [];
+  // const trendingProducts = productsToShow?.slice(0, 10) || [];
+  // const recentProducts = productsToShow?.slice(10, 20) || [];
   const byCategory = (cat) =>
     (productsToShow || []).filter((p) => (p.category || "").toLowerCase().includes(cat)).slice(0, 10);
 
@@ -322,7 +362,8 @@ const HomePage = () => {
         />
       </Box>
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 4, md: 6 } }}>
+      {/* <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 4, md: 6 } }}> */}
+      <Container maxWidth="95%">
         {/* SNACKBAR */}
         <Snackbar
           open={snackbarState.show}
@@ -450,7 +491,7 @@ const HomePage = () => {
           <Grid container spacing={4}>
             <Grid size={{xs: 12, md: 4}}>
               <Typography variant="h6" fontWeight={800}>
-                MyShop
+                Cartify
               </Typography>
               <Typography variant="body2" sx={{ mt: 1.5, color: "rgba(255,255,255,.75)" }}>
                 Your destination for quality products and great deals, delivered fast.
@@ -491,7 +532,7 @@ const HomePage = () => {
           </Grid>
           <Divider sx={{ my: 3, borderColor: "rgba(255,255,255,.15)" }} />
           <Typography variant="body2" align="center" sx={{ color: "rgba(255,255,255,.6)" }}>
-            © {new Date().getFullYear()} MyShop. All rights reserved.
+            © {new Date().getFullYear()} Cartify. All rights reserved.
           </Typography>
         </Container>
       </Box>

@@ -19,10 +19,8 @@ function AdminOrders() {
     const [error, setError] = useState(null);
     const token = useSelector(state => state.userReducer.token);
 
-
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    const adminOrdersState = useSelector(state => state.adminOrdersReducer)
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
         pageSize: 10,
@@ -41,7 +39,7 @@ function AdminOrders() {
 
             if (!response.ok) {
                 const errData = await response.json();
-                throw new Error(errData.error || "Failed to fetch orders");
+                console.error("Failed to fetch admin orders", errData.error);
             }
 
             const result = await response.json();
@@ -77,7 +75,7 @@ function AdminOrders() {
     useEffect(() => {
         fetchOrders(paginationModel.page + 1, paginationModel.pageSize);
     }, [paginationModel]);
-    
+
     const columns = [
         { 
             field: 'id', headerName: 'Order ID', width: 90, align : "center"

@@ -75,9 +75,9 @@ function NavBar() {
     }
 
     useEffect(() => {
-        // if (input.trim() === "") return;
         const timeOut = setTimeout(() => {
             dispatch(setSearchQuery(input))
+            if (input.trim() === "") return;
             dispatch(searchProducts(input))
         },1000)
 

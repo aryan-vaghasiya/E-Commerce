@@ -44,7 +44,7 @@ export const addOrders = (order, coupon) => {
     }
 }
 
-export const fetchOrders = (token, page, limit) => {
+export const fetchOrders = (token, page = 1, limit = 10) => {
     return async (dispatch) => {
         // console.log("Token : ", token);
         // const token = getState().userReducer.token

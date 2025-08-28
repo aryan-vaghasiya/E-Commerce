@@ -111,9 +111,9 @@ function ProductItem({product, loading}) {
                                 component="img"
                                 image={getImageUrl(product.thumbnail)}
                                 alt="Product Image"
-                                sx={{ minHeight: 300, objectFit: "contain" }}
+                                sx={{ maxHeight: 300, objectFit: "contain"}}
                             />
-                            <Typography level="h3">{product.title}</Typography>
+                            <Typography level="h3" noWrap sx={{width: "99%"}}>{product.title}</Typography>
                             {
                             product.brand ?
                             (<Typography sx={{fontSize: 13}}>Brand: {product.brand}</Typography>)

@@ -52,7 +52,7 @@ exports.signupUser = async(username, password, fName, lName, email) => {
 
     const userId = result.insertId;
 
-    const addWallet = await runQuery(`INSERT INTO wallets (user_id, balance) VALUES (?, ?)`, [userId, 0.00])
+    const addWallet = await runQuery(`INSERT INTO wallets (user_id) VALUES (?)`, [userId])
     // if(addWallet.affectedRows === 0){
     //     throw new Error ("Couldn't add wallet")
     // }

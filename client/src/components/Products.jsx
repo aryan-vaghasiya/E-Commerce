@@ -37,14 +37,12 @@ const Products = () => {
     // const productsToShow = searchState.query && searchState.products? searchState.products : productsState.products
 
     useEffect(() => {
-        
         if(searchState.query.trim() !== ""){
             dispatch(searchProducts(searchState.query));
         }
         else{
             dispatch(fetchProducts());
         }
-        // console.log(currentPage);
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
     }, [currentPage]);
 
@@ -98,7 +96,7 @@ const Products = () => {
                 {
                 productsToShow?.length > 0?
                 
-                <Box sx={{display: "flex", justifyContent: "center", pb: 2}}>
+                <Box sx={{display: "flex", justifyContent: "center", py: 2}}>
                     <Pagination count={totalPages} page={currentPage} onChange={handlePage} color="primary" showFirstButton showLastButton/>
                 </Box>
                 :

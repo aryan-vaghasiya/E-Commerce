@@ -13,7 +13,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Stepper from '@mui/material/Stepper'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
-import { fetchOrders } from '../redux/order/orderActions'
+// import { fetchOrders } from '../redux/order/orderActions'
 import { getImageUrl } from '../utils/imageUrl'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -23,23 +23,54 @@ import DialogActions from '@mui/material/DialogActions'
 import Pagination from '@mui/material/Pagination'
 
 function MyOrders() {
+    // const ordersState = useSelector(state => state.orderReducer.orders)
+    // const currentPage = useSelector(state => state.orderReducer.currentPage)
+    // const totalPages = useSelector(state => state.orderReducer.pages)
+    // const totalOrders = useSelector(state => state.orderReducer.total)
 
-    const ordersState = useSelector(state => state.orderReducer.orders)
-    const currentPage = useSelector(state => state.orderReducer.currentPage)
-    const totalPages = useSelector(state => state.orderReducer.pages)
-    const totalOrders = useSelector(state => state.orderReducer.total)
     const userState = useSelector(state => state.userReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(true)
     const [openDialog, setOpenDialog] = useState(false)
     const [selectedOrderId, setSelectedOrderId] = useState(null)
+
+    const [allOrders, setAllOrders] = useState([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalOrders, setTotalOrders] = useState(1)
+
     const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
     const cancelledSteps = ["Order Placed", "Order Cancelled"]
     const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
+    const fetchOrders = async (token, page = 1, limit = 10) => {
+        try {
+            const res = await fetch(`http://localhost:3000/orders/get-orders?page=${page}&limit=${limit}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if(!res.ok){
+                const error = await res.json();
+                console.error("Could not fetch Orders:", error.error)
+                return false
+            }
+            const orderData = await res.json();
+            // console.log(orderData);
+            setAllOrders(orderData.orders.reverse())
+            setCurrentPage(orderData.currentPage)
+            setTotalPages(orderData.pages)
+            setTotalOrders(orderData.total)
+        }
+        catch (err) {
+            console.error("Orders fetch failed:", err.message);
+        }
+    }
+
     useEffect(() => {
-        dispatch(fetchOrders(userState.token, 1, 10))
+        // dispatch(fetchOrders(userState.token, 1, 10))
+        fetchOrders(userState.token, 1, 10)
         const timeOut = setTimeout(() => {
             setLoading(false)
         },1000)
@@ -90,7 +121,7 @@ function MyOrders() {
                 return
             }
             handleDialogClose()
-            dispatch(fetchOrders(userState.token, 1, 10))
+            fetchOrders(userState.token, 1, 10)
         }
         catch (err){
             console.error("Could not cancel Order:", err.message);
@@ -107,7 +138,8 @@ function MyOrders() {
     }
 
     const handlePageChange = (event, value) => {
-        dispatch(fetchOrders(userState.token, value, 10))
+        // dispatch(fetchOrders(userState.token, value, 10))
+        fetchOrders(userState.token, value, 10)
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
     }
 
@@ -155,7 +187,7 @@ function MyOrders() {
                 </DialogActions>
             </Dialog>
             {
-            ordersState.length === 0 ?
+            allOrders.length === 0 ?
             (
             <Box sx={{ display: "block", margin: "auto", textAlign: "center" }}>
                 <Typography component="h1">No Orders Yet...</Typography>
@@ -193,11 +225,11 @@ function MyOrders() {
                     )
                     :
                     (
-                    ordersState.map((order, index) => (
+                    allOrders.map((order, index) => (
                         <Card key={index} sx={{mx: "auto", bgcolor: "white", width: "80%", my: 2}} >
                             {/* <Box sx={{textAlign: "left", pt: 2, px: 3}}> */}
                             <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 3}}>
-                                {/* <Typography>Order Number: {ordersState.length - index}</Typography> */}
+                                {/* <Typography>Order Number: {allOrders.length - index}</Typography> */}
                                 <Box>
                                     <Typography>Order ID: {order.order_id}</Typography>
                                     <Typography>Order Value: ${order.cartValue}</Typography>

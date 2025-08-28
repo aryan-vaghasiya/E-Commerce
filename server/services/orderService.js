@@ -189,7 +189,8 @@ exports.getOrdersService = async (userId, page, limit, offset) => {
                                             ON c.id = p.category_id
                                         JOIN orders o 
                                             ON oi.order_id = o.id
-                                        WHERE o.id IN (?)`, [orderIds]);
+                                        WHERE o.id IN (?)
+                                        ORDER BY FIELD(oi.order_id, ?)`, [orderIds, orderIds]);
     if(getOrders.length < 0){
         console.error("No Orders Exist");
         return{};
