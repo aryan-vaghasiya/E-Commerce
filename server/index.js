@@ -134,3 +134,13 @@ app.listen(port, () => {
     //     .catch(err => {
     //         console.error("Failed to send welcome email:", err);
     //     });
+
+    // sendMail({
+    //     to: "demo@demo.com",
+    //     subject: "Campaign email",
+    //     template: "postdrop_test.hbs",
+    //     replacements: {companyName: "Cartify", logo: "https://cdn.postdrop.io/starter-templates-v0/postdrop-logo-dark.png", brandColor: "#EC0867"}
+    // })
+    //     .catch(err => {
+    //         console.error("Failed to send welcome email:", err);
+    //     });

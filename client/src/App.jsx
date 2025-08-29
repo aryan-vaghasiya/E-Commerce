@@ -38,6 +38,8 @@ import AdminCouponEdit from './components/AdminCouponEdit'
 import MyProfile from './components/MyProfile'
 import MyWallet from './components/MyWallet'
 import HomePage from './components/HomePage'
+import AdminCampaigns from './components/AdminCampaigns'
+import AdminCampaignsAdd from './components/AdminCampaignsAdd'
 
 function App() {
 
@@ -75,6 +77,8 @@ function App() {
                 <Route path='/admin/product/:productId' element={<AdminProductsPage />} />
                 <Route path='/admin/product/add' element={<AdminAddProduct />} />
                 <Route path='/admin/coupons' element={<AdminCoupons />} />
+                <Route path='/admin/campaigns' element={<AdminCampaigns />} />
+                <Route path='/admin/campaigns/add' element={<AdminCampaignsAdd />} />
                 <Route path='/admin/coupons/add' element={<AdminCouponsAdd />} />
                 {/* <Route path='/admin/coupons/:couponId/edit' element={<AdminCouponEdit />} />
                 <Route path='/admin/coupons/:couponId' element={<AdminCouponDetails />} /> */}
