@@ -2005,3 +2005,68 @@ exports.getCouponReportDates = async (couponId, fromTime, toTime, limit, sortBy,
 
     return {dates: groupedDateUsages, totalDateRedeems}
 }
+
+exports.getFirstBasicTemplate = async () => {
+    const basicTemplatePath = path.join(__dirname, "../mailer/templates", "basic.hbs")
+
+    const basicTemplateData = await fs.readFile(basicTemplatePath, 'utf-8')
+
+    // console.log(basicTemplateData);
+    return basicTemplateData
+}
+
+exports.getAllTemplateFiles = async (username, active) => {
+    console.log(username, active);
+    
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    const templatesExist = await fs.pathExists(adminTemplatesDir)
+
+    if(!templatesExist){
+        await this.addNewTemplateFile(username, "first_template")
+    }
+
+    const dirContents = await fs.readdir(adminTemplatesDir)
+    console.log(dirContents);
+
+    if(dirContents.length === 0){
+        return {files: {}}
+    }
+
+    const files = {}
+    for(let file of dirContents){
+        const woExt = file.replace(path.extname(file), "")
+        files[woExt] = ""
+    }
+
+    if(active === "any"){
+        const firstFile = dirContents[0]
+        const firstFilePath = path.join(adminTemplatesDir, firstFile)
+        const firstFileContent = await fs.readFile(firstFilePath, 'utf-8')
+
+        files[firstFile.replace(".hbs", "")] = firstFileContent
+        return {files}
+    }
+    else{
+        const activeFile = active + ".hbs"
+        const activeFilePath = path.join(adminTemplatesDir, activeFile)
+        const activeFileContent = await fs.readFile(activeFilePath, 'utf-8')
+
+        files[activeFile.replace(".hbs", "")] = activeFileContent
+        return {files}
+    }
+}
+
+exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
+
+    console.log(username, fileName, extension);
+    
+
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    await fs.ensureDir(adminTemplatesDir)
+
+    const newFilePath = path.join(adminTemplatesDir, fileName.trim() + extension.trim())
+    const newFileContent = await this.getFirstBasicTemplate()
+    await fs.outputFile(newFilePath, newFileContent)
+}

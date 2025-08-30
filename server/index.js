@@ -138,7 +138,7 @@ app.listen(port, () => {
     // sendMail({
     //     to: "demo@demo.com",
     //     subject: "Campaign email",
-    //     template: "postdrop_test.hbs",
+    //     template: "basic.hbs",
     //     replacements: {companyName: "Cartify", logo: "https://cdn.postdrop.io/starter-templates-v0/postdrop-logo-dark.png", brandColor: "#EC0867"}
     // })
     //     .catch(err => {

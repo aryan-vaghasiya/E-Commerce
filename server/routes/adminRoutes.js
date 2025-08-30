@@ -46,4 +46,8 @@ router.get("/coupons/:couponId/report/categories", verifyAdminToken, adminContro
 router.get("/coupons/:couponId/report/users", verifyAdminToken, adminController.getSingleCouponReportUsers);
 router.get("/coupons/:couponId/report/dates", verifyAdminToken, adminController.getSingleCouponReportDates);
 
+router.get("/templates/get-basic", verifyAdminToken, adminController.getBasicTemplate);
+router.get("/templates/get-files", verifyAdminToken, adminController.getAllTemplates);
+router.post("/templates/add", verifyAdminToken, adminController.addNewTemplate);
+
 module.exports = router;

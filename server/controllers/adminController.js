@@ -570,3 +570,42 @@ exports.getSingleCouponReportDates = async (req, res) => {
         res.status(500).json({ error: err.message })
     }
 }
+
+exports.getBasicTemplate = async (req, res) => {
+    try{
+        const template = await adminServices.getFirstBasicTemplate()        
+        res.status(200).json({fileContent: template})
+    }
+    catch (err){
+        console.error("Error fetching first basic template: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getAllTemplates = async (req, res) => {
+    const username = req.user.username
+    const active = req.query.active
+
+    try{
+        const files = await adminServices.getAllTemplateFiles(username, active)        
+        res.status(200).json(files)
+    }
+    catch (err){
+        console.error("Error fetching all template files: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.addNewTemplate = async (req, res) => {
+    const username = req.user.username
+    const fileName = req.body.fileName
+
+    try{
+        const files = await adminServices.addNewTemplateFile(username, fileName)        
+        res.status(200).send("New template added Successfully");
+    }
+    catch (err){
+        console.error("Error adding new template: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
