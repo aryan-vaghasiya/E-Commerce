@@ -44,14 +44,25 @@ function OfferTimeLeft({ offerEndTime }) {
             <Box>
                 <Typography variant="body2" color="error"  sx={{fontSize: 16, fontWeight: 400, pt: 1}}>
                     Order within 
-                    {` ${pad(timeLeft.days)}d : `}
                     {
-                        timeLeft.hours > 0 ?
-                        ` ${pad(timeLeft.hours)}h : `
+                        timeLeft.days > 0 ?
+                        <Typography component="span" sx={{fontWeight: 700}}>{` ${pad(timeLeft.days)}d : `}</Typography>
                         :
                         null
                     }
-                    {` ${pad(timeLeft.minutes)}m `}to get this price!
+                    {
+                        timeLeft.hours > 0 ?
+                        <Typography component="span" sx={{fontWeight: 700}}>{` ${pad(timeLeft.hours)}h : `}</Typography>
+                        :
+                        null
+                    }
+                    {
+                        timeLeft.minutes > 0 ?
+                        <Typography component="span" sx={{fontWeight: 700}}>{` ${pad(timeLeft.minutes)}m `}</Typography>
+                        :
+                        <Typography component="span" sx={{fontWeight: 700}}>less than a minute</Typography>
+                    }
+                    to get this price!
                     {/* Order within {timeLeft.hours} hour{timeLeft.hours !== 1 ? 's' : ''}, {timeLeft.minutes} minute{timeLeft.minutes !== 1 ? 's' : ''} to get this price! */}
                 </Typography>
             </Box>

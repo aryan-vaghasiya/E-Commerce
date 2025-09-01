@@ -49,6 +49,24 @@ async function sendMail({ to, subject, template, replacements }) {
     return info
 }
 
+async function sendCampaignMail({from , to, subject, templatePath, replacements }) {
+    const source = fs.readFileSync(templatePath, "utf-8");
+
+    const compiled = handlebars.compile(source);
+    const html = compiled(replacements);
+
+    const info = await transporter.sendMail({
+        from,
+        to,
+        subject,
+        html,
+    });
+
+    console.log("Message sent:", info.messageId);
+    console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+    return info
+}
+
 
 // async function sendMail({ to, subject, template, replacements }) {
 //     const templatePath = path.join(__dirname, "templates", template);
@@ -71,7 +89,7 @@ async function sendMail({ to, subject, template, replacements }) {
 //     return info
 // }
 
-module.exports = { sendMail };
+module.exports = { sendMail, sendCampaignMail };
 
 
 // // CALLING ON SIGN UP, EXAMPLE

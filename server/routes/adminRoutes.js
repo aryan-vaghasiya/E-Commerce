@@ -49,5 +49,8 @@ router.get("/coupons/:couponId/report/dates", verifyAdminToken, adminController.
 router.get("/templates/get-basic", verifyAdminToken, adminController.getBasicTemplate);
 router.get("/templates/get-files", verifyAdminToken, adminController.getAllTemplates);
 router.post("/templates/add", verifyAdminToken, adminController.addNewTemplate);
+router.post("/templates/save", verifyAdminToken, adminController.saveEditedTemplate);
+router.post("/templates/rename", verifyAdminToken, adminController.renameTemplate);
+router.post("/templates/delete", verifyAdminToken, adminController.deleteTemplate);
 
 module.exports = router;

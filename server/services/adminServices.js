@@ -7,6 +7,8 @@ const dayjs = require('dayjs')
 const adminUtils = require("../utils/adminUtils")
 const walletService = require("./walletService");
 const { sendMail } = require("../mailer/sendMail");
+const { sendCampaignMail } = require("../mailer/sendMail");
+const { template } = require("handlebars");
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -2016,7 +2018,7 @@ exports.getFirstBasicTemplate = async () => {
 }
 
 exports.getAllTemplateFiles = async (username, active) => {
-    console.log(username, active);
+    // console.log(username, active);
     
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
 
@@ -2027,16 +2029,17 @@ exports.getAllTemplateFiles = async (username, active) => {
     }
 
     const dirContents = await fs.readdir(adminTemplatesDir)
-    console.log(dirContents);
+    // console.log(dirContents);
 
     if(dirContents.length === 0){
         return {files: {}}
     }
 
-    const files = {}
+    const files = []
     for(let file of dirContents){
         const woExt = file.replace(path.extname(file), "")
-        files[woExt] = ""
+        // files[woExt] = ""
+        files.push({ name: woExt, content: "" })
     }
 
     if(active === "any"){
@@ -2044,22 +2047,29 @@ exports.getAllTemplateFiles = async (username, active) => {
         const firstFilePath = path.join(adminTemplatesDir, firstFile)
         const firstFileContent = await fs.readFile(firstFilePath, 'utf-8')
 
-        files[firstFile.replace(".hbs", "")] = firstFileContent
-        return {files}
+        // files[firstFile.replace(".hbs", "")] = firstFileContent
+        // return {files}
+
+        files[0].content = firstFileContent;
     }
     else{
         const activeFile = active + ".hbs"
         const activeFilePath = path.join(adminTemplatesDir, activeFile)
         const activeFileContent = await fs.readFile(activeFilePath, 'utf-8')
 
-        files[activeFile.replace(".hbs", "")] = activeFileContent
-        return {files}
+        // files[activeFile.replace(".hbs", "")] = activeFileContent
+        // return {files}
+
+        const match = files.find(f => f.name === active);
+        if (match) match.content = activeFileContent;
     }
+
+    return {files}
 }
 
 exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
 
-    console.log(username, fileName, extension);
+    // console.log(username, fileName, extension);
     
 
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
@@ -2069,4 +2079,84 @@ exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
     const newFilePath = path.join(adminTemplatesDir, fileName.trim() + extension.trim())
     const newFileContent = await this.getFirstBasicTemplate()
     await fs.outputFile(newFilePath, newFileContent)
+
+    return {name: fileName, content: newFileContent}
 }
+
+exports.saveTemplateChanges = async (username, fileName, content) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    await fs.ensureDir(adminTemplatesDir)
+
+    const templatePath = path.join(adminTemplatesDir, `${fileName}.hbs`)
+    const templatesExist = await fs.pathExists(templatePath)
+
+    if(!templatesExist){
+        throw new Error("File not found")
+    }
+
+    await fs.outputFile(templatePath, content)
+}
+
+exports.renameTemplateFile = async (username, oldFileName, newFileName) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    await fs.ensureDir(adminTemplatesDir)
+
+    const oldTemplatePath = path.join(adminTemplatesDir, `${oldFileName}.hbs`)
+    const newTemplatePath = path.join(adminTemplatesDir, `${newFileName}.hbs`)
+
+    const templatesExist = await fs.pathExists(oldTemplatePath)
+
+    if(!templatesExist){
+        throw new Error("File not found")
+    }
+
+    await fs.move(oldTemplatePath, newTemplatePath)
+}
+
+exports.deleteTemplateFile = async (username, fileName) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    await fs.ensureDir(adminTemplatesDir)
+
+    const templatePath = path.join(adminTemplatesDir, `${fileName}.hbs`)
+
+    await fs.remove(templatePath)
+}
+
+exports.sendCampaignEmail = async(username, templateName, subject) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+    await fs.ensureDir(adminTemplatesDir)
+
+    const templatePath = path.join(adminTemplatesDir, `${templateName}.hbs`)
+
+    const allUsers = await runQuery(`SELECT first_name, last_name, email FROM users`)
+
+    if(allUsers.length === 0){
+        throw new Error("Could not fetch users to send email")
+    }
+
+    // console.log(allUsers);
+    const usersData = []
+
+    for(let user of allUsers){
+        usersData.push([user.email, user.first_name, user.last_name])
+    }
+
+    // console.log(usersData);
+
+    for(let user of usersData){
+        // console.log(user);
+        await sendCampaignMail({
+            from: '"Cartify" <no-reply@cartify.com>',
+            to: user[0],
+            subject,
+            templatePath,
+            replacements: {fName: user[1], lName: user[2],}
+        })
+    }
+
+}
+
+this.sendCampaignEmail("admin", "123", "Campaign 2")

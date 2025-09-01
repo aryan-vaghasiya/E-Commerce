@@ -374,14 +374,24 @@ function CouponReportPDF({data}) {
                     </View>
                     :null
                 }
-                <View style={styles.section} wrap={false}>
-                    <Text style={styles.header}>User-wise Usage</Text>
-                    <UsersTable users={users} />
-                </View>
-                <View style={styles.section} wrap={false}>
-                    <Text style={styles.header}>Date-wise Usage</Text>
-                    <DatesTable dates={dates} />
-                </View>
+                {
+                    users && users.users.length > 0 ?
+                    <View style={styles.section} wrap={false}>
+                        <Text style={styles.header}>User-wise Usage</Text>
+                        <UsersTable users={users} />
+                    </View>
+                    :
+                    null
+                } 
+                {
+                    dates && dates.dates.length > 0 ?
+                    <View style={styles.section} wrap={false}>
+                        <Text style={styles.header}>Date-wise Usage</Text>
+                        <DatesTable dates={dates} />
+                    </View>
+                    :
+                    null
+                }
             </Page>
         </Document>
     )

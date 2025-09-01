@@ -601,11 +601,55 @@ exports.addNewTemplate = async (req, res) => {
     const fileName = req.body.fileName
 
     try{
-        const files = await adminServices.addNewTemplateFile(username, fileName)        
-        res.status(200).send("New template added Successfully");
+        const newFile = await adminServices.addNewTemplateFile(username, fileName)        
+        res.status(200).json(newFile);
     }
     catch (err){
         console.error("Error adding new template: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.saveEditedTemplate = async (req, res) => {
+    const username = req.user.username
+    const fileName = req.body.fileName
+    const content = req.body.content
+
+    try{
+        await adminServices.saveTemplateChanges(username, fileName, content)        
+        res.status(200).send("Template edited Successfully");
+    }
+    catch (err){
+        console.error("Error editing template: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.renameTemplate = async (req, res) => {
+    const username = req.user.username
+    const oldFileName = req.body.oldFileName
+    const newFileName = req.body.newFileName
+
+    try{
+        await adminServices.renameTemplateFile(username, oldFileName, newFileName)        
+        res.status(200).send("Template renamed Successfully");
+    }
+    catch (err){
+        console.error("Error renaming template: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.deleteTemplate = async (req, res) => {
+    const username = req.user.username
+    const fileName = req.body.fileName
+
+    try{
+        await adminServices.deleteTemplateFile(username, fileName)        
+        res.status(200).send("Template deleted Successfully");
+    }
+    catch (err){
+        console.error("Error deleting template: ", err.message)
         res.status(500).json({ error: err.message })
     }
 }
