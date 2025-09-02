@@ -2125,7 +2125,38 @@ exports.deleteTemplateFile = async (username, fileName) => {
     await fs.remove(templatePath)
 }
 
-exports.sendCampaignEmail = async(username, templateName, subject) => {
+// exports.sendCampaignEmail = async(username, templateName, subject) => {
+//     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+//     await fs.ensureDir(adminTemplatesDir)
+
+//     const templatePath = path.join(adminTemplatesDir, `${templateName}.hbs`)
+
+//     const allUsers = await runQuery(`SELECT first_name, last_name, email FROM users`)
+
+//     if(allUsers.length === 0){
+//         throw new Error("Could not fetch users to send email")
+//     }
+
+//     const usersData = []
+
+//     for(let user of allUsers){
+//         usersData.push([user.email, user.first_name, user.last_name])
+//     }
+
+//     for(let user of usersData){
+//         // console.log(user);
+//         await sendCampaignMail({
+//             from: '"Cartify" <no-reply@cartify.com>',
+//             to: user[0],
+//             subject,
+//             templatePath,
+//             replacements: {fName: user[1], lName: user[2],}
+//         })
+//     }
+
+// }
+
+exports.sendCampaignEmailService = async(username, templateName, subject) => {
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
     await fs.ensureDir(adminTemplatesDir)
 
@@ -2137,14 +2168,11 @@ exports.sendCampaignEmail = async(username, templateName, subject) => {
         throw new Error("Could not fetch users to send email")
     }
 
-    // console.log(allUsers);
     const usersData = []
 
     for(let user of allUsers){
         usersData.push([user.email, user.first_name, user.last_name])
     }
-
-    // console.log(usersData);
 
     for(let user of usersData){
         // console.log(user);
@@ -2156,7 +2184,31 @@ exports.sendCampaignEmail = async(username, templateName, subject) => {
             replacements: {fName: user[1], lName: user[2],}
         })
     }
-
 }
 
-this.sendCampaignEmail("admin", "123", "Campaign 2")
+exports.addCampaignEntries = async (username, campaignName, subject, templateName, scheduleTime) => {
+    // console.log(username, campaignName, subject, templateName, scheduleTime);
+
+    const addCampaign = await runQuery(`INSERT INTO campaigns (name, template_name, subject, scheduled_at, created_by, status) VALUES (?, ?, ?, ?, ?, ?)`, [campaignName, templateName, subject, scheduleTime, username, "scheduled"])
+
+    if(addCampaign.affectedRows === 0){
+        throw new Error("Could not add Campaign")
+    }
+    const campaignId = addCampaign.insertId
+    console.log(campaignId);
+
+    const addRecipients  = await runQuery(`INSERT INTO campaign_recipients (campaign_id, user_id, email, first_name, last_name, status)
+                                                SELECT 
+                                                    c.id AS campaign_id,
+                                                    u.id AS user_id,
+                                                    u.email,
+                                                    u.first_name,
+                                                    u.last_name,
+                                                    'pending' AS status
+                                                FROM users u
+                                                JOIN campaigns c ON c.id = ?`, [campaignId]);
+
+    if(addRecipients.affectedRows === 0){
+        throw new Error("Could not add Campaign")
+    }
+}

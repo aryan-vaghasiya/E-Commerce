@@ -653,3 +653,21 @@ exports.deleteTemplate = async (req, res) => {
         res.status(500).json({ error: err.message })
     }
 }
+
+exports.addCampaign = async (req, res) => {
+    // console.log(req.body);
+    const username = req.user.username
+    const name = req.body.name
+    const subject = req.body.subject
+    const template_name = req.body.template_name
+    const schedule_time = req.body.schedule_time
+
+    try{
+        await adminServices.addCampaignEntries(username, name, subject, template_name, schedule_time)        
+        res.status(200).send("Campaign added Successfully");
+    }
+    catch (err){
+        console.error("Error adding campaign: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}

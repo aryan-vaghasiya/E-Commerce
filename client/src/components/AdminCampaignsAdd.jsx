@@ -252,6 +252,7 @@ import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import CircleIcon from '@mui/icons-material/Circle';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import InfoIcon from '@mui/icons-material/Info';
 
 function AdminCampaignsAdd() {
     const userState = useSelector(state => state.userReducer)
@@ -261,9 +262,10 @@ function AdminCampaignsAdd() {
     const [openDialog, setOpenDialog] = useState(false)
     const [openRenameDialog, setOpenRenameDialog] = useState(false)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+    const [openSaveDialog, setOpenSaveDialog] = useState(false)
     const [selectedFileForRename, setSelectedFileForRename] = useState(null)
     const [allFileNames, setAllFileNames] = useState({});
-    const [originalFileContent, setOriginalFileContent] = useState({}); // Track original file contents
+    const [originalFileContent, setOriginalFileContent] = useState({});
     const [activeFileName, setActiveFileName] = useState(null);
     const [activeFileContent, setActiveFileContent] = useState(null);
     const [menuAnchor, setMenuAnchor] = useState(null);
@@ -302,7 +304,7 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
-                return console.error("Could not fetch basic template:", error.error);
+                return console.error("Could not fetch all templates:", error.error);
             }
             const data = await res.json();
             // console.log(data);
@@ -483,9 +485,14 @@ function AdminCampaignsAdd() {
     }
 
     const handleFileChange = (file) => {
-        console.log(file);
-        fetchAllTemplates(userState.token, file)
-        setActiveFileName(file)
+        if(hasUnsavedChanges){
+            setSelectedFile(file)
+            setOpenSaveDialog(true)
+        }
+        else{
+            fetchAllTemplates(userState.token, file)
+        }
+        // setActiveFileName(file)
     }
 
     const handleMenuOpen = (event, fileName) => {
@@ -514,8 +521,22 @@ function AdminCampaignsAdd() {
         // handleMenuClose();
     }
 
-    const handleDeleteConfirmation = () => {
-        handleDeleteFile(selectedFile)
+    const handleDeleteConfirmation = (confirmation) => {
+        if(!confirmation){
+            handleMenuClose()
+            setOpenDeleteDialog(false)
+        }
+        else{
+            handleDeleteFile(selectedFile)
+        }
+    }
+
+    const handleSaveConfirmation = (confirmation) => {
+        if(confirmation){
+            handleSaveFile()
+        }
+        fetchAllTemplates(userState.token, selectedFile)
+        setOpenSaveDialog(false)
     }
 
     useEffect(() => {
@@ -543,7 +564,7 @@ function AdminCampaignsAdd() {
                         />
                     </DialogContent>
                     <DialogActions sx={{py: 2, px: 3}}>
-                        <Button onClick={() => { setOpenDialog(false); reset(); }} color="inherit">
+                        <Button variant="outlined" onClick={() => { setOpenDialog(false); reset(); }} color="error">
                             Cancel
                         </Button>
                         <Button type="submit" variant="contained">
@@ -572,7 +593,7 @@ function AdminCampaignsAdd() {
                         />
                     </DialogContent>
                     <DialogActions sx={{py: 2, px: 3}}>
-                        <Button onClick={() => { setOpenRenameDialog(false); resetRename(); setSelectedFileForRename(null); }} color="">
+                        <Button variant="outlined" onClick={() => { setOpenRenameDialog(false); resetRename(); setSelectedFileForRename(null); }} color="error">
                             Cancel
                         </Button>
                         <Button type="submit" variant="contained">
@@ -582,6 +603,7 @@ function AdminCampaignsAdd() {
                 </form>
             </Dialog>
 
+            {/* Delete Template Dialog */}
             <Dialog
                 open={openDeleteDialog}
                 onClose={() => setOpenDeleteDialog(false)}
@@ -598,9 +620,33 @@ function AdminCampaignsAdd() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button variant='contained' onClick={() => setOpenDeleteDialog(false)}>Back</Button>
-                    <Button onClick={handleDeleteConfirmation} autoFocus variant='contained' color='error'>
+                    <Button variant='outlined' onClick={() => handleDeleteConfirmation(false)}>Back</Button>
+                    <Button onClick={() => handleDeleteConfirmation(true)} autoFocus variant='contained' color='error'>
                         Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Save Template Dialog */}
+            <Dialog
+                open={openSaveDialog}
+                onClose={() => setOpenSaveDialog(false)}
+            >
+                <DialogTitle>
+                    Save template 
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Save changes ?
+                    </DialogContentText>
+                    <DialogContentText>
+                        You had some unsaved changes on previous file, would you like to apply those changes?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='outlined' color='error' onClick={() => handleSaveConfirmation(false)}>No</Button>
+                    <Button onClick={() => handleSaveConfirmation(true)} autoFocus variant='contained'>
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -624,7 +670,7 @@ function AdminCampaignsAdd() {
             <Box sx={{
                 "& .split": { display: "flex", flexDirection: "row", height: "100%" },
                 "& .gutter": {
-                    backgroundColor: "#a1a1a1",
+                    backgroundColor: "#333333",
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "50%",
                 },
@@ -638,7 +684,7 @@ function AdminCampaignsAdd() {
                 <Split
                     className="split"
                     direction="horizontal"
-                    sizes={[15, 40, 45]}
+                    sizes={[20, 40, 40]}
                     minSize={[150, 200, 150]}
                     gutterSize={8}
                 >
@@ -671,38 +717,10 @@ function AdminCampaignsAdd() {
 
                         <Divider sx={{ mb: 2 }} />
 
-                        {/* Current File Indicator */}
-                        {/* {activeFileName && (
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="overline" color="text.secondary">
-                                    Current File
-                                </Typography>
-                                <Card 
-                                    sx={{ 
-                                        p: 1.5, 
-                                        bgcolor: 'primary.50',
-                                        border: 1,
-                                        borderColor: 'primary.main'
-                                    }}
-                                >
-                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                        <FileIcon color="primary" />
-                                        <Typography variant="body2" fontWeight="medium">
-                                            {activeFileName}
-                                        </Typography>
-                                        {hasUnsavedChanges ? (
-                                            <Chip label="Modified" size="small" color="warning" />
-                                        ) : (
-                                            <CheckCircleIcon color="success" fontSize="small" />
-                                        )}
-                                    </Stack>
-                                </Card>
-                            </Box>
-                        )} */}
-
                         {/* File List */}
                         <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                            All Templates ({allFileNames.length})
+                            {/* All Templates (allFileNames ? {allFileNames.length} : 0) */}
+                            All Templates ({allFileNames?.length || 0})
                         </Typography>
                         
                         {allFileNames.length > 0 ? (
@@ -717,7 +735,7 @@ function AdminCampaignsAdd() {
                                             border: activeFileName === file ? 1 : 0,
                                             borderColor: 'primary.main',
                                             '&:hover': {
-                                                bgcolor: 'grey.50',
+                                                bgcolor: 'grey.200',
                                                 transform: 'translateY(-1px)',
                                                 boxShadow: 2
                                             }
@@ -779,19 +797,34 @@ function AdminCampaignsAdd() {
                                 </Typography>
                             </Card>
                         )}
+                        {/* Dynamic Variables Note */}
+                        <Card sx={{ p: 2, mt: 2, border: 1,}}>
+                            <Stack direction="row" spacing={1} alignItems="flex-start">
+                                <InfoIcon color="info" fontSize="small" sx={{ mt: 0.25 }} />
+                                <Box>
+                                    <Typography variant="body2" fontWeight="medium" color="info.dark" sx={{ mb: 0.5 }}>
+                                        Dynamic Variables
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                                        Use <Box component="code" sx={{ px: 0.5, py: 0.25, bgcolor: 'grey.200', borderRadius: 0.5, fontFamily: 'monospace' }}>{'{{fName}}'}</Box> and <Box component="code" sx={{ px: 0.5, py: 0.25, bgcolor: 'grey.200', borderRadius: 0.5, fontFamily: 'monospace' }}>{'{{lName}}'}</Box> in your templates. They will be automatically replaced with the recipient's first and last name when emails are sent.
+                                    </Typography>
+                                </Box>
+                            </Stack>
+                        </Card>
                     </Box>
 
                     {/* Code Editor Panel */}
                     <Box>
                         <Box sx={{height: `calc(100vh - 64px)`, display: "flex", flexDirection: "column", overflow: "auto"}}>
                             <CodeMirror
+                                key={activeFileName}
                                 // value={files[activeFileName] || ''}
                                 value={activeFileContent || ''}
                                 height="100%"
                                 style={{ flex: 1 }} 
                                 extensions={[
-                                    html(), 
-                                    css(), 
+                                    html(),
+                                    css(),
                                     EditorView.contentAttributes.of({ "data-enable-grammarly": "false" }), 
                                     EditorView.lineWrapping,
                                     indentUnit.of("    "),
@@ -808,8 +841,9 @@ function AdminCampaignsAdd() {
                     <Box>
                         <Box sx={{borderRadius: "8px", height: "100%"}}>
                             <iframe
-                                // srcDoc={files[activeFileName] || ''}
-                                srcDoc={activeFileContent || ''}
+                                // srcDoc={activeFileContent || ''}
+                                srcDoc={activeFileContent ? activeFileContent.replaceAll("{{fName}}", "John").replaceAll("{{lName}}", "Doe") : ''}
+                                // sandbox="allow-same-origin"
                                 title="preview"
                                 width="100%"
                                 height="100%"

@@ -670,34 +670,6 @@ function AdminCouponsAdd() {
                                 </Box>
                             </TabPanel>
                         </TabContext>
-                        {/* {
-                            currentStep === 1?
-                            
-                            :
-                            null
-                        } */}
-
-                        {/* {
-                            currentStep === 2?
-                            
-                            :
-                            null
-                        } */}
-
-                        {/* {
-                            currentStep === 3 ?
-                            
-                            :
-                            null
-                        } */}
-
-                        {/* {
-                            currentStep === 4 ?
-                            
-                            :
-                            null
-                        } */}
-                    {/* </Stack> */}
                 </form>
             </Card>
         </Box>
