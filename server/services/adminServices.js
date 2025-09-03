@@ -2156,33 +2156,37 @@ exports.deleteTemplateFile = async (username, fileName) => {
 
 // }
 
-exports.sendCampaignEmailService = async(username, templateName, subject) => {
-    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+exports.sendCampaignEmailService = async(campaignId) => {
+    const [campaign] = await runQuery(`SELECT * FROM campaigns WHERE id = ?`, [campaignId])
+    const recipients = await runQuery(`SELECT * FROM campaign_recipients WHERE campaign_id = ? AND status = ?`, [campaignId, "pending"]);
+
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", campaign.created_by)
     await fs.ensureDir(adminTemplatesDir)
 
-    const templatePath = path.join(adminTemplatesDir, `${templateName}.hbs`)
+    const templatePath = path.join(adminTemplatesDir, `${campaign.template_name}.hbs`)
 
-    const allUsers = await runQuery(`SELECT first_name, last_name, email FROM users`)
-
-    if(allUsers.length === 0){
-        throw new Error("Could not fetch users to send email")
+    for (let r of recipients) {
+        try {
+            await sendCampaignMail({
+                from: '"Cartify" <no-reply@cartify.com>',
+                to: r.email,
+                subject: campaign.subject,
+                templatePath,
+                replacements: {fName: r.first_name, lName: r.last_name,}
+            })
+            await runQuery(`UPDATE campaign_recipients SET status='sent', sent_at = NOW() WHERE id=?`, [r.id]);
+        } 
+        catch (err) {
+            await runQuery(`UPDATE campaign_recipients SET status='failed', sent_at = NOW(), error_message = ?  WHERE id=?`, [r.id, err.message]);
+        }
     }
 
-    const usersData = []
+    const [left] = await runQuery(`SELECT COUNT(*) as remaining
+                                FROM campaign_recipients
+                                WHERE campaign_id=? AND status= ?`, [campaignId, "pending"]);
 
-    for(let user of allUsers){
-        usersData.push([user.email, user.first_name, user.last_name])
-    }
-
-    for(let user of usersData){
-        // console.log(user);
-        await sendCampaignMail({
-            from: '"Cartify" <no-reply@cartify.com>',
-            to: user[0],
-            subject,
-            templatePath,
-            replacements: {fName: user[1], lName: user[2],}
-        })
+    if (left.remaining === 0) {
+        await runQuery(`UPDATE campaigns SET status='completed' WHERE id=?`, [campaignId]);
     }
 }
 
@@ -2195,7 +2199,7 @@ exports.addCampaignEntries = async (username, campaignName, subject, templateNam
         throw new Error("Could not add Campaign")
     }
     const campaignId = addCampaign.insertId
-    console.log(campaignId);
+    // console.log(campaignId);
 
     const addRecipients  = await runQuery(`INSERT INTO campaign_recipients (campaign_id, user_id, email, first_name, last_name, status)
                                                 SELECT 
@@ -2211,4 +2215,38 @@ exports.addCampaignEntries = async (username, campaignName, subject, templateNam
     if(addRecipients.affectedRows === 0){
         throw new Error("Could not add Campaign")
     }
+}
+
+exports.sendCampaignTestEmail = async (username, template, userId) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
+
+    await fs.ensureDir(adminTemplatesDir)
+
+    const templatePath = path.join(adminTemplatesDir, `${template}.hbs`)
+
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+
+    if(!getUser){
+        throw new Error("Admin user not found")
+    }
+
+    await sendCampaignMail({
+        from: '"Cartify" <no-reply@cartify.com>',
+        to: getUser.email,
+        subject: `${template} template test subject`,
+        templatePath,
+        replacements: {fName: getUser.first_name, lName: getUser.last_name,}
+    })
+
+    return getUser.email
+}
+
+exports.getAllCampaignsData = async (username) => {
+    const allCampaigns = await runQuery(`SELECT * FROM campaigns WHERE created_by = ?`, [username])
+
+    if(allCampaigns.length === 0){
+        throw new Error("There are no campaigns")
+    }
+
+    return allCampaigns
 }

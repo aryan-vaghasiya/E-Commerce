@@ -645,7 +645,7 @@ exports.deleteTemplate = async (req, res) => {
     const fileName = req.body.fileName
 
     try{
-        await adminServices.deleteTemplateFile(username, fileName)        
+        await adminServices.deleteTemplateFile(username, fileName)     
         res.status(200).send("Template deleted Successfully");
     }
     catch (err){
@@ -668,6 +668,48 @@ exports.addCampaign = async (req, res) => {
     }
     catch (err){
         console.error("Error adding campaign: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.sendCampaignNow = async (req, res) => {
+    const campaignId = req.body.campaignId
+
+    try{
+        await adminServices.sendCampaignEmailService(campaignId)
+        res.status(200).send("Campaign emails sent Successfully")
+    }
+    catch (err){
+        console.error("Error sending campaign emails: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.sendCampaignTest = async (req, res) => {
+    const userId = req.user.id
+    const username = req.user.username
+    const template = req.body.template
+
+    try{
+        const testEmail = await adminServices.sendCampaignTestEmail(username, template, userId)
+        res.status(200).json(testEmail)
+    }
+    catch (err){
+        console.error("Error sending campaign test email: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getAllCampaigns = async (req, res) => {
+    const username = req.user.username
+    const userId = req.user.id
+
+    try{
+        const campaigns = await adminServices.getAllCampaignsData(username)        
+        res.status(200).json(campaigns)
+    }
+    catch (err){
+        console.error("Error fetching all campaigns: ", err.message)
         res.status(500).json({ error: err.message })
     }
 }

@@ -53,5 +53,8 @@ router.post("/templates/save", verifyAdminToken, adminController.saveEditedTempl
 router.post("/templates/rename", verifyAdminToken, adminController.renameTemplate);
 router.post("/templates/delete", verifyAdminToken, adminController.deleteTemplate);
 router.post("/campaigns/add", verifyAdminToken, adminController.addCampaign);
+router.post("/campaigns/send-now", verifyAdminToken, adminController.sendCampaignNow);
+router.post("/campaigns/send-test", verifyAdminToken, adminController.sendCampaignTest);
+router.get("/campaigns/get", verifyAdminToken, adminController.getAllCampaigns);
 
 module.exports = router;

@@ -237,7 +237,8 @@ import {
     Stack,
     Divider,
     Alert,
-    DialogContentText
+    DialogContentText,
+    Snackbar
 } from "@mui/material";
 import { 
     Add as AddIcon, 
@@ -248,14 +249,18 @@ import {
 } from "@mui/icons-material";
 import Split from "react-split";
 import { wrappedLineIndent } from 'codemirror-wrapped-line-indent';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import CircleIcon from '@mui/icons-material/Circle';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import InfoIcon from '@mui/icons-material/Info';
+import SendIcon from '@mui/icons-material/Send';
+import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions";
 
 function AdminCampaignsAdd() {
     const userState = useSelector(state => state.userReducer)
+    const snackbarState = useSelector((state) => state.snackbarReducer)
+    const dispatch = useDispatch()
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const { register: registerRename, handleSubmit: handleSubmitRename, reset: resetRename, formState: { errors: errorsRename } } = useForm();
 
@@ -271,6 +276,7 @@ function AdminCampaignsAdd() {
     const [menuAnchor, setMenuAnchor] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [cooldown, setCooldown] = useState(0)
 
     // Check if current file has unsaved changes
     const hasUnsavedChanges = activeFileContent && originalFileContent !== activeFileContent;
@@ -293,6 +299,43 @@ function AdminCampaignsAdd() {
     //         console.error("Basic template fetch failed:", err.message);
     //     }
     // }
+
+    const handleSendTest = async () => {
+        if (cooldown > 0) return
+        setCooldown(30);
+
+        try {
+            const res = await fetch("http://localhost:3000/admin/campaigns/send-test", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${userState.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({template: activeFileName})
+            });
+            if(!res.ok){
+                const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
+                return console.error("Could not add new file:", error.error);
+            }
+            const email = await res.json()
+            dispatch(showSnack({message: `Sent a test email on ${email}`, severity: "success"}))
+        }
+        catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
+            console.error("Adding new template failed:", err.message);
+        }
+    }
+
+    useEffect(() => {
+        if (cooldown === 0) return;
+
+        const interval = setInterval(() => {
+            setCooldown(prev => (prev <= 1 ? 0 : prev - 1));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [cooldown]);
 
     const fetchAllTemplates = async (token, active = "any") => {
         // console.log(active);
@@ -546,6 +589,19 @@ function AdminCampaignsAdd() {
 
     return (
         <Box>
+            <Snackbar
+                open={snackbarState.show}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={5000}
+                onClose={() => dispatch(hideSnack())}
+                sx={{
+                    '&.MuiSnackbar-root': { top: '70px' },
+                }}
+            >
+                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                    {snackbarState.message}
+                </Alert>
+            </Snackbar>
             {/* Add Template Dialog */}
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
                 <DialogTitle>Create New Template</DialogTitle>
@@ -700,7 +756,16 @@ function AdminCampaignsAdd() {
                             >
                                 Add Template
                             </Button>
-                            
+                            <Button
+                                variant="contained"
+                                startIcon={<SendIcon />}
+                                fullWidth
+                                onClick={handleSendTest}
+                                disabled={cooldown > 0 || hasUnsavedChanges}
+                            >
+                                { cooldown > 0 ? `Wait ${cooldown}s` : hasUnsavedChanges ? `Save to test` : "Send Test Email"}
+                            </Button>
+
                             {hasUnsavedChanges && (
                                 <Button
                                     variant="outlined"
