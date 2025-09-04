@@ -51,3 +51,16 @@ exports.getForm = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
+exports.makeReferralToken = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const referralToken = await userService.generateReferral(userId);
+        return res.status(200).json(referralToken)
+    }
+    catch(err){
+        console.error("Error generating referral: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}

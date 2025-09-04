@@ -1,219 +1,3 @@
-// import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-// import { html } from "@codemirror/lang-html";
-// import { css } from "@codemirror/lang-css";
-// import { indentUnit } from '@codemirror/language';
-// import { oneDark } from "@codemirror/theme-one-dark";
-// import { useEffect, useState } from "react";
-// import { Box, Button, Card, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Typography } from "@mui/material";
-// import Split from "react-split";
-// import { wrappedLineIndent } from 'codemirror-wrapped-line-indent';
-// import { useSelector } from "react-redux";
-// import { useForm } from "react-hook-form";
-
-// function AdminCampaignsAdd() {
-
-//     const userState = useSelector(state => state.userReducer)
-//     const { register, handleSubmit, reset, formState: { errors } } = useForm();
-//     const [openDialog, setOpenDialog] = useState(false)
-//     const [code, setCode] = useState("<h1 style='color:blue'>Hello World</h1>");
-
-//     const [files, setFiles] = useState({});
-//     // const [files, setFiles] = useState({
-//     //     "index.html": "<!DOCTYPE html>\n<html><h2>Select an existing file or create a new one.</h2></html>",
-//     // });
-//     const [activeFile, setActiveFile] = useState(null);
-
-//     const fetchBasicTemplate = async (token) => {
-//         try {
-//             const res = await fetch("http://localhost:3000/admin/templates/get-basic", {
-//                 headers: {
-//                     Authorization: `Bearer ${token}`,
-//                 },
-//             });
-//             if(!res.ok){
-//                 const error = await res.json()
-//                 return console.error("Could not fetch basic template:", error.error);
-//             }
-//             const data = await res.json();
-//             // console.log(data);
-//             setCode(data.fileContent)
-//         }
-//         catch (err) {
-//             console.error("Basic template fetch failed:", err.message);
-//         }
-//     }
-
-//     const fetchAllTemplates = async (token, active = "any") => {
-//         console.log(active);
-//         try {
-//             const res = await fetch(`http://localhost:3000/admin/templates/get-files?active=${active}`, {
-//                 headers: {
-//                     Authorization: `Bearer ${token}`,
-//                 },
-//             });
-//             if(!res.ok){
-//                 const error = await res.json()
-//                 return console.error("Could not fetch basic template:", error.error);
-//             }
-//             const data = await res.json();
-//             console.log(data);
-//             setFiles(data.files)
-//             if(active === "any"){
-//                 setActiveFile(Object.keys(data.files)[0]);
-//             }
-//             else{
-//                 setActiveFile(active)
-//             }
-            
-//         }
-//         catch (err) {
-//             console.error("Basic template fetch failed:", err.message);
-//         }
-//     }
-
-//     const handleAddTemplate = async (formData) => {
-//         // console.log(formData);
-
-//         try {
-//             const res = await fetch("http://localhost:3000/admin/templates/add", {
-//                 method: "POST",
-//                 headers: {
-//                     Authorization: `Bearer ${userState.token}`,
-//                     "Content-Type": "application/json"
-//                 },
-//                 body: JSON.stringify({fileName: formData.templateName})
-//             });
-//             if(!res.ok){
-//                 const error = await res.json()
-//                 return console.error("Could not add new file:", error.error);
-//             }
-//             fetchAllTemplates(userState.token, formData.templateName)
-//         }
-//         catch (err) {
-//             console.error("Adding new template failed:", err.message);
-//         }
-//         finally{
-//             setOpenDialog(false)
-//         }
-//     }
-
-//     const handleFileChange = (file) => {
-//         console.log(file);
-        
-//         fetchAllTemplates(userState.token, file)
-//         setActiveFile(file)
-//     }
-
-//     useEffect(() => {
-//         fetchBasicTemplate(userState.token)
-//         fetchAllTemplates(userState.token)
-//     }, [])
-
-//     return (
-//         <Box>
-//             <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
-//                 <DialogTitle>New Template</DialogTitle>
-//                 <form onSubmit={handleSubmit(handleAddTemplate)} noValidate>
-//                     <DialogContent>
-//                         <TextField
-//                             label="Template Name"
-//                             {...register("templateName", { required: "Template name is required" })}
-//                             autoFocus
-//                             fullWidth
-//                             autoComplete='off'
-//                             slotProps={{htmlInput: { maxLength: 50 }}}
-//                             error={!!errors.reason}
-//                             helperText={errors.reason?.message}
-//                         />
-//                     </DialogContent>
-//                     <DialogActions sx={{py: 2, px: 3}}>
-//                         <Button onClick={() => setOpenDialog(false)} variant='contained' color="error">Back</Button>
-//                         <Button type="submit" variant="contained">
-//                             Add Template
-//                         </Button>
-//                     </DialogActions>
-//                 </form>
-//             </Dialog>
-//             <Box sx={{
-//                 "& .split": { display: "flex", flexDirection: "row", height: "100%" },
-//                 "& .gutter": {
-//                     backgroundColor: "#a1a1a1",
-//                     backgroundRepeat: "no-repeat",
-//                     backgroundPosition: "50%",
-//                 },
-//                 "& .gutter.gutter-horizontal": {
-//                     backgroundImage:
-//                     "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==')",
-//                     cursor: "col-resize",
-//                     width: "8px",
-//                 }
-//             }}>
-//                 <Split
-//                     className="split"
-//                     direction="horizontal"
-//                     sizes={[15, 40, 45]}
-//                     minSize={[100, 200, 150]}
-//                     gutterSize={8}
-//                 >
-//                     <Box>
-//                         <Box>
-//                             <Button onClick={() => setOpenDialog(true)}>Add</Button>
-//                         </Box>
-//                         <Box>
-//                             {Object.keys(files).length > 0 ?
-//                             Object.keys(files).map((file, index) => (
-//                                 <Card key={index} sx={{p: 1, mb: 1}} elevation={3} onClick={() => handleFileChange(file)}>
-//                                     <Typography>{file}</Typography>
-//                                 </Card>
-//                             ))
-//                             :
-//                             <Card>
-//                                 <Typography>You don't have any templates, Add a new one</Typography>
-//                             </Card>
-//                             }
-//                         </Box>
-//                     </Box>
-//                     <Box>
-//                         <Box sx={{height: `calc(100vh - 64px)`, display: "flex", flexDirection: "column", overflow: "auto"}}>
-//                             <CodeMirror
-//                                 // value={code}
-//                                 value={files[activeFile]}
-//                                 height="100%"
-//                                 style={{ flex: 1 }} 
-//                                 // extensions={[html(), css(), EditorView.contentAttributes.of({ "data-enable-grammarly": "false" })]}
-//                                 extensions={[
-//                                     html(), 
-//                                     css(), 
-//                                     EditorView.contentAttributes.of({ "data-enable-grammarly": "false" }), 
-//                                     EditorView.lineWrapping,
-//                                     indentUnit.of("    "),
-//                                     wrappedLineIndent,
-//                                 ]}
-//                                 theme={oneDark}
-//                                 // onChange={(val) => setCode(val)}
-//                                 onChange={(val) => setFiles(prev => ({...prev, [activeFile]: val}))}
-//                             />
-//                         </Box>
-//                     </Box>
-//                     <Box>
-//                         <Box sx={{borderRadius: "8px", height: "100%"}}>
-//                             <iframe
-//                                 // srcDoc={code}
-//                                 srcDoc={files[activeFile]}
-//                                 title="preview"
-//                                 width="100%"
-//                                 height="100%"
-//                             />
-//                         </Box>
-//                     </Box>
-//                 </Split>
-//             </Box>
-//         </Box>
-//     )
-// }
-
-// export default AdminCampaignsAdd
-
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
@@ -251,13 +35,12 @@ import Split from "react-split";
 import { wrappedLineIndent } from 'codemirror-wrapped-line-indent';
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
-import CircleIcon from '@mui/icons-material/Circle';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import InfoIcon from '@mui/icons-material/Info';
 import SendIcon from '@mui/icons-material/Send';
 import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions";
 
-function AdminCampaignsAdd() {
+function AdminCampaignsTemplates() {
     const userState = useSelector(state => state.userReducer)
     const snackbarState = useSelector((state) => state.snackbarReducer)
     const dispatch = useDispatch()
@@ -338,7 +121,6 @@ function AdminCampaignsAdd() {
     }, [cooldown]);
 
     const fetchAllTemplates = async (token, active = "any") => {
-        // console.log(active);
         try {
             const res = await fetch(`http://localhost:3000/admin/templates/get-files?active=${active}`, {
                 headers: {
@@ -347,10 +129,10 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
                 return console.error("Could not fetch all templates:", error.error);
             }
             const data = await res.json();
-            // console.log(data);
 
             const fileNamesArr = []
             for(let item of data.files){
@@ -366,10 +148,11 @@ function AdminCampaignsAdd() {
             if(active === "any"){
                 setActiveFileName(data.files[0].name);
                 setActiveFileContent(data.files[0].content)
-                setOriginalFileContent(data.files[0].content) // Track original content
+                setOriginalFileContent(data.files[0].content)
             }
         }
         catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Basic template fetch failed:", err.message);
         }
     }
@@ -386,18 +169,19 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
                 return console.error("Could not add new file:", error.error);
             }
-            // fetchAllTemplates(userState.token, formData.templateName)
 
             const newFile = await res.json()
             setAllFileNames(prev => [...prev, newFile.name])
             setActiveFileName(newFile.name)
             setActiveFileContent(newFile.content)
             setOriginalFileContent(newFile.content)
-            reset(); // Reset form
+            reset();
         }
         catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Adding new template failed:", err.message);
         }
         finally{
@@ -423,13 +207,13 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
                 return console.error("Could not save file:", error.error);
             }
-            // Update original files to reflect saved state
             setOriginalFileContent(activeFileContent)
-            // setOriginalFiles(prev => ({...prev, [activeFileName]: files[activeFileName]}));
         }
         catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Saving file failed:", err.message);
         }
         finally {
@@ -454,28 +238,20 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
                 return console.error("Could not rename file:", error.error);
             }
             
-            // Update local state
             const newFileNames = allFileNames.map(old => old === selectedFileForRename ? formData.newTemplateName : old)
             setAllFileNames(newFileNames)
-            // const newFiles = { ...files };
-            // const newOriginalFiles = { ...originalFiles };
-            // newFiles[formData.newTemplateName] = newFiles[selectedFileForRename];
-            // newOriginalFiles[formData.newTemplateName] = newOriginalFiles[selectedFileForRename];
-            // delete newFiles[selectedFileForRename];
-            // delete newOriginalFiles[selectedFileForRename];
-            // setFiles(newFiles);
-            // setOriginalFiles(newOriginalFiles);
-            
-            // Update active file if it was renamed
+
             if (activeFileName === selectedFileForRename) {
                 setActiveFileName(formData.newTemplateName);
             }
             resetRename();
         }
         catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Renaming file failed:", err.message);
         }
         finally {
@@ -497,29 +273,21 @@ function AdminCampaignsAdd() {
             });
             if(!res.ok){
                 const error = await res.json()
+                dispatch(showSnack({message: error.error, severity: "warning"}))
                 return console.error("Could not delete file:", error.error);
             }
-            
-            // Update local state
 
             const newFileNames = allFileNames.filter(item => item !== fileName)
             setAllFileNames(newFileNames)
             setOpenDeleteDialog(false)
             handleMenuClose();
-            // const newFiles = { ...files };
-            // const newOriginalFiles = { ...originalFiles };
-            // delete newFiles[fileName];
-            // delete newOriginalFiles[fileName];
-            // setFiles(newFiles);
-            // setOriginalFiles(newOriginalFiles);
-            
-            // Update active file if deleted file was active
+
             if (activeFileName === fileName) {
-                // const remainingFiles = Object.keys(newFiles);
                 setActiveFileName(newFileNames.length > 0 ? newFileNames[0] : null);
             }
         }
         catch (err) {
+            dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Deleting file failed:", err.message);
         }
         finally {
@@ -535,7 +303,6 @@ function AdminCampaignsAdd() {
         else{
             fetchAllTemplates(userState.token, file)
         }
-        // setActiveFileName(file)
     }
 
     const handleMenuOpen = (event, fileName) => {
@@ -556,12 +323,7 @@ function AdminCampaignsAdd() {
     }
 
     const handleDeleteClick = () => {
-        // if (selectedFile && window.confirm(`Are you sure you want to delete "${selectedFile}"?`)) {
-        //     handleDeleteFile(selectedFile);
-        // }
-
         setOpenDeleteDialog(true)
-        // handleMenuClose();
     }
 
     const handleDeleteConfirmation = (confirmation) => {
@@ -583,7 +345,6 @@ function AdminCampaignsAdd() {
     }
 
     useEffect(() => {
-        // fetchBasicTemplate(userState.token)
         fetchAllTemplates(userState.token)
     }, [])
 
@@ -818,9 +579,9 @@ function AdminCampaignsAdd() {
                                                 noWrap
                                                 sx={{ 
                                                     flex: 1,
-                                                    minWidth: 0, // This is important for text truncation to work properly
+                                                    minWidth: 0,
                                                 }}
-                                                title={file} // Show full filename on hover
+                                                title={file}
                                             >
                                                 {file}
                                             </Typography>
@@ -830,7 +591,7 @@ function AdminCampaignsAdd() {
                                                 <FiberManualRecordIcon 
                                                     fontSize="small" 
                                                     color="warning"
-                                                    sx={{ flexShrink: 0 }} // Prevent the dot from shrinking
+                                                    sx={{ flexShrink: 0 }}
                                                 />
                                             )}
                                             
@@ -840,7 +601,7 @@ function AdminCampaignsAdd() {
                                                 onClick={(e) => handleMenuOpen(e, file)}
                                                 sx={{ 
                                                     opacity: 0.7,
-                                                    flexShrink: 0, // Prevent the button from shrinking
+                                                    flexShrink: 0,
                                                     '&:hover': { opacity: 1 }
                                                 }}
                                             >
@@ -883,7 +644,6 @@ function AdminCampaignsAdd() {
                         <Box sx={{height: `calc(100vh - 64px)`, display: "flex", flexDirection: "column", overflow: "auto"}}>
                             <CodeMirror
                                 key={activeFileName}
-                                // value={files[activeFileName] || ''}
                                 value={activeFileContent || ''}
                                 height="100%"
                                 style={{ flex: 1 }} 
@@ -896,7 +656,6 @@ function AdminCampaignsAdd() {
                                     wrappedLineIndent,
                                 ]}
                                 theme={oneDark}
-                                // onChange={(val) => setFiles(prev => ({...prev, [activeFileName]: val}))}
                                 onChange={(val) => setActiveFileContent(val)}
                             />
                         </Box>
@@ -906,7 +665,6 @@ function AdminCampaignsAdd() {
                     <Box>
                         <Box sx={{borderRadius: "8px", height: "100%"}}>
                             <iframe
-                                // srcDoc={activeFileContent || ''}
                                 srcDoc={activeFileContent ? activeFileContent.replaceAll("{{fName}}", "John").replaceAll("{{lName}}", "Doe") : ''}
                                 // sandbox="allow-same-origin"
                                 title="preview"
@@ -921,4 +679,4 @@ function AdminCampaignsAdd() {
     )
 }
 
-export default AdminCampaignsAdd
+export default AdminCampaignsTemplates

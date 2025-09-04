@@ -256,6 +256,7 @@ function NavBar() {
                                     <Box>
                                         <MenuItem onClick={() => navigate("/my-wallet")}>My Wallet</MenuItem>
                                         <MenuItem onClick={() => navigate("/my-profile")}>Profile</MenuItem>
+                                        <MenuItem onClick={() => navigate("/user-referrals")}>Referral</MenuItem>
                                     </Box>
                                     :
                                     null

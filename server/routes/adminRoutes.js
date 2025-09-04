@@ -46,7 +46,7 @@ router.get("/coupons/:couponId/report/categories", verifyAdminToken, adminContro
 router.get("/coupons/:couponId/report/users", verifyAdminToken, adminController.getSingleCouponReportUsers);
 router.get("/coupons/:couponId/report/dates", verifyAdminToken, adminController.getSingleCouponReportDates);
 
-router.get("/templates/get-basic", verifyAdminToken, adminController.getBasicTemplate);
+router.get("/templates/get", verifyAdminToken, adminController.getSingleTemplate);
 router.get("/templates/get-files", verifyAdminToken, adminController.getAllTemplates);
 router.post("/templates/add", verifyAdminToken, adminController.addNewTemplate);
 router.post("/templates/save", verifyAdminToken, adminController.saveEditedTemplate);
@@ -56,5 +56,7 @@ router.post("/campaigns/add", verifyAdminToken, adminController.addCampaign);
 router.post("/campaigns/send-now", verifyAdminToken, adminController.sendCampaignNow);
 router.post("/campaigns/send-test", verifyAdminToken, adminController.sendCampaignTest);
 router.get("/campaigns/get", verifyAdminToken, adminController.getAllCampaigns);
+router.get("/campaigns/get-data", verifyAdminToken, adminController.getSingleCampaignData);
+router.get("/campaigns/get-recipients", verifyAdminToken, adminController.getSingleCampaignRecipients);
 
 module.exports = router;

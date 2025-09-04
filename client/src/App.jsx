@@ -39,7 +39,10 @@ import MyProfile from './components/MyProfile'
 import MyWallet from './components/MyWallet'
 import HomePage from './components/HomePage'
 import AdminCampaigns from './components/AdminCampaigns'
-import AdminCampaignsAdd from './components/AdminCampaignsAdd'
+import AdminCampaignsAdd from './components/AdminCampaignsTemplates'
+import AdminCampaignsTemplates from './components/AdminCampaignsTemplates'
+import AdminCampaignDetails from './components/AdminCampaignDetails'
+import UserReferrals from './components/UserReferrals'
 
 function App() {
 
@@ -66,6 +69,7 @@ function App() {
                 <Route path='/my-wishlist' element={<MyWishlist />} />
                 <Route path='/my-profile' element={<MyProfile />} />
                 <Route path='/my-wallet' element={<MyWallet />} />
+                <Route path='/user-referrals' element={<UserReferrals />} />
               </Route>
 
               <Route element={<AdminLayout />}>
@@ -77,8 +81,6 @@ function App() {
                 <Route path='/admin/product/:productId' element={<AdminProductsPage />} />
                 <Route path='/admin/product/add' element={<AdminAddProduct />} />
                 <Route path='/admin/coupons' element={<AdminCoupons />} />
-                <Route path='/admin/campaigns' element={<AdminCampaigns />} />
-                <Route path='/admin/campaigns/add' element={<AdminCampaignsAdd />} />
                 <Route path='/admin/coupons/add' element={<AdminCouponsAdd />} />
                 {/* <Route path='/admin/coupons/:couponId/edit' element={<AdminCouponEdit />} />
                 <Route path='/admin/coupons/:couponId' element={<AdminCouponDetails />} /> */}
@@ -86,6 +88,9 @@ function App() {
                   <Route index element={<AdminCouponDetails />} />
                   <Route path='edit' element={<AdminCouponEdit />} />
                 </Route>
+                <Route path='/admin/campaigns' element={<AdminCampaigns />} />
+                <Route path='/admin/campaigns/templates' element={<AdminCampaignsTemplates />} />
+                <Route path='/admin/campaigns/:campaignId' element={<AdminCampaignDetails />} />
               </Route>
 
             </Routes>

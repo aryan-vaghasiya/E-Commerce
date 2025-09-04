@@ -2008,13 +2008,21 @@ exports.getCouponReportDates = async (couponId, fromTime, toTime, limit, sortBy,
     return {dates: groupedDateUsages, totalDateRedeems}
 }
 
-exports.getFirstBasicTemplate = async () => {
-    const basicTemplatePath = path.join(__dirname, "../mailer/templates", "basic.hbs")
+exports.getSingleTemplateContent = async (username, template) => {
+    const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
 
-    const basicTemplateData = await fs.readFile(basicTemplatePath, 'utf-8')
+    await fs.ensureDir(adminTemplatesDir)
 
-    // console.log(basicTemplateData);
-    return basicTemplateData
+    const templatePath = path.join(adminTemplatesDir, `${template}.hbs`)
+    const templatesExist = await fs.pathExists(templatePath)
+
+    if(!templatesExist){
+        throw new Error("File not found")
+    }
+
+    const fileContent = await fs.readFile(templatePath, 'utf-8')
+
+    return fileContent
 }
 
 exports.getAllTemplateFiles = async (username, active) => {
@@ -2077,6 +2085,12 @@ exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
     await fs.ensureDir(adminTemplatesDir)
 
     const newFilePath = path.join(adminTemplatesDir, fileName.trim() + extension.trim())
+
+    const checkDuplicate = fs.pathExists(newFilePath)
+    if(checkDuplicate){
+        throw new Error("Template already exists, try a different name")
+    }
+
     const newFileContent = await this.getFirstBasicTemplate()
     await fs.outputFile(newFilePath, newFileContent)
 
@@ -2107,9 +2121,13 @@ exports.renameTemplateFile = async (username, oldFileName, newFileName) => {
     const newTemplatePath = path.join(adminTemplatesDir, `${newFileName}.hbs`)
 
     const templatesExist = await fs.pathExists(oldTemplatePath)
-
     if(!templatesExist){
         throw new Error("File not found")
+    }
+
+    const checkDuplicate = fs.pathExists(newTemplatePath)
+    if(checkDuplicate){
+        throw new Error("Template name already exists, try a different name")
     }
 
     await fs.move(oldTemplatePath, newTemplatePath)
@@ -2165,7 +2183,8 @@ exports.sendCampaignEmailService = async(campaignId) => {
 
     const templatePath = path.join(adminTemplatesDir, `${campaign.template_name}.hbs`)
 
-    for (let r of recipients) {
+    await runQuery(`UPDATE campaigns SET status = ? WHERE id=?`, ["sending", campaignId]);
+    for (let r of recipients){
         try {
             await sendCampaignMail({
                 from: '"Cartify" <no-reply@cartify.com>',
@@ -2186,7 +2205,7 @@ exports.sendCampaignEmailService = async(campaignId) => {
                                 WHERE campaign_id=? AND status= ?`, [campaignId, "pending"]);
 
     if (left.remaining === 0) {
-        await runQuery(`UPDATE campaigns SET status='completed' WHERE id=?`, [campaignId]);
+        await runQuery(`UPDATE campaigns SET status = ? WHERE id=?`, ["completed", campaignId]);
     }
 }
 
@@ -2241,12 +2260,58 @@ exports.sendCampaignTestEmail = async (username, template, userId) => {
     return getUser.email
 }
 
-exports.getAllCampaignsData = async (username) => {
-    const allCampaigns = await runQuery(`SELECT * FROM campaigns WHERE created_by = ?`, [username])
+exports.getAllCampaignsData = async (userId, limit, offset) => {
+    const campaigns = await runQuery(`SELECT 
+                                        c.id,
+                                        c.name,
+                                        c.template_name,
+                                        c.subject,
+                                        c.scheduled_at,
+                                        c.created_by,
+                                        c.status,
+                                        c.created_by,
+                                        c.updated_at
+                                    FROM campaigns c
+                                    JOIN users u
+                                        ON u.username = c.created_by
+                                    WHERE u.id = ? 
+                                    ORDER BY created_at DESC 
+                                    LIMIT ? OFFSET ?`, [userId, limit, offset])
 
-    if(allCampaigns.length === 0){
+    const [{total}] = await runQuery(`SELECT 
+                                            COUNT(*) as total 
+                                        FROM campaigns c
+                                        JOIN users u
+                                            ON u.username = c.created_by
+                                        WHERE u.id = ? `, [userId])
+
+    if(!total){
         throw new Error("There are no campaigns")
     }
 
-    return allCampaigns
+    return {campaigns, total}
+}
+
+exports.getCampaignsData = async (campaignId) => {
+    const [campaignData] = await runQuery(`SELECT * FROM campaigns WHERE id = ?`, [campaignId])
+
+    if(campaignData.length === 0){
+        throw new Error("Campaign not found")
+    }
+
+    return campaignData
+}
+
+exports.getCampaignRecipients = async (campaignId, limit, offset) => {
+    const recipients = await runQuery(`SELECT * FROM campaign_recipients WHERE campaign_id = ? ORDER BY sent_at DESC LIMIT ? OFFSET ?`, [campaignId, limit, offset])
+
+    const [{total}] = await runQuery(`SELECT 
+                                            COUNT(*) as total 
+                                        FROM campaign_recipients WHERE campaign_id = ?`, [campaignId])
+
+    if(!total){
+        throw new Error("There are no recipients")
+    }
+
+    return {recipients, total}
 }

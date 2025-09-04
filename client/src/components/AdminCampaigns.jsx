@@ -1,30 +1,4 @@
-// import { Box, Button, Card } from "@mui/material"
-// import { useNavigate } from "react-router"
-
-// function AdminCampaigns() {
-
-//     const navigate = useNavigate()
-
-//     return (
-//         <Box>
-//             <Box>
-//                 <Card>
-//                     <Button onClick={() => navigate("/admin/campaigns/add")}>Add Template</Button>
-//                 </Card>
-//             </Box>
-//             <Box>
-//                 <Card>
-//                     No campaigns yet.
-//                 </Card>
-//             </Box>
-//         </Box>
-//     )
-// }
-
-// export default AdminCampaigns
-
-
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -53,60 +27,56 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
+import { DataGrid } from "@mui/x-data-grid";
 
-// Fake APIs for now
-const fetchCampaigns = async () => {
-    return [
-        { id: 1, name: "Welcome Campaign", template_id: 2, scheduled_at: "2025-09-01T12:00:00", status: "Scheduled" },
-        { id: 2, name: "Sale Reminder", template_id: 1, scheduled_at: "2025-09-05T10:00:00", status: "Draft" },
-    ];
-};
-
-const fetchTemplates = async () => {
-    return [
-        { id: 1, name: "Order Status Update" },
-        { id: 2, name: "Welcome Email" },
-        { id: 3, name: "Sale Announcement" },
-    ];
-};
 
 export default function AdminCampaigns() {
     const userState = useSelector(state => state.userReducer)
+    const { register, control, handleSubmit, reset, formState: { errors }} = useForm();
+
     const [open, setOpen] = useState(false);
     const navigate = useNavigate()
     const [allFileNames, setAllFileNames] = useState([]);
     const [activeFileName, setActiveFileName] = useState(null);
     const [activeFileContent, setActiveFileContent] = useState(null);
-    const [allCampaigns, setAllCampaigns] = useState([]);
+    const [campaigns, setCampaigns] = useState([]);
+    const [totalCampaigns, setTotalCampaigns] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 5,
+    });
 
-    const { register, control, handleSubmit, reset, formState: { errors }} = useForm();
-
-    const fetchAllCampaigns = async () => {
+    const fetchCampaigns = async (page, limit) => {
+        setLoading(true)
         try {
-            const res = await fetch(`http://localhost:3000/admin/campaigns/get`, {
+            const res = await fetch(`http://localhost:3000/admin/campaigns/get?page=${page}&limit=${limit}`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
                 },
             });
             if(!res.ok){
                 const error = await res.json()
-                return console.error("Could not fetch all campaigns:", error.error);
+                return console.error("Could not fetch Campaigns:", error.error);
             }
             const data = await res.json();
             // console.log(data);
-            setAllCampaigns(data)
+            setCampaigns(data.campaigns)
+            setTotalCampaigns(data.total)
         }
         catch (err) {
-            console.error("All campaigns fetch failed:", err.message);
+            console.error("Campaigns fetch failed:", err.message);
+        }
+        finally{
+            setLoading(false)
         }
     }
 
-    const fetchAllTemplates = async (token, active = "any") => {
-        // console.log(active);
+    const fetchAllTemplates = async (active = "any") => {
         try {
             const res = await fetch(`http://localhost:3000/admin/templates/get-files?active=${active}`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${userState.token}`,
                 },
             });
             if(!res.ok){
@@ -137,13 +107,8 @@ export default function AdminCampaigns() {
     }
 
     useEffect(() => {
-        // (async () => {
-        //     setCampaigns(await fetchCampaigns());
-        //     setTemplates(await fetchTemplates());
-        // })();
-        fetchAllTemplates(userState.token)
-        fetchAllCampaigns()
-    }, []);
+        fetchCampaigns(paginationModel.page + 1, paginationModel.pageSize);
+    }, [paginationModel]);
 
     const handleAddCampaign = async (formData) => {
         // console.log(formData);
@@ -166,62 +131,120 @@ export default function AdminCampaigns() {
             }
             setOpen(false)
             reset();
-            fetchAllCampaigns()
+            fetchCampaigns()
         }
         catch (err) {
             console.error("Adding new campaign failed:", err.message);
         }
     };
 
+    const handlePaginationChange = (newModel) => {
+        setPaginationModel(newModel);
+        fetchCampaigns(newModel.page + 1, newModel.pageSize);
+    };
+
+    // const fetchTemplateContent = async (event) => {
+    //     const template = event.row.template_name
+    //     console.log(event.row.template_name);
+    //     try {
+    //         const res = await fetch(`http://localhost:3000/admin/templates/get?template=${template}`, {
+    //             headers: {
+    //                 Authorization: `Bearer ${userState.token}`,
+    //             },
+    //         });
+    //         if(!res.ok){
+    //             const error = await res.json()
+    //             return console.error("Could not fetch template data:", error.error);
+    //         }
+    //         const data = await res.json();
+    //         console.log(data);
+    //     }
+    //     catch (err) {
+    //         console.error("Template data fetch failed:", err.message);
+    //     }
+    // }
+
+    const campaignColumns = [
+        { 
+            field: 'id', headerName: 'Campaign ID', width: 110, align : "right"
+        },
+        {
+            field: 'name',
+            headerName: 'Campaign Name',
+            width: 180,
+            editable: false,
+        },
+        {
+            field: 'template_name',
+            headerName: 'Template',
+            width: 160,
+            editable: false,
+        },
+        {
+            field: 'scheduled_at',
+            headerName: 'Scheduled Time',
+            align: "right",
+            width: 130,
+            editable: false,
+            renderCell : (params) => <span>{dayjs(params.value).format("h:mm A, D MMM")}</span>
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            width: 110,
+            editable: false,
+            renderCell : (params) => <span>{params.value.charAt(0).toUpperCase() + params.value.slice(1).toLowerCase()}</span>
+        },
+        {
+            field: 'updated_at',
+            headerName: 'Last Updated',
+            align: "right",
+            width: 130,
+            editable: false,
+            renderCell : (params) => <span>{dayjs(params.value).format("h:mm A, D MMM")}</span>
+        },
+    ];
+
     return (
-        // <Box p={3}>
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            {/* <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Box>
-                    <Typography variant="h5">Campaigns</Typography>
-                </Box>
-                <Box sx={{display: "flex", gap: 1}}>
-                    <Button variant="contained" onClick={() => setOpen(true)} startIcon={<AddIcon/>}>
-                        Add Campaign
-                    </Button>
-                    <Button variant="contained" onClick={() => navigate("/admin/campaigns/add")} startIcon={<DescriptionIcon/>}>
-                        Templates
-                    </Button>
-                </Box>
-            </Box> */}
             <Box sx={{display : "flex", justifyContent : "space-between", pb: 1}}>
                 <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Campaigns</Typography>
-                {/* <Box sx={{ width: "100%", maxWidth: "90%", mb: 2, display: "flex", justifyContent: "flex-end" }}> */}
                 <Box sx={{display: "flex", gap: 1, alignItems: "center"}}>
-                    <Button variant="contained" onClick={() => setOpen(true)} startIcon={<AddIcon/>}>
+                    <Button variant="contained" 
+                        onClick={() =>{ 
+                            setOpen(true)
+                            fetchAllTemplates()
+                        }} 
+                        startIcon={<AddIcon/>}
+                    >
                         Add Campaign
                     </Button>
-                    <Button variant="contained" onClick={() => navigate("/admin/campaigns/add")} startIcon={<DescriptionIcon/>}>
+                    <Button variant="contained" onClick={() => navigate("/admin/campaigns/templates")} startIcon={<DescriptionIcon/>}>
                         Templates
                     </Button>
                 </Box> 
-                {/* </Box> */}
             </Box>
             <Divider sx={{mt: 1, mb: 2}}/>
 
             {/* Campaign list */}
-            <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap={2}>
-                {allCampaigns.map((c) => (
+            {/* <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap={2}>
+                {campaigns.map((c) => (
                     <Card key={c.id} sx={{ borderRadius: 2, boxShadow: 3 }}>
                         <CardContent>
                             <Typography variant="h6">{c.name}</Typography>
                             <Typography variant="body2" color="text.secondary">
                                 Status: {c.status}
+                                <Typography component="span">{c.status === "completed" || c.status === "failed" ? ` (${dayjs(c.updated_at).format("hh:mm A, D MMM")})` : null}</Typography>
                             </Typography>
                             <Typography variant="body2">Template: {c.template_name}</Typography>
                             <Typography variant="body2">Scheduled: {dayjs(c.scheduled_at).format("DD MMM YYYY, hh:mm A")}</Typography>
                         </CardContent>
                     </Card>
                 ))}
-            </Box>
+            </Box> */}
 
             {/* Dialog for new campaign */}
-            <Dialog open={open} onClose={() => setOpen(false)} fullWidth slotProps={{paper: {elevation: 5, sx: {minWidth: "80%", minHeight: "70%"}}}}>
+            <Dialog open={open} onClose={() => setOpen(false)} fullWidth slotProps={{paper: {elevation: 5, sx: {minWidth: "80%", minHeight: "80%"}}}}>
                 
                 <Box sx={{display: "flex", width: "100%", flexGrow: 1, minWidth: "500px"}}>
                     <Box component="form" onSubmit={handleSubmit(handleAddCampaign)} sx={{width: "50%", display: "flex", flexDirection: "column", justifyContent: "space-between"}}>
@@ -249,16 +272,17 @@ export default function AdminCampaigns() {
                                         name="template_name"
                                         control={control}
                                         rules={{ required: "Template Name is required" }}
-                                        
                                         render={({field}) => (
                                             <Select
                                                 {...field}
+                                                defaultValue={activeFileName}
                                                 labelId="template_name"
                                                 label="Template Name"
-                                                value={field.value ?? ""}
+                                                // value={field.value ?? ""}
+                                                value={activeFileName ?? ""}
                                                 onChange={(e) => {
                                                     field.onChange(e)
-                                                    fetchAllTemplates(userState.token, e.target.value)
+                                                    fetchAllTemplates(e.target.value)
                                                 }}
                                             >
                                                 {allFileNames && allFileNames.length > 0 ?
@@ -358,6 +382,22 @@ export default function AdminCampaigns() {
                     </Box>
                 </Box>
             </Dialog>
+
+            <DataGrid
+                sx={{ maxHeight: 690, width: "850px", maxWidth: "100%", mx: "auto"}}
+                rows={campaigns}
+                columns={campaignColumns}
+                rowCount={totalCampaigns}
+                pagination
+                paginationMode="server"
+                paginationModel={paginationModel}
+                onPaginationModelChange={handlePaginationChange}
+                loading={loading}
+                onRowClick={(event) => navigate(`/admin/campaigns/${event.row.id}`, {state: event.row.template_name})}
+                // onRowClick={(event) => navigate(`/admin/campaigns/${event.row.id}`)}
+                pageSizeOptions={[5, 10, 20]}
+                disableRowSelectionOnClick
+            />
         </Box>
     );
 }

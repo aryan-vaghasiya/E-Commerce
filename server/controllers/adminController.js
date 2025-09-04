@@ -571,10 +571,12 @@ exports.getSingleCouponReportDates = async (req, res) => {
     }
 }
 
-exports.getBasicTemplate = async (req, res) => {
+exports.getSingleTemplate = async (req, res) => {
+    const username = req.user.username
+    const template = req.query.template
     try{
-        const template = await adminServices.getFirstBasicTemplate()        
-        res.status(200).json({fileContent: template})
+        const fileContent = await adminServices.getSingleTemplateContent(username, template)        
+        res.status(200).json({fileContent})
     }
     catch (err){
         console.error("Error fetching first basic template: ", err.message)
@@ -703,13 +705,45 @@ exports.sendCampaignTest = async (req, res) => {
 exports.getAllCampaigns = async (req, res) => {
     const username = req.user.username
     const userId = req.user.id
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
 
     try{
-        const campaigns = await adminServices.getAllCampaignsData(username)        
+        const campaigns = await adminServices.getAllCampaignsData(userId, limit, offset)        
         res.status(200).json(campaigns)
     }
     catch (err){
         console.error("Error fetching all campaigns: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getSingleCampaignData = async (req, res) => {
+    const campaignId = req.query.campaignId
+
+    try{
+        const campaignData = await adminServices.getCampaignsData(campaignId)        
+        res.status(200).json(campaignData)
+    }
+    catch (err){
+        console.error("Error fetching campaign data: ", err.message)
+        res.status(500).json({ error: err.message })
+    }
+}
+
+exports.getSingleCampaignRecipients = async (req, res) => {
+    const campaignId = req.query.campaignId
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit);
+    const offset = (page - 1) * limit
+
+    try{
+        const recipients = await adminServices.getCampaignRecipients(campaignId, limit, offset)
+        res.status(200).json(recipients)
+    }
+    catch (err){
+        console.error("Error fetching campaign data: ", err.message)
         res.status(500).json({ error: err.message })
     }
 }

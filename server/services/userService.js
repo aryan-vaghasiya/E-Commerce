@@ -85,3 +85,22 @@ exports.formData = async (userId) => {
     }
     return formResult;
 }
+
+exports.generateReferral = async (userId) => {
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+
+    if(!getUser){
+        throw new Error("Could not generate referral")
+    }
+
+    const token = jwt.sign(
+        {
+            id: userId,
+            email: getUser.email
+        },
+        process.env.JWT_SECRET_REFERRAL,
+        { expiresIn: "8d" }
+    );
+
+    console.log(token);
+}

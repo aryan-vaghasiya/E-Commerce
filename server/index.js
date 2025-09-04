@@ -16,6 +16,7 @@ const runQuery = require("./db")
 const dotenv = require('dotenv');
 const { sendMail } = require("./mailer/sendMail")
 const adminServices = require("./services/adminServices")
+const referralRoutes = require("./routes/referralRoutes")
 
 dotenv.config();
 const app = express();
@@ -81,6 +82,7 @@ app.use("/cart", verifyToken, cartRoutes);
 app.use("/orders", verifyToken, orderRoutes);
 app.use("/wishlist", verifyToken, wishlistRoutes);
 app.use("/wallet", verifyToken, walletRoutes);
+app.use("/referral", verifyToken, referralRoutes);
 
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);
