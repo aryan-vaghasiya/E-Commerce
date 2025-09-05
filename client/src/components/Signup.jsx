@@ -9,13 +9,16 @@ import TextField from '@mui/material/TextField'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
-import { useLocation, useNavigate } from 'react-router'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { addDetails } from '../redux/checkout/checkoutActions'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { addUser } from '../redux/user/userActions'
 
 function Signup() {
     // const [signup, setSignup] = useState(false)
+    // const {referral} = useParams()
+    const [searchParams] = useSearchParams();
+    const referralCode = searchParams.get("referral");
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const snackbarState = useSelector((state) => state.snackbarReducer)
@@ -41,35 +44,36 @@ function Signup() {
 
     const onSubmitOne = async (data) => {
         dispatch(addDetails(getValues()))
-        const response = await fetch(`http://localhost:3000/signup`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                username: data.username,
-                password: data.password,
-                fName: data.fName,
-                lName: data.lName,
-                email: data.email
+        try{
+            const response = await fetch(`http://localhost:3000/signup`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: data.username,
+                    password: data.password,
+                    fName: data.fName,
+                    lName: data.lName,
+                    email: data.email,
+                    // referral: data.referral ? data.referral : null
+                    referral: data.referral || null
+                })
             })
-        })
-
-        if (response.status === 200) {
-            const resData = await response.json()
-            const token = resData.token
-            dispatch(addUser(data.username, token))
-            // dispatch(fetchCart(token))
-            // dispatch(fetchOrders(token))
-            // dispatch(fetchDetails(token))
-            navigate("/")
-            // navigate(fromPath, { replace: true })
-        }
-        else{
+            if (response.ok) {
+                const resData = await response.json()
+                const token = resData.token
+                dispatch(addUser(data.username, token))
+                return navigate("/")
+            }
             const error = await response.json()
             console.error(error.error);
             dispatch(showSnack({message: error.error, severity: "warning"}))
-        } 
+        }
+        catch(err){
+            console.error(err.error);
+            dispatch(showSnack({message: err.error, severity: "warning"}))
+        }
     }
 
     return (
@@ -97,8 +101,8 @@ function Signup() {
                                     message: "First Name is required"
                                 },
                                 pattern: {
-                                    value: /^.{5,20}$/,
-                                    message: "Must have 5 - 20 characters"
+                                    value: /^[A-Za-z]{3,20}$/,
+                                    message: "Must have alphabets only (3-20"
                                 },
                             })}
                                 error={!!errors.fName}
@@ -106,8 +110,8 @@ function Signup() {
                             />
                             <TextField label="Last Name" type='text' sx={{ width: "100%" }} {...register("lName", {
                                 pattern: {
-                                    value: /^.{5,20}$/,
-                                    message: "Must have 5 - 20 characters"
+                                    value: /^[A-Za-z]{3,20}$/,
+                                    message: "Must have alphabets only (3-20)"
                                 }
                             })}
                                 error={!!errors.lName}
@@ -162,6 +166,23 @@ function Signup() {
                         })}
                             error={!!errors.confirmPassword}
                             helperText={errors.confirmPassword ? errors.confirmPassword.message : ""}
+                        />
+                        <TextField label="Referral Code (optional)" type='text' sx={{ width: "100%" }} {...register("referral",
+                            {
+                                pattern: {
+                                    value: /^[A-Za-z]{6}$/,
+                                    message: "Must be 6 letters alphanumeric"
+                                }
+                            }
+                        )}
+                                error={!!errors.referral}
+                                helperText={errors.referral ? errors.referral.message : ""}
+                                slotProps={{
+                                    input: {
+                                        readOnly: referralCode,
+                                    },
+                                }}
+                                defaultValue={referralCode ? (referralCode).toUpperCase() : ""}
                         />
                         <Button type='submit' variant="contained">Sign Up</Button>
                     </Stack>

@@ -15,6 +15,13 @@ exports.addOrder = async(userId, order, coupon) => {
     }
     const cartId = checkCart[0].id; 
 
+    const [{totalOrders}] = await runQuery(`SELECT COUNT(*) as totalOrders FROM orders WHERE user_id = ?`, [userId])
+    console.log(totalOrders);
+
+    if(totalOrders === 0){
+
+    }
+
     const itemsToOrder = await runQuery(`SELECT 
                                             ci.product_id, 
                                             ci.quantity
@@ -492,4 +499,10 @@ exports.sendOrderEmail = async (userId, orderId, order, coupon) => {
 
 exports.orderRefundByUser = async (orderId, userId, reason = "") => {
     await adminServices.orderRefund(orderId, userId, reason, "user")
+}
+
+exports.checkReferral = async (userId) => {
+    const checkReferral = await runQuery(`SELECT * FROM referral_uses WHERE referee_id = ? AND accepted = ? AND reward_status = ?`, [userId, 1, "pending"])
+
+    
 }

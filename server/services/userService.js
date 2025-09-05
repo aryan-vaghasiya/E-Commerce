@@ -2,6 +2,7 @@ const runQuery = require("../db")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt")
 const {sendMail} = require("../mailer/sendMail")
+const crypto = require("crypto");
 
 exports.loginUser = async(username, password) => {
     const result = await runQuery("SELECT * FROM users WHERE username = ?", [username])
@@ -28,7 +29,17 @@ exports.loginUser = async(username, password) => {
     }
 }
 
-exports.signupUser = async(username, password, fName, lName, email) => {
+exports.signupUser = async(username, password, fName, lName, email, referral) => {
+
+    let referrer
+    if(referral){
+        const [checkReferralCode] = await runQuery(`SELECT * FROM users WHERE referral_code = ?`, [referral])
+        if(!checkReferralCode){
+            throw new Error("Invalid Referral Code")
+        }
+        referrer = checkReferralCode
+    }
+
     const getUser = await runQuery("SELECT * FROM users WHERE username = ?", [username])
     if (getUser.length > 0) {
         throw new Error ("User already Exists, Please Login")
@@ -40,17 +51,30 @@ exports.signupUser = async(username, password, fName, lName, email) => {
         throw new Error ("Can't Signup User")
     }
 
-    sendMail({
-        to: email,
-        subject: "Welcome to Cartify🎉",
-        template: "welcome.hbs",
-        replacements: { fName, lName, username }
-    })
-        .catch(err => {
-            console.error("Failed to send welcome email:", err);
-        });
-
     const userId = result.insertId;
+
+    if(referral){
+        const recordUsage = await runQuery(`INSERT INTO referral_uses (referrer_id, referee_id, referral_code, accepted) VALUES (?, ?, ?, ?)`, [referrer.id, userId, referrer.referral_code, true])
+    }
+
+    try{
+        sendMail({
+            to: email,
+            subject: "Welcome to Cartify🎉",
+            template: "welcome.hbs",
+            replacements: { fName, lName, username }
+        })
+    }
+    catch(err){
+        console.error("Failed to send welcome email:", err);
+    }
+
+    try{
+        await this.assignReferralCode(userId)
+    }
+    catch(err){
+        console.error("Failed to assign referral code:", err);
+    }
 
     const addWallet = await runQuery(`INSERT INTO wallets (user_id) VALUES (?)`, [userId])
     // if(addWallet.affectedRows === 0){
@@ -103,4 +127,71 @@ exports.generateReferral = async (userId) => {
     );
 
     console.log(token);
+}
+
+exports.sendInvite = async (userId, refereeEmail) => {
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+    if(!getUser){
+        throw new Error("Could not get referrer details")
+    }
+
+    const recordInvitation = await runQuery(`INSERT INTO referral_invites (referrer_id, referee_email, referral_code, status) VALUES (?, ?, ?, ?)`, [getUser.id, refereeEmail, getUser.referral_code, "sending"])
+    if(recordInvitation.affectedRows === 0){
+        throw new Error("Could not record invitation")
+    }
+    const invitationId = recordInvitation.insertId
+
+    try{
+        await sendMail({
+            to: refereeEmail,
+            subject: `${getUser.first_name} ${getUser.last_name} invites you to Cartify!`,
+            template: "referral-invite.hbs",
+            replacements: {fName: getUser.first_name, lName: getUser.last_name, inviteLink: `http://localhost:5173/signup?referral=${getUser.referral_code}`}
+        })
+    }
+    catch(err){
+        await runQuery(`UPDATE referral_invites SET status = ? WHERE id = ?`, ["failed", invitationId])
+    }
+
+    const updateInvitation = await runQuery(`UPDATE referral_invites SET status = ? WHERE id = ?`, ["sent", invitationId])
+    if(updateInvitation.affectedRows === 0){
+        throw new Error("Could not update invitation")
+    }
+}
+
+
+exports.generateReferralCode = (length = 6) => {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let code = "";
+    for (let i = 0; i < length; i++) {
+        const rand = crypto.randomInt(0, chars.length);
+        code += chars[rand];
+    }
+    return code;
+}
+
+exports.assignReferralCode = async (userId) => {
+    let code;
+    let success = false;
+    let attempt = 1;
+
+    while (!success && attempt <= 10) {
+        console.log("assigning referral code attempt:", attempt);
+        
+        code = this.generateReferralCode(6);
+        try {
+            await runQuery("UPDATE users SET referral_code = ? WHERE id = ?", [code, userId]);
+            success = true;
+        } 
+        catch (err) {
+            if (err.code !== "ER_DUP_ENTRY") throw err;
+            attempt += 1
+        }
+    }
+
+    return code;
+}
+
+exports.acceptReferralInvitation = async () => {
+
 }

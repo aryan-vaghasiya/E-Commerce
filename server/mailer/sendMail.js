@@ -44,7 +44,6 @@ async function sendMail({ to, subject, template, replacements }) {
         html,
     });
 
-    console.log("Message sent:", info.messageId);
     console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
     return info
 }

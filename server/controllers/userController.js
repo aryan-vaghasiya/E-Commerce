@@ -14,10 +14,10 @@ exports.login = async (req, res) => {
 }
 
 exports.signup = async (req, res) => {
-    const { username, password, fName, lName, email } = req.body;
+    const { username, password, fName, lName, email, referral } = req.body;
 
     try{
-        const token = await userService.signupUser(username, password, fName, lName, email);
+        const token = await userService.signupUser(username, password, fName, lName, email, referral);
         res.status(200).json({ message: "Signup Successful", token: token});
     }
     catch (err){
@@ -61,6 +61,20 @@ exports.makeReferralToken = async (req, res) => {
     }
     catch(err){
         console.error("Error generating referral: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.sendReferralInvite = async (req, res) => {
+    const userId = req.user.id;
+    const refereeEmail = req.body.email
+
+    try{
+        await userService.sendInvite(userId, refereeEmail);
+        return res.status(200).send("Sent referral invitation")
+    }
+    catch(err){
+        console.error("Error sending referral invitation: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

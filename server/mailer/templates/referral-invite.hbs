@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border: none;
+        }
+
+        /* Container */
+        .email-wrapper {
+            width: 100%;
+            background-color: #f5f5f5;
+            padding: 20px 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .logo {
+            margin-bottom: 15px;
+        }
+
+        .logo img {
+            width: 80px;
+            height: auto;
+            max-width: 120px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 40px 30px;
+        }
+
+        .main-content p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        /* Button */
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #333;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            padding: 30px;
+        }
+
+        .footer p {
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        /* Preheader (hidden) */
+        .preheader {
+            display: none !important;
+            visibility: hidden;
+            opacity: 0;
+            color: transparent;
+            height: 0;
+            width: 0;
+            font-size: 1px;
+            line-height: 1px;
+            max-height: 0;
+            max-width: 0;
+            overflow: hidden;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 600px) {
+            .email-wrapper {
+                padding: 10px 0;
+            }
+
+            .email-container {
+                margin: 0 10px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .logo img {
+                width: 60px;
+            }
+
+            .main-content {
+                padding: 30px 20px;
+            }
+
+            .main-content p {
+                font-size: 15px;
+            }
+
+            .btn {
+                display: block;
+                width: 100%;
+                max-width: 280px;
+                margin: 0 auto;
+                padding: 18px 20px;
+                font-size: 16px;
+            }
+
+            .footer {
+                padding: 25px 20px;
+            }
+        }
+
+        @media screen and (max-width: 400px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .logo img {
+                width: 50px;
+            }
+
+            .main-content p {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 16px 20px;
+                font-size: 15px;
+            }
+        }
+
+        /* Email Client Compatibility */
+        .ExternalClass {
+            width: 100%;
+        }
+
+        .ExternalClass,
+        .ExternalClass p,
+        .ExternalClass span,
+        .ExternalClass font,
+        .ExternalClass td,
+        .ExternalClass div {
+            line-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="preheader">{{fName}} {{lName}} has invited you to join Cartify!</div>
+    
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo">
+                    <a href="https://cartify.com">
+                        <img src="https://freevector-images.s3.amazonaws.com/uploads/vector/preview/36682/36682.png" alt="Cartify">
+                    </a>
+                </div>
+                <h1>{{fName}} {{lName}} has invited you to join Cartify!</h1>
+                <p>Discover great deals and start shopping with us.</p>
+            </div>
+
+            <!-- Main Content Section -->
+            <div class="main-content">
+                <p>Hi there,</p>
+                
+                <p>{{fName}} {{lName}} thinks you’ll love Cartify and has sent you an invite to join.</p>
+                
+                <div class="button-container">
+                    <a href={{inviteLink}} class="btn">Join Cartify Now</a>
+                </div>
+                
+                <p>When you sign up and place your first order, {{fName}} {{lName}} will receive a reward as a thank-you reward for referring you.</p>
+                
+                <p>We’re excited to have you join our community!</p>
+            </div>
+
+            <!-- Footer Section -->
+            <div class="footer">
+                <p>Questions? Contact us at <a href="mailto:support@cartify.com">support@cartify.com</a></p>
+                <p>Don't like these emails? <a href="https://cartify.com/unsubscribe">Unsubscribe</a></p>
+                <p>&copy; 2025 Cartify. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

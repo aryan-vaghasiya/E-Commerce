@@ -82,6 +82,7 @@ app.use("/cart", verifyToken, cartRoutes);
 app.use("/orders", verifyToken, orderRoutes);
 app.use("/wishlist", verifyToken, wishlistRoutes);
 app.use("/wallet", verifyToken, walletRoutes);
+
 app.use("/referral", verifyToken, referralRoutes);
 
 app.listen(port, () => {

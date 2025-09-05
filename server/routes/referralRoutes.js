@@ -8,5 +8,6 @@ const userController = require("../controllers/userController");
 // router.get("/recently-ordered", productsController.recentlyOrderedProducts);
 // router.get("/search", productsController.searchProduct);
 router.post("/generate", userController.makeReferralToken);
+router.post("/send-invite", userController.sendReferralInvite);
 
 module.exports = router;
