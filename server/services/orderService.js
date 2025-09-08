@@ -18,8 +18,9 @@ exports.addOrder = async(userId, order, coupon) => {
     const [{totalOrders}] = await runQuery(`SELECT COUNT(*) as totalOrders FROM orders WHERE user_id = ?`, [userId])
     console.log(totalOrders);
 
+    let isReferral = false
     if(totalOrders === 0){
-
+        isReferral = await this.checkReferral(userId)
     }
 
     const itemsToOrder = await runQuery(`SELECT 
@@ -160,8 +161,9 @@ exports.addOrder = async(userId, order, coupon) => {
     // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
     const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
-    if (emptyCart.affectedRows === 0) {
-        throw new Error("Couldn't empty Cart");
+
+    if(isReferral){
+        this.giveReferralReward(isReferral)
     }
 
     this.sendOrderEmail(userId, orderId, order, coupon)
@@ -172,7 +174,13 @@ exports.getOrdersService = async (userId, page, limit, offset) => {
 
     const limitedOrders = await runQuery(`SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
 
+    if(limitedOrders.length === 0){
+        console.error("No Orders Exist");
+        return{};
+    }
+
     const orderIds = limitedOrders.map(order => order.id)
+
 
     const getOrders = await runQuery(`SELECT
                                         oi.order_id,
@@ -198,8 +206,8 @@ exports.getOrdersService = async (userId, page, limit, offset) => {
                                             ON oi.order_id = o.id
                                         WHERE o.id IN (?)
                                         ORDER BY FIELD(oi.order_id, ?)`, [orderIds, orderIds]);
-    if(getOrders.length < 0){
-        console.error("No Orders Exist");
+    if(getOrders.length === 0){
+        console.error("Cannot fetch orders");
         return{};
     }
     // console.log(getOrders);
@@ -502,7 +510,26 @@ exports.orderRefundByUser = async (orderId, userId, reason = "") => {
 }
 
 exports.checkReferral = async (userId) => {
-    const checkReferral = await runQuery(`SELECT * FROM referral_uses WHERE referee_id = ? AND accepted = ? AND reward_status = ?`, [userId, 1, "pending"])
+    const [checkReferral] = await runQuery(`SELECT * FROM referral_uses WHERE referee_id = ? AND accepted = ? AND reward_status = ?`, [userId, 1, "pending"])
 
-    
+    if(!checkReferral){
+        return false
+    }
+
+    return checkReferral
+}
+
+exports.giveReferralReward = async (referralData) => {
+    const reward_amount = 10
+    const referrerWallet = await walletService.getWallet(referralData.referrer_id)
+
+    try{
+        if(referralData.status === "credited") return
+        await walletService.addAmount(referrerWallet, reward_amount, "REFERRAL_REWARD", null, `referral_order/refereeId:${referralData.referee_id}`)
+
+        await runQuery(`UPDATE referral_uses SET reward_status = ?, reward_amount = ? WHERE id = ?`, ["credited", reward_amount, referralData.id])
+    }
+    catch(err){
+        await runQuery(`UPDATE referral_uses SET reward_status = ?, reward_amount = ? WHERE id = ?`, ["failed", reward_amount, referralData.id])
+    }
 }

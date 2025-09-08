@@ -40,9 +40,14 @@ exports.signupUser = async(username, password, fName, lName, email, referral) =>
         referrer = checkReferralCode
     }
 
-    const getUser = await runQuery("SELECT * FROM users WHERE username = ?", [username])
-    if (getUser.length > 0) {
+    const getUserName = await runQuery("SELECT * FROM users WHERE username = ?", [username])
+    if (getUserName.length > 0) {
         throw new Error ("User already Exists, Please Login")
+    }
+
+    const getUserEmail = await runQuery("SELECT * FROM users WHERE email = ?", [email])
+    if (getUserEmail.length > 0) {
+        throw new Error ("Email already in use, Please try another email")
     }
 
     const hashedPass = await bcrypt.hash(password, 10);
@@ -110,25 +115,6 @@ exports.formData = async (userId) => {
     return formResult;
 }
 
-exports.generateReferral = async (userId) => {
-    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
-
-    if(!getUser){
-        throw new Error("Could not generate referral")
-    }
-
-    const token = jwt.sign(
-        {
-            id: userId,
-            email: getUser.email
-        },
-        process.env.JWT_SECRET_REFERRAL,
-        { expiresIn: "8d" }
-    );
-
-    console.log(token);
-}
-
 exports.sendInvite = async (userId, refereeEmail) => {
     const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
     if(!getUser){
@@ -157,8 +143,9 @@ exports.sendInvite = async (userId, refereeEmail) => {
     if(updateInvitation.affectedRows === 0){
         throw new Error("Could not update invitation")
     }
-}
 
+    return invitationId
+}
 
 exports.generateReferralCode = (length = 6) => {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -192,6 +179,75 @@ exports.assignReferralCode = async (userId) => {
     return code;
 }
 
-exports.acceptReferralInvitation = async () => {
+exports.referralsSummary = async (userId) => {
 
+    let totalInvites = 0
+    let pendingInvites = 0
+    let totalReferrals = 0
+    let totalRewards = 0
+
+    const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+    if(!getUser){
+        throw new Error("Could not fetch User Details")
+    }
+
+    [{totalInvites}] = await runQuery(`SELECT COUNT(*) AS totalInvites FROM referral_invites WHERE referrer_id = ? AND status = ?`, [userId, "sent"]);
+
+    const invites = await runQuery(`SELECT id FROM referral_invites WHERE referrer_id = ? AND status = ?`, [userId, "sent"]);
+    const inviteIds = invites.map(item => item.id);
+
+    // console.log(inviteIds);
+
+    const invitesAccepted  = await runQuery(`SELECT id FROM referral_uses WHERE referral_invite_id IN (?)`, [inviteIds]);
+
+    // console.log(invitesAccepted);
+    pendingInvites = totalInvites - invitesAccepted.length;
+
+    [{totalReferrals}] = await runQuery(`SELECT COUNT(*) AS totalReferrals FROM referral_uses WHERE referrer_id = ? AND accepted = ?`, [userId, true]);
+
+    [{totalRewards}] = await runQuery(`SELECT COALESCE(SUM(reward_amount), 0) AS totalRewards FROM referral_uses WHERE referrer_id = ? AND accepted = ? AND reward_status = ?`, [userId, true, "credited"]);
+
+    // console.log(totalInvites, totalReferrals, totalRewards, getUser.referral_code);
+    return {totalInvites, totalReferrals, totalRewards, pendingInvites, myReferralCode: getUser.referral_code}
+}
+
+exports.acceptedReferrals = async (userId) => {
+    const referrals = await runQuery(`SELECT 
+                                        ru.id,
+                                        ru.referrer_id,
+                                        ru.referee_id,
+                                        ru.referral_code,
+                                        ru.reward_status,
+                                        ru.reward_amount,
+                                        ru.created_at,
+                                        ru.updated_at,
+                                        ru.referral_invite_id,
+                                        u.first_name,
+                                        u.last_name,
+                                        u.email
+                                    FROM referral_uses ru
+                                    JOIN users u
+                                        ON ru.referee_id = u.id
+                                    WHERE referrer_id = ?
+                                    ORDER BY ru.created_at DESC`, [userId])
+
+    return referrals
+}
+
+exports.allInvites = async (userId) => {
+    const invites = await runQuery(`SELECT 
+                                        ri.id,
+                                        ri.referee_email,
+                                        ri.referral_code,
+                                        ri.status,
+                                        ri.created_at,
+                                        ri.updated_at,
+                                        ru.accepted
+                                    FROM referral_invites ri
+                                    LEFT JOIN referral_uses ru
+                                        ON ri.id = ru.referral_invite_id
+                                    WHERE ri.referrer_id = ?
+                                    ORDER BY ri.created_at DESC`, [userId])
+
+    return invites
 }

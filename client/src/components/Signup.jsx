@@ -57,7 +57,8 @@ function Signup() {
                     lName: data.lName,
                     email: data.email,
                     // referral: data.referral ? data.referral : null
-                    referral: data.referral || null
+                    referral: data.referral || null,
+                    referralMode: referralCode ? "invite" : data.referral ? "manual" : null
                 })
             })
             if (response.ok) {

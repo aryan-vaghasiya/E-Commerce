@@ -65,7 +65,7 @@ function MyWallet() {
     };
 
     const getTransactionType = (type) => {
-        const transactionType = type === "DEPOSIT" ? "Wallet Deposit" : type === "WITHDRAWAL" ? "Wallet Withdrawal" : type === "PAYMENT" ? "Order Payment" : type === "REFUND" ? "Refund" : type === "CASHBACK" ? "Cashback" : null
+        const transactionType = type === "DEPOSIT" ? "Wallet Deposit" : type === "WITHDRAWAL" ? "Wallet Withdrawal" : type === "PAYMENT" ? "Order Payment" : type === "REFUND" ? "Refund" : type === "CASHBACK" ? "Cashback" : type === "REFERRAL_REWARD" ? "Referral Reward" : null
         return transactionType
     }
 
@@ -87,8 +87,10 @@ function MyWallet() {
             }
             setWallet(prev => ({...prev, balance: prev.balance + parseFloat(data.amount)}))
 
-            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "CREDIT", type: "DEPOSIT"}, ...transactions];
-            newTransactions.pop();
+            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "CREDIT", type: "DEPOSIT", description: "wallet_topup/self"}, ...transactions];
+            if(newTransactions.length > 10){
+                newTransactions.pop();
+            }
             setTransactions(newTransactions);
         }
         catch(err){
@@ -117,8 +119,10 @@ function MyWallet() {
             }
             setWallet(prev => ({...prev, balance: prev.balance - parseFloat(data.amount)}))
 
-            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "DEBIT", type: "WITHDRAWAL"}, ...transactions];
-            newTransactions.pop();
+            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "DEBIT", type: "WITHDRAWAL", description: "wallet_withdrawal/self"}, ...transactions];
+            if(newTransactions.length > 10){
+                newTransactions.pop();
+            }
             setTransactions(newTransactions);
         }
         catch(err){

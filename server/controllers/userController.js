@@ -70,11 +70,51 @@ exports.sendReferralInvite = async (req, res) => {
     const refereeEmail = req.body.email
 
     try{
-        await userService.sendInvite(userId, refereeEmail);
-        return res.status(200).send("Sent referral invitation")
+        const invitation = await userService.sendInvite(userId, refereeEmail);
+        return res.status(200).json(invitation)
     }
     catch(err){
         console.error("Error sending referral invitation: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }
+
+exports.getReferralsSummary = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const summary = await userService.referralsSummary(userId);
+        return res.status(200).json(summary)
+    }
+    catch(err){
+        console.error("Error fetching referral summary: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getAcceptedReferrals = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const referrals = await userService.acceptedReferrals(userId);
+        return res.status(200).json(referrals)
+    }
+    catch(err){
+        console.error("Error fetching referrals: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getReferralInvites = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const invitations = await userService.allInvites(userId);
+        return res.status(200).json(invitations)
+    }
+    catch(err){
+        console.error("Error fetching invitations: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+

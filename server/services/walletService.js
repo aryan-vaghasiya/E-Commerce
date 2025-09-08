@@ -81,6 +81,9 @@ exports.verifyBalance = async (wallet) =>{
                                                 FROM wallet_transactions
                                                 WHERE wallet_id = ?`, [walletId]);
     // console.log(calculated_balance, cacheBalance);
+    if(!calculated_balance && cacheBalance === 0){
+        return true
+    }
     return calculated_balance === cacheBalance
 }
 

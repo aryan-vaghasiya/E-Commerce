@@ -18,7 +18,7 @@ exports.addBalance = async (req, res) => {
 
     try{
         const wallet = await walletService.getWallet(userId)
-        await walletService.addAmount(wallet, amount, "DEPOSIT")
+        await walletService.addAmount(wallet, amount, "DEPOSIT", null, "wallet_topup/self")
         return res.status(200).send("Successfully added funds");
     }
     catch(err){
@@ -33,7 +33,7 @@ exports.withdrawBalance = async (req, res) => {
 
     try{
         const wallet = await walletService.getWallet(userId)
-        await walletService.withdrawAmount(wallet, amount, "WITHDRAWAL")
+        await walletService.withdrawAmount(wallet, amount, "WITHDRAWAL", null, "wallet_withdrawal/self")
         return res.status(200).send("Successful withdrawal");
     }
     catch(err){
