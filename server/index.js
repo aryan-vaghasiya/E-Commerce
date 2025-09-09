@@ -84,6 +84,7 @@ app.use("/wishlist", verifyToken, wishlistRoutes);
 app.use("/wallet", verifyToken, walletRoutes);
 
 app.use("/referral", verifyToken, referralRoutes);
+// app.use("/profile", verifyToken, profileRoutes);
 
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);

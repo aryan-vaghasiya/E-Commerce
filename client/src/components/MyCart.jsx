@@ -116,7 +116,7 @@ function MyCart() {
                             <Typography sx={{ mt: 1 }}>({noOfItems}) Items in Cart</Typography>
                         }
                         {productState.map(item =>
-                            <Box key={item.id}>
+                            <Box key={item.id} sx={{width: {xs: "90%", sm: "100%"}}}>
                                 <CartItem item={item} />
                             </Box>
                             )

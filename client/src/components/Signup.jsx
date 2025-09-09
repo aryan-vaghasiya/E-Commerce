@@ -19,6 +19,7 @@ function Signup() {
     // const {referral} = useParams()
     const [searchParams] = useSearchParams();
     const referralCode = searchParams.get("referral");
+    const invitationId = searchParams.get("invitationId");
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const snackbarState = useSelector((state) => state.snackbarReducer)
@@ -58,7 +59,7 @@ function Signup() {
                     email: data.email,
                     // referral: data.referral ? data.referral : null
                     referral: data.referral || null,
-                    referralMode: referralCode ? "invite" : data.referral ? "manual" : null
+                    referralMode: invitationId ? invitationId : data.referral ? "manual" : null
                 })
             })
             if (response.ok) {

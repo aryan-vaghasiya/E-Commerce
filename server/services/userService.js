@@ -29,7 +29,7 @@ exports.loginUser = async(username, password) => {
     }
 }
 
-exports.signupUser = async(username, password, fName, lName, email, referral) => {
+exports.signupUser = async(username, password, fName, lName, email, referral, referralMode) => {
 
     let referrer
     if(referral){
@@ -59,7 +59,11 @@ exports.signupUser = async(username, password, fName, lName, email, referral) =>
     const userId = result.insertId;
 
     if(referral){
-        const recordUsage = await runQuery(`INSERT INTO referral_uses (referrer_id, referee_id, referral_code, accepted) VALUES (?, ?, ?, ?)`, [referrer.id, userId, referrer.referral_code, true])
+        let referral_invite_id = null
+        if(referralMode && referralMode !== "manual"){
+            referral_invite_id = referralMode
+        }
+        const recordUsage = await runQuery(`INSERT INTO referral_uses (referrer_id, referee_id, referral_code, accepted, referral_invite_id) VALUES (?, ?, ?, ?, ?)`, [referrer.id, userId, referrer.referral_code, true, referral_invite_id])
     }
 
     try{
@@ -132,7 +136,7 @@ exports.sendInvite = async (userId, refereeEmail) => {
             to: refereeEmail,
             subject: `${getUser.first_name} ${getUser.last_name} invites you to Cartify!`,
             template: "referral-invite.hbs",
-            replacements: {fName: getUser.first_name, lName: getUser.last_name, inviteLink: `http://localhost:5173/signup?referral=${getUser.referral_code}`}
+            replacements: {fName: getUser.first_name, lName: getUser.last_name, inviteLink: `http://localhost:5173/signup?referral=${getUser.referral_code}&invitationId=${invitationId}`}
         })
     }
     catch(err){
@@ -185,6 +189,8 @@ exports.referralsSummary = async (userId) => {
     let pendingInvites = 0
     let totalReferrals = 0
     let totalRewards = 0
+    let pendingRewards = 0
+    const reward = 10
 
     const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
     if(!getUser){
@@ -193,6 +199,9 @@ exports.referralsSummary = async (userId) => {
 
     [{totalInvites}] = await runQuery(`SELECT COUNT(*) AS totalInvites FROM referral_invites WHERE referrer_id = ? AND status = ?`, [userId, "sent"]);
 
+    if(!totalInvites){
+        return {totalInvites, totalReferrals, totalRewards, pendingInvites, pendingRewards, myReferralCode: getUser.referral_code}
+    }
     const invites = await runQuery(`SELECT id FROM referral_invites WHERE referrer_id = ? AND status = ?`, [userId, "sent"]);
     const inviteIds = invites.map(item => item.id);
 
@@ -208,7 +217,8 @@ exports.referralsSummary = async (userId) => {
     [{totalRewards}] = await runQuery(`SELECT COALESCE(SUM(reward_amount), 0) AS totalRewards FROM referral_uses WHERE referrer_id = ? AND accepted = ? AND reward_status = ?`, [userId, true, "credited"]);
 
     // console.log(totalInvites, totalReferrals, totalRewards, getUser.referral_code);
-    return {totalInvites, totalReferrals, totalRewards, pendingInvites, myReferralCode: getUser.referral_code}
+    pendingRewards = (totalReferrals * reward) - totalRewards
+    return {totalInvites, totalReferrals, totalRewards, pendingInvites, pendingRewards, myReferralCode: getUser.referral_code}
 }
 
 exports.acceptedReferrals = async (userId) => {

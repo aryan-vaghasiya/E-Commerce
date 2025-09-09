@@ -27,23 +27,7 @@ function MyWishlist() {
     useEffect(() => {
         dispatch(getFullWishlist(token))
     }, [])
-    // console.log(productState);
-    
-    // let filtered;
-    // useEffect(() => {
-    //     filtered = productState.filter(item => wishlist.includes(item.id))
-    //     const noOfItems = filtered.length
-    // },[wishlist])
 
-    // const filtered = productState.filter(item => wishlist.products.includes(item.id))
-
-    // console.log(filtered);
-    
-    
-    // const productState = useSelector(state => state.cartReducer.products)
-    // const noOfItems = useSelector(state => state.cartReducer.noOfItems)
-    
-    const cartValue = useSelector(state => state.cartReducer.cartValue)
     const userState = useSelector(state => state.userReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
@@ -80,32 +64,19 @@ function MyWishlist() {
                         <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", justifyContent: "center", minHeight: "91vh" }}>
                             {
                                 wishlist.products.length === 0 ?
-                                    (
-                                        <Box sx={{ display: "block", margin: "auto" }}>
-                                            <Typography component="h1">Your Wishlist is Empty...</Typography>
-                                            <Button variant="contained" onClick={() => navigate("/")} sx={{ width: "100%", my: 1 }}>Add Something</Button>
-                                        </Box>
-                                    )
+                                    <Box sx={{ display: "block", margin: "auto" }}>
+                                        <Typography component="h1">Your Wishlist is Empty...</Typography>
+                                        <Button variant="contained" onClick={() => navigate("/")} sx={{ width: "100%", my: 1 }}>Add Something</Button>
+                                    </Box>
                                     :
-                                    (
-                                        <Typography sx={{ mt: 1 }}>({noOfItems}) Items in WishList</Typography>
-                                    )
+                                    <Typography sx={{ mt: 1 }}>({noOfItems}) Items in Wish List</Typography>
                             }
                             {
                                 wishlist.products.map(item =>
-                                    <Box key={item.id}>
+                                    <Box key={item.id} sx={{width: {xs: "90%", sm: "100%"}}}>
                                         <WishlistItem item={item} />
                                     </Box>
                                 )
-                            }
-                            {
-                                // filtered.length > 0 ?
-                                //     <Box textAlign="center">
-                                //         <Typography>Cart Value: ${cartValue}</Typography>
-                                //         {/* <Button variant='contained' onClick={checkOutNavigate} sx={{ my: 1 }}>Checkout</Button > */}
-                                //     </Box>
-                                //     :
-                                //     null
                             }
                         </Box>
                     )

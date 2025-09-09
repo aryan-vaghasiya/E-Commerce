@@ -37,10 +37,10 @@ margin-top: 8px;
 font-size: 14px;
 font-weight: bold;
 &:hover {
-background-color: #EEEEEE;
+    background-color: #EEEEEE;
 }
 &:active {
-transform: scale(0.95)
+    transform: scale(0.95)
 }
 `;
 

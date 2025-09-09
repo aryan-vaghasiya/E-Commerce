@@ -14,10 +14,11 @@ exports.login = async (req, res) => {
 }
 
 exports.signup = async (req, res) => {
-    const { username, password, fName, lName, email, referral } = req.body;
+    const { username, password, fName, lName, email, referral, referralMode } = req.body;
+    console.log(username, password, fName, lName, email, referral, referralMode);
 
     try{
-        const token = await userService.signupUser(username, password, fName, lName, email, referral);
+        const token = await userService.signupUser(username, password, fName, lName, email, referral, referralMode);
         res.status(200).json({ message: "Signup Successful", token: token});
     }
     catch (err){
