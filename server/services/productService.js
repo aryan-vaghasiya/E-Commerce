@@ -1,41 +1,46 @@
 const runQuery = require("../db");
 const dayjs = require("dayjs");
 
-exports.getAllProducts = async(page, limit, offset) => {
-    const results = await runQuery(`SELECT 
-        p.*, 
-        c.category,
-        pp.mrp, 
-        pp.discount, 
-        i.stock,
+exports.getAllProducts = async(page, limit, offset, userId) => {
+    // const results = await runQuery(`SELECT 
+    //     p.*, 
+    //     c.category,
+    //     pp.mrp, 
+    //     pp.discount, 
+    //     i.stock,
+    //     pd.discount_type,
+    //     CASE 
+    //         WHEN pd.offer_price IS NOT NULL 
+    //             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+    //         ELSE NULL
+    //     END AS offer_discount,
+    //     CASE 
+    //         WHEN pd.offer_price IS NOT NULL 
+    //             THEN pd.offer_price
+    //         ELSE pp.price
+    //     END AS price
 
-        pd.discount_type,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-            ELSE NULL
-        END AS offer_discount,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN pd.offer_price
-            ELSE pp.price
-        END AS price
+    //     FROM products p 
+    //         JOIN product_inventory i 
+    //             ON p.id = i.product_id
+    //         JOIN categories c 
+    //             ON c.id = p.category_id
+    //         JOIN product_pricing pp    
+    //             ON pp.product_id = p.id
+    //             AND p.status = ?
+    //             AND NOW() BETWEEN pp.start_time AND pp.end_time
+    //         LEFT JOIN product_discounts pd
+    //             ON pd.product_id = p.id
+    //             AND pd.is_active = 1
+    //             AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+    //             AND (pd.end_time IS NULL OR pd.end_time > NOW())
+    //         LIMIT ? OFFSET ?`, ["active", limit, offset]);
 
-        FROM products p 
-            JOIN product_inventory i 
-                ON p.id = i.product_id
-            JOIN categories c 
-                ON c.id = p.category_id
-            JOIN product_pricing pp    
-                ON pp.product_id = p.id
-                AND p.status = ?
-                AND NOW() BETWEEN pp.start_time AND pp.end_time
-            LEFT JOIN product_discounts pd
-                ON pd.product_id = p.id
-                AND pd.is_active = 1
-                AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                AND (pd.end_time IS NULL OR pd.end_time > NOW())
-            LIMIT ? OFFSET ?`, ["active", limit, offset]);
+    const products = await runQuery(`SELECT id FROM products ORDER BY id ASC LIMIT ? OFFSET ?`, [limit, offset])
+    const productIds = products.map(item => item.id)
+
+    const results = await this.getProductsByIdsHelper(productIds, userId)
+
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -54,39 +59,46 @@ exports.getAllProducts = async(page, limit, offset) => {
     return productsRes
 }
 
-exports.getSearchedProducts = async (page, limit, offset, query) => {
-    const status = "active"
-    const results = await runQuery(`SELECT 
-        p.*, 
-        c.category,
-        pp.mrp, 
-        pp.discount, 
-        i.stock,
-        pd.discount_type,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-            ELSE NULL
-        END AS offer_discount,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN pd.offer_price
-            ELSE pp.price
-        END AS price
+exports.getSearchedProducts = async (page, limit, offset, query, userId) => {
 
-        FROM products p 
-        JOIN product_inventory i ON p.id = i.product_id 
-        JOIN categories c ON c.id = p.category_id
-        JOIN product_pricing pp ON pp.product_id = p.id 
-            AND NOW() BETWEEN pp.start_time AND pp.end_time
-        LEFT JOIN product_discounts pd ON pd.product_id = p.id
-            AND pd.is_active = 1
-            AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-            AND (pd.end_time IS NULL OR pd.end_time > NOW())
+    const products = await runQuery(`SELECT id FROM products WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) LIMIT ? OFFSET ?`, [query, query, limit, offset])
+    const productIds = products.map(item => item.id)
 
-        WHERE (p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%'))
-        AND p.status = ? 
-        LIMIT ? OFFSET ?`, [query, query, "active", limit, offset]);
+
+    // const results = await runQuery(`SELECT 
+    //     p.*, 
+    //     c.category,
+    //     pp.mrp, 
+    //     pp.discount, 
+    //     i.stock,
+    //     pd.discount_type,
+    //     CASE 
+    //         WHEN pd.offer_price IS NOT NULL 
+    //             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+    //         ELSE NULL
+    //     END AS offer_discount,
+    //     CASE 
+    //         WHEN pd.offer_price IS NOT NULL 
+    //             THEN pd.offer_price
+    //         ELSE pp.price
+    //     END AS price
+
+    //     FROM products p 
+    //     JOIN product_inventory i ON p.id = i.product_id 
+    //     JOIN categories c ON c.id = p.category_id
+    //     JOIN product_pricing pp ON pp.product_id = p.id 
+    //         AND NOW() BETWEEN pp.start_time AND pp.end_time
+    //     LEFT JOIN product_discounts pd ON pd.product_id = p.id
+    //         AND pd.is_active = 1
+    //         AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+    //         AND (pd.end_time IS NULL OR pd.end_time > NOW())
+
+    //     WHERE (p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%'))
+    //     AND p.status = ? 
+    //     LIMIT ? OFFSET ?`, [query, query, "active", limit, offset]);
+
+    const results = await this.getProductsByIdsHelper(productIds, userId)
+
     if(results.length === 0){
         // throw new Error ("Could not select searched products")
         return {}
@@ -106,7 +118,7 @@ exports.getSearchedProducts = async (page, limit, offset, query) => {
     return productsRes
 }
 
-exports.getTrendingProducts = async (limit) => {
+exports.getTrendingProducts = async (limit, userId) => {
     const oneWeekAgo = dayjs().startOf('day').subtract(7, "day").format("YYYY-MM-DD hh:mm:ss")
 
     const oneWeekOrders = await runQuery(`SELECT id FROM orders WHERE order_date BETWEEN ? AND NOW() ORDER BY order_date DESC`, [oneWeekAgo])
@@ -115,7 +127,7 @@ exports.getTrendingProducts = async (limit) => {
     const products = await runQuery(`SELECT product_id, COUNT(product_id) AS count FROM order_item WHERE order_id IN (?) GROUP BY product_id ORDER BY count DESC LIMIT ?`, [orderIds, limit])
     const productIds = products.map(prod => prod.product_id)
 
-    const results = await this.getProductsByIdsHelper(productIds)
+    const results = await this.getProductsByIdsHelper(productIds, userId)
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -123,7 +135,7 @@ exports.getTrendingProducts = async (limit) => {
     return results
 }
 
-exports.getRecentlyOrderedProducts = async (limit) => {
+exports.getRecentlyOrderedProducts = async (limit, userId) => {
     const orderItems = await runQuery(`SELECT product_id
                                         FROM order_item
                                         GROUP BY product_id
@@ -131,7 +143,7 @@ exports.getRecentlyOrderedProducts = async (limit) => {
                                         LIMIT ?`, [limit])
     const productIds = orderItems.map(prod => prod.product_id)
 
-    const results = await this.getProductsByIdsHelper(productIds)
+    const results = await this.getProductsByIdsHelper(productIds, userId)
     if(results.length === 0){
         throw new Error ("Could not select all products")
     }
@@ -139,40 +151,52 @@ exports.getRecentlyOrderedProducts = async (limit) => {
     return results
 }
 
-exports.getSingleProduct = async(productId) => {
-    const results = await runQuery(`SELECT 
-                                        p.*,
-                                        c.category,
-                                        pp.mrp, 
-                                        pp.discount, 
-                                        i.stock,
-                                        pd.discount_type,
-                                        pd.start_time,
-                                        pd.end_time,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                                            ELSE NULL
-                                        END AS offer_discount,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN pd.offer_price
-                                            ELSE pp.price
-                                        END AS price
-                                    FROM products p 
-                                    JOIN product_inventory i 
-                                        ON p.id = i.product_id 
-                                    JOIN categories c
-                                        ON c.id = p.category_id 
-                                    JOIN product_pricing pp 
-                                        ON pp.product_id = p.id 
-                                        AND p.id = ? 
-                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
-                                    LEFT JOIN product_discounts pd ON pd.product_id = p.id
-                                        AND pd.is_active = 1
-                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
-                                    `, [productId]);
+exports.getSingleProduct = async(productId, userId) => {
+    // const results = await runQuery(`SELECT 
+    //                                     p.*,
+    //                                     c.category,
+    //                                     pp.mrp, 
+    //                                     pp.discount, 
+    //                                     i.stock,
+    //                                     pd.discount_type,
+    //                                     pd.start_time,
+    //                                     pd.end_time,
+    //                                     CASE 
+    //                                         WHEN wi.product_id IS NOT NULL 
+    //                                             THEN true 
+    //                                         ELSE false 
+    //                                     END AS wishlisted,
+    //                                     CASE 
+    //                                         WHEN pd.offer_price IS NOT NULL 
+    //                                             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+    //                                         ELSE NULL
+    //                                     END AS offer_discount,
+    //                                     CASE 
+    //                                         WHEN pd.offer_price IS NOT NULL 
+    //                                             THEN pd.offer_price
+    //                                         ELSE pp.price
+    //                                     END AS price
+    //                                 FROM products p 
+    //                                 JOIN product_inventory i 
+    //                                     ON p.id = i.product_id 
+    //                                 JOIN categories c
+    //                                     ON c.id = p.category_id 
+    //                                 JOIN product_pricing pp 
+    //                                     ON pp.product_id = p.id 
+    //                                     AND p.id = ? 
+    //                                     AND NOW() BETWEEN pp.start_time AND pp.end_time
+    //                                 LEFT JOIN product_discounts pd ON pd.product_id = p.id
+    //                                     AND pd.is_active = 1
+    //                                     AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+    //                                     AND (pd.end_time IS NULL OR pd.end_time > NOW())
+    //                                 LEFT JOIN wishlist_items wi
+    //                                     ON p.id = wi.product_id AND wi.wishlist_id = (
+    //                                         SELECT id FROM wishlists WHERE user_id = ? AND name = ?
+    //                                     )`, 
+    //                                 [productId, userId, "My Wishlist"]);
+
+    const results = await this.getProductsByIdsHelper([productId], userId)
+
     if(results.length === 0){
         throw new Error ("Failed to fetch product details")
     }
@@ -187,7 +211,7 @@ exports.getSingleProduct = async(productId) => {
     return product
 }
 
-exports.getProductsByIdsHelper = async (productIds) => {
+exports.getProductsByIdsHelper = async (productIds, userId = null) => {
     const products = await runQuery(`SELECT 
         p.*, 
         c.category,
@@ -195,6 +219,11 @@ exports.getProductsByIdsHelper = async (productIds) => {
         pp.discount, 
         i.stock,
         pd.discount_type,
+        CASE 
+            WHEN wi.product_id IS NOT NULL 
+                THEN true 
+            ELSE false 
+        END AS wishlisted,
         CASE 
             WHEN pd.offer_price IS NOT NULL 
                 THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
@@ -220,8 +249,12 @@ exports.getProductsByIdsHelper = async (productIds) => {
                 AND pd.is_active = 1
                 AND (pd.start_time IS NULL OR pd.start_time <= NOW())
                 AND (pd.end_time IS NULL OR pd.end_time > NOW())
+            LEFT JOIN wishlist_items wi
+                ON p.id = wi.product_id AND wi.wishlist_id = (
+                    SELECT id FROM wishlists WHERE user_id = ? AND name = ?
+                )
             WHERE p.id IN (?)
-            ORDER BY FIELD(p.id, ?)`, ["active", productIds, productIds]);
+            ORDER BY FIELD(p.id, ?)`, ["active", userId, "My Wishlist", productIds, productIds]);
 
     return products
 }

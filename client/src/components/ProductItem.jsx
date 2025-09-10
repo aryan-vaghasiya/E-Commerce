@@ -47,7 +47,7 @@ font-weight: bold;
 function ProductItem({product, loading}) {
     const dispatch = useDispatch()
     // const [wishlisted, setWishlisted] = useState(false)
-    const wishlistState = useSelector(state => state.wishlistReducer)
+    // const wishlistState = useSelector(state => state.wishlistReducer)
     const userState = useSelector(state => state.userReducer)
     // console.log(product);
     
@@ -62,14 +62,15 @@ function ProductItem({product, loading}) {
 
     const handleWishlist = () => {
         if(userState.userName){
-            if(!wishlistState.products.some(item => item.id === product.id)){
+            // if(!wishlistState.products.some(item => item.id === product.id)){
+            if(!product.wishlisted){
                 dispatch(addWishlistDb(product))
             }
             else{
                 dispatch(removeWishlistDb(product))
             }
             // setWishlisted(prev => !prev)
-            console.log(wishlistState.products.includes({id: product.id}));
+            // console.log(wishlistState.products.includes({id: product.id}));
         }
         else{
             dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
@@ -113,6 +114,7 @@ function ProductItem({product, loading}) {
                                 alt="Product Image"
                                 sx={{ maxHeight: 300, objectFit: "contain"}}
                             />
+                            {/* <Typography level="h3" noWrap sx={{width: "99%"}}>{product.id}.{product.title}</Typography> */}
                             <Typography level="h3" noWrap sx={{width: "99%"}}>{product.title}</Typography>
                             {
                             product.brand ?
@@ -162,7 +164,9 @@ function ProductItem({product, loading}) {
                                     // wishlisted?
                                     // wishlistState.products.includes(product.id)?
                                     // wishlistState.products.includes({id: product.id, ...product})?
-                                    wishlistState.products.some(item => item.id === product.id)?
+                                    
+                                    // wishlistState.products.some(item => item.id === product.id)?
+                                    product.wishlisted ?
                                     <FavoriteIcon></FavoriteIcon>
                                     :
                                     <FavoriteBorderIcon></FavoriteBorderIcon>

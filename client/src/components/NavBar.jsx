@@ -351,7 +351,7 @@ function NavBar() {
         const navTo = e.target.id === "orders" ? "/my-orders" :
                     e.target.id === "wishlist" ? "/my-wishlist" :
                     "/"
-        
+
         if(!userState.userName){
             navigate("/login", {state: navTo})
             setAnchorEl(null)

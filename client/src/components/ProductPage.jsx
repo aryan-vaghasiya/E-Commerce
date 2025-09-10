@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { data, useNavigate, useParams } from 'react-router'
 import StarIcon from '@mui/icons-material/Star'
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import IconButton from '@mui/material/IconButton'
 import Button from '@mui/material/Button'
@@ -41,43 +41,45 @@ color: white;
 function ProductPage() {
 
     const [imgIndex, setImgIndex] = useState(0)
-    // const [wishlisted, setWishlisted] = useState(false)
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    const wishlistState = useSelector(state => state.wishlistReducer)
+    // const wishlistState = useSelector(state => state.wishlistReducer)
     const userState = useSelector(state => state.userReducer)
     const snackbarState = useSelector((state) => state.snackbarReducer)
 
     const { productId } = useParams()
-    // const products = useSelector(state => state.productReducer.products)
-    // const product = products.find( item => item.id === parseInt(productId))
 
     const [product, setProduct] = useState(null)
     const [snack, setSnack] = useState(false)
 
-    // const now_time = dayjs()
-    // const end_time = product && product.end_time ? dayjs(product.end_time) : null
-    // const remaining = end_time ? end_time.diff(now_time) : null
-    // const isActive = end_time ? now_time.isBefore(end_time) : null      
-
-    // const durationLeft = end_time ? dayjs.duration(end_time.diff(now_time)) : null
-    // const hours = end_time ? String(durationLeft.hours()).padStart(2, '0') : null
-    // const minutes = end_time ? String(durationLeft.minutes()).padStart(2, '0') : null
-    // const seconds = end_time ? String(durationLeft.seconds()).padStart(2, '0') : null
-    // console.log(product);
+    const fetchSingleProduct = async () => {
+        try {
+            const res = await fetch(`http://localhost:3000/products/${productId}`, {
+                headers: {
+                    Authorization: `Bearer ${userState.token}`,
+                },
+            });
+            if(!res.ok){
+                const error = await res.json()
+                console.error("Could not fetch Product:", error.error);
+                return false
+            }
+            const data = await res.json();
+            console.log(data);
+            setProduct(data)
+        }
+        catch (err) {
+            console.error("Product fetch failed:", err.message);
+        }
+    }
 
     useEffect(() => {
         const timeOut1 = setTimeout(() => {
-            // fetch(`https://dummyjson.com/products/${productId}`)
-            fetch(`http://localhost:3000/products/${productId}`)
-            .then(res => res.json())
-            .then(data => setProduct(data))
-        },1000)      
+            fetchSingleProduct()
+        }, 500)      
 
         return () => clearTimeout(timeOut1)
     }, [productId])
-
-    // console.log(product);
 
     const handleBuyNow = () => {
         if(userState.userName){
@@ -98,14 +100,17 @@ function ProductPage() {
 
     const handleWishlist = () => {
         if(userState.userName){
-            if(!wishlistState.products.some(item => item.id === product.id)){
+            // if(!wishlistState.products.some(item => item.id === product.id)){
+            if(!product.wishlisted){
+                setProduct(prev => ({...prev, wishlisted: 1}))
                 dispatch(addWishlistDb(product))
             }
             else{
+                setProduct(prev => ({...prev, wishlisted: 0}))
                 dispatch(removeWishlistDb(product))
             }
             // setWishlisted(prev => !prev)
-            console.log(wishlistState.products.includes({id: product.id}));
+            // console.log(wishlistState.products.includes({id: product.id}));
         }
         else{
             dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
@@ -122,25 +127,6 @@ function ProductPage() {
                 product ?
                     (
                         <Card sx={{ display: "inline-flex", width: "90%" }}>
-                            {/* {
-                                snack ?
-                                <Snackbar
-                                open={snack}
-                                anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                                autoHideDuration={1000}
-                                onClose={handleClose}
-                                sx={{
-                                    '&.MuiSnackbar-root': { top: '70px' },
-                                }}
-                            >
-                                <Alert severity="success" onClose={handleClose} variant='filled'>
-                                    Added to cart!
-                                </Alert>
-                            </Snackbar>
-                            :
-                            null
-                            } */}
-
                             <Snackbar
                                 open={snackbarState.show}
                                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -167,18 +153,18 @@ function ProductPage() {
                                         sx={{ position: "absolute", top: "7%", right: 12, transform: "translateY(-50%)" }}
                                         onClick={handleWishlist}
                                     >
-                                        {
-                                        wishlistState.products.some(item => item.id === product.id)?
-                                        <FavoriteIcon color='primary'></FavoriteIcon>
+                                        {/* {wishlistState.products.some(item => item.id === product.id)? */}
+                                        {product.wishlisted?
+                                            <FavoriteIcon color='primary'></FavoriteIcon>
                                         :
-                                        <FavoriteBorderIcon color='primary'></FavoriteBorderIcon>
+                                            <FavoriteBorderIcon color='primary'></FavoriteBorderIcon>
                                         }
                                     </IconButton>
                                     <IconButton
                                         onClick={() => setImgIndex((prev) => (prev - 1 + product.images.length) % product.images.length)}
                                         color='primary'
                                         sx={{ position: "absolute", top: "50%", left: 10, transform: "translateY(-50%)" }}>
-                                        <ArrowBackIosIcon></ArrowBackIosIcon>
+                                        <ArrowBackIosNewIcon></ArrowBackIosNewIcon>
                                     </IconButton>
                                     <IconButton
                                         onClick={() => setImgIndex((prev) => (prev + 1) % product.images.length)}

@@ -34,7 +34,7 @@ function MyWishlist() {
     const noOfItems = wishlist.noOfItems
 
     return (
-        <Box>
+        <Box sx={{mb: "auto"}}>
             {
                 loading ?
                     (
@@ -61,7 +61,7 @@ function MyWishlist() {
                     )
                     :
                     (
-                        <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", justifyContent: "center", minHeight: "91vh" }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", bgcolor: "#EEEEEE", alignItems: "center", minHeight: "91vh" }}>
                             {
                                 wishlist.products.length === 0 ?
                                     <Box sx={{ display: "block", margin: "auto" }}>

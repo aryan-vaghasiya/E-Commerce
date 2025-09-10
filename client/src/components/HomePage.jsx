@@ -148,6 +148,7 @@ const ProductCarousel = ({ title, subtitle, products }) => {
 
 const HomePage = () => {
   const productsState = useSelector((state) => state.productReducer);
+  const userState = useSelector((state) => state.userReducer);
   const searchState = useSelector((state) => state.searchReducer);
   const snackbarState = useSelector((state) => state.snackbarReducer);
   const [trendingProducts, setTrendingProducts] = useState([])
@@ -156,7 +157,11 @@ const HomePage = () => {
 
   const getTrendingProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`);
+      const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`, {
+          headers: {
+            Authorization: `Bearer ${userState.token}`,
+          },
+        });
         if(!res.ok){
           const error = await res.json()
           console.error("Could not fetch Trending Products:", error.error);
@@ -173,7 +178,11 @@ const HomePage = () => {
 
   const getRecentlyOrderedProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/recently-ordered?limit=${limit}`);
+      const res = await fetch(`http://localhost:3000/products/recently-ordered?limit=${limit}`, {
+          headers: {
+            Authorization: `Bearer ${userState.token}`,
+          },
+        });
         if(!res.ok){
           const error = await res.json()
           console.error("Could not fetch Recently Ordered Products:", error.error);

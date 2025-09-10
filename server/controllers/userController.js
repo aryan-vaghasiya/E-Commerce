@@ -119,3 +119,15 @@ exports.getReferralInvites = async (req, res) => {
     }
 }
 
+exports.getUserDetails = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const userDetails = await userService.userDetails(userId);
+        return res.status(200).json(userDetails)
+    }
+    catch(err){
+        console.error("Error fetching user details: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}

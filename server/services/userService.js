@@ -261,3 +261,41 @@ exports.allInvites = async (userId) => {
 
     return invites
 }
+
+exports.userDetails = async (userId) => {
+    const [details] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
+
+    const [{totalOrders, totalSpent}] = await runQuery(`SELECT COALESCE(COUNT(*), 0) AS totalOrders, COALESCE(SUM(final_total), 0) AS totalSpent FROM orders WHERE user_id = ?`, [userId])
+
+    const [{wishlistItems}] = await runQuery(`SELECT
+                                            COUNT(wi.product_id) AS wishlistItems
+                                        FROM wishlists w
+                                        JOIN wishlist_items wi
+                                            ON w.id = wi.wishlist_id
+                                        WHERE w.user_id = ? 
+                                            AND w.name = ?`, [userId, "My Wishlist"])
+
+    const [{walletBalance}] = await runQuery(`SELECT balance AS walletBalance FROM wallets WHERE user_id = ?`, [userId])
+
+    const userDetails = {
+        first_name: details.first_name,
+        last_name: details.last_name,
+        email: details.email,
+        phone: details.number,
+        addLine1: details.addLine1,
+        addLine2: details.addLine2,
+        state: details.state,
+        city: details.city,
+        pincode: details.pincode,
+        joinedDate: details.created_at,
+        totalOrders, 
+        totalSpent, 
+        wishlistItems, 
+        walletBalance
+    }
+
+    // console.log(userDetails);
+    return userDetails
+}
+
+this.userDetails(18)

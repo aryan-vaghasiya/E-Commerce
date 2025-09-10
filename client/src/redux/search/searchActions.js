@@ -26,10 +26,15 @@ export const setPageSearch = (page) => {
 export const searchProducts = (query) => {
     return (dispatch, getState) => {
         const currentPage = getState().searchReducer.currentPage
+        const token = getState().userReducer.token
         dispatch(searchRequest())
         setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:3000/products/search?query=${query}&page=${currentPage}&limit=24`);
+                const res = await fetch(`http://localhost:3000/products/search?query=${query}&page=${currentPage}&limit=24`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 if(!res.ok){
                     const error = await res.json()
                     console.error("Could not fetch Search Results:", error.error);

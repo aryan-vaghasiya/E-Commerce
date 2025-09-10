@@ -17,6 +17,7 @@ const dotenv = require('dotenv');
 const { sendMail } = require("./mailer/sendMail")
 const adminServices = require("./services/adminServices")
 const referralRoutes = require("./routes/referralRoutes")
+const profileRoutes = require("./routes/profileRoutes")
 
 dotenv.config();
 const app = express();
@@ -84,7 +85,7 @@ app.use("/wishlist", verifyToken, wishlistRoutes);
 app.use("/wallet", verifyToken, walletRoutes);
 
 app.use("/referral", verifyToken, referralRoutes);
-// app.use("/profile", verifyToken, profileRoutes);
+app.use("/profile", verifyToken, profileRoutes);
 
 app.listen(port, () => {
     console.log(`E-commerce app on port ${port}`);
