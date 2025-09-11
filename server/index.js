@@ -54,9 +54,11 @@ cron.schedule('*/5 * * * *', async () => {
     campaignRunning = true
     try{
         console.log("Checking for pending campaigns every 5 minutes");
-        const campaigns = await runQuery(`SELECT id FROM campaigns 
-                        WHERE status='scheduled' 
-                            AND scheduled_at <= NOW()`);
+        const campaigns = await runQuery(`SELECT 
+                                            id 
+                                        FROM campaigns 
+                                        WHERE status = ?
+                                            AND scheduled_at <= NOW()`, ["scheduled"]);
 
         for (let campaign of campaigns) {
             await adminServices.sendCampaignEmailService(campaign.id);

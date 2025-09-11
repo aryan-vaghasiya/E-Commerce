@@ -25,7 +25,7 @@ const persistConfig = {
     // whitelist: ["userReducer", "detailsReducer"]
 }
 
-const rootReducer = combineReducers({productReducer, cartReducer, userReducer, detailsReducer, snackbarReducer, searchReducer, wishlistReducer})
+const rootReducer = combineReducers({productReducer, cartReducer, userReducer, detailsReducer, snackbarReducer, searchReducer})
 // const rootReducer = combineReducers({productReducer, cartReducer, userReducer, orderReducer, detailsReducer, snackbarReducer, searchReducer, wishlistReducer, dashboardReducer, adminOrdersReducer, adminProductsReducer})
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

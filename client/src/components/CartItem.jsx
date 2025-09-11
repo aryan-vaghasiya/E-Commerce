@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux'
-import {addToCart, removeCartItem, removeFromCart} from '../redux/cart/cartActions'
+import {addToCart, removeCartItem, removeFromCart, saveForLater} from '../redux/cart/cartActions'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -40,7 +40,10 @@ function CartItem({item}) {
                             <Typography>Item Value: ${item.priceValue?.toFixed(2)}</Typography>
                             {item.stock > 0 && item.status === "active"?
                                 <Box textAlign={"center"} sx={{mt: {xs: 1, sm: 0}}}>
-                                    <Box sx={{display: "flex", justifyContent: "center"}}>
+                                    <Box sx={{display: "flex", justifyContent: "center", gap: 1,}}>
+                                        <Box>
+                                            <Button variant='outlined' onClick={() => dispatch(saveForLater(item))}>Save for Later</Button>
+                                        </Box>
                                         <Box sx={{bgcolor: "#EEEEEE", borderRadius: 5}} >
                                             <Button 
                                                 variant='contained' 

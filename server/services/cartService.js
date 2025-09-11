@@ -1,5 +1,6 @@
 const runQuery = require("../db")
 const cartUtils = require("../utils/cartUtils")
+const wishlistService = require("../services/wishlistServices")
 
 exports.addCartService = async (productId, userId) => {
     let cartId;
@@ -18,6 +19,13 @@ exports.addCartService = async (productId, userId) => {
         cartId = addResult.insertId;
         await cartUtils.addQuantity(cartId, productId, userId);
     }
+    const removeSavedForLater = await runQuery(
+        `DELETE wi
+            FROM wishlist_items wi
+            JOIN wishlists w ON wi.wishlist_id = w.id
+            WHERE w.user_id = ? AND w.name = ? AND wi.product_id = ?`,
+        [userId, "save_for_later", productId]
+    );
 }
 
 exports.addCartBulkService = async (userId, items) => {
@@ -68,6 +76,13 @@ exports.addCartBulkService = async (userId, items) => {
                 )
             );
         }
+        const removeSavedForLater = await runQuery(
+            `DELETE wi
+                FROM wishlist_items wi
+                JOIN wishlists w ON wi.wishlist_id = w.id
+                WHERE w.user_id = ? AND w.name = ? AND wi.product_id = ?`,
+            [userId, "save_for_later", productId]
+    );
     }
 
     const results = await Promise.all([...updates, ...inserts]);
@@ -140,21 +155,13 @@ exports.getCartService = async(userId) => {
                                         AND (pd.start_time IS NULL OR pd.start_time <= NOW())
                                         AND (pd.end_time IS NULL OR pd.end_time > NOW())
                                     `, [userId]);
-                                    // WHERE ci.user_id = ? AND p.status = ?`, [userId, "active"]);
-    // `SELECT 
-    //     ci.product_id AS id,
-    //     ci.quantity,
-    //     p.title,
-    //     p.description,
-    //     p.price,
-    //     p.rating,
-    //     p.brand,
-    //     p.thumbnail
-    // FROM cart_item ci JOIN products p ON ci.product_id = p.id
-    // WHERE ci.user_id = ?`
+
     if(getCart.length < 0){
         console.error("No cart items Exist");
         return{};
     }
-    return getCart;
+
+    const savedForLater = await wishlistService.getWishlistService(userId, "save_for_later")
+
+    return {items: getCart, saved: savedForLater};
 }

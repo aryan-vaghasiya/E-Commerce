@@ -1,4 +1,5 @@
 const userService = require("../services/userService")
+const orderService = require("../services/orderService")
 
 exports.login = async (req, res) => {
     const { username, password } = req.body;
@@ -131,3 +132,23 @@ exports.getUserDetails = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
+exports.getRecentOrders = async (req, res) => {
+    const userId = req.user.id;
+
+    try{
+        const recentOrders = await userService.recentOrders(userId);
+        return res.status(200).json(recentOrders)
+    }
+    catch(err){
+        console.error("Error fetching recent orders: ", err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// const now = async() => {
+//     const recentOrders = await orderService.getOrdersService(18, 1, 3, 0);
+//     console.log(recentOrders);
+// }
+
+// now()

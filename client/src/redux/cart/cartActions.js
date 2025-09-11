@@ -1,19 +1,5 @@
-import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM } from "./cartTypes";
+import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER } from "./cartTypes";
 import { showSnack } from "../snackbar/snackbarActions";
-
-// export const addToCartLocal = (product) => {
-//     return {
-//         type: ADD_TO_CART,
-//         payload: product
-//     }
-// }
-
-// export const removeFromCartLocal = (product) => {
-//     return {
-//         type: REMOVE_FROM_CART,
-//         payload: product
-//     }
-// }
 
 export const emptyCart = () => {
     return {
@@ -32,8 +18,6 @@ export const addToCart = (product) => {
     return async (dispatch, getState) => {
         if(getState().cartReducer.items.some(item => item.id === product.id)){
             const [quantity] = getState().cartReducer.items.filter(item => item.id === product.id)
-            // console.log(quantity.quantity);
-            
             if(product.stock<=quantity.quantity){
                 dispatch(showSnack({message: "No more products in inventory", severity: "warning"}))
                 return
@@ -42,12 +26,9 @@ export const addToCart = (product) => {
         const token = getState().userReducer.token
         if(!token){
             dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
-            // console.log("Please Login");
             return
         }
-        // console.log(token);
         const productId = product.id || product.product_id
-        // console.log("sending to backend", productId);
         const response = await fetch("http://localhost:3000/cart/add", {
             method: "POST",
             headers: {
@@ -70,7 +51,6 @@ export const addToCart = (product) => {
 export const removeFromCart = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
-        // console.log(token);
         const productId = product.id
         const response = await fetch("http://localhost:3000/cart/remove", {
             method: "POST",
@@ -93,7 +73,6 @@ export const removeFromCart = (product) => {
 export const removeCartItem = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
-        // console.log(token); 
         const productId = product.id
         const response = await fetch("http://localhost:3000/cart/remove-item", {
             method: "POST",
@@ -115,7 +94,6 @@ export const removeCartItem = (product) => {
 
 export const fetchCart = (token) => {
     return async (dispatch) => {
-        // const token = getState().userReducer.token
         try {
             const res = await fetch("http://localhost:3000/cart/get-cart", {
                 headers: {
@@ -128,6 +106,8 @@ export const fetchCart = (token) => {
                 return false
             }
             const data = await res.json();
+            console.log(data);
+            
             dispatch(cartFromDb(data));
         } 
         catch (err) {
@@ -135,3 +115,33 @@ export const fetchCart = (token) => {
         }
     };
 };
+
+export const saveForLater = (product) => {
+    return async (dispatch, getState) => {
+
+        const token = getState().userReducer.token
+        if(!token){
+            dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
+            return
+        }
+
+        const productId = product.id
+        const response = await fetch("http://localhost:3000/wishlist/add/save-for-later", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({productId})
+        })
+        if(!response.ok){
+            const error = await response.json()
+            console.error("Could not add to Save for later:", error.error);
+            return false
+        }
+        dispatch({type: SAVE_FOR_LATER, payload: product})
+        dispatch({type: REMOVE_CART_ITEM, payload: product})
+        dispatch(showSnack({message: "Item Saved for Later", severity: "success"}))
+        return true
+    }
+}

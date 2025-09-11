@@ -2,40 +2,6 @@ const runQuery = require("../db");
 const dayjs = require("dayjs");
 
 exports.getAllProducts = async(page, limit, offset, userId) => {
-    // const results = await runQuery(`SELECT 
-    //     p.*, 
-    //     c.category,
-    //     pp.mrp, 
-    //     pp.discount, 
-    //     i.stock,
-    //     pd.discount_type,
-    //     CASE 
-    //         WHEN pd.offer_price IS NOT NULL 
-    //             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-    //         ELSE NULL
-    //     END AS offer_discount,
-    //     CASE 
-    //         WHEN pd.offer_price IS NOT NULL 
-    //             THEN pd.offer_price
-    //         ELSE pp.price
-    //     END AS price
-
-    //     FROM products p 
-    //         JOIN product_inventory i 
-    //             ON p.id = i.product_id
-    //         JOIN categories c 
-    //             ON c.id = p.category_id
-    //         JOIN product_pricing pp    
-    //             ON pp.product_id = p.id
-    //             AND p.status = ?
-    //             AND NOW() BETWEEN pp.start_time AND pp.end_time
-    //         LEFT JOIN product_discounts pd
-    //             ON pd.product_id = p.id
-    //             AND pd.is_active = 1
-    //             AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-    //             AND (pd.end_time IS NULL OR pd.end_time > NOW())
-    //         LIMIT ? OFFSET ?`, ["active", limit, offset]);
-
     const products = await runQuery(`SELECT id FROM products ORDER BY id ASC LIMIT ? OFFSET ?`, [limit, offset])
     const productIds = products.map(item => item.id)
 
@@ -64,43 +30,9 @@ exports.getSearchedProducts = async (page, limit, offset, query, userId) => {
     const products = await runQuery(`SELECT id FROM products WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) LIMIT ? OFFSET ?`, [query, query, limit, offset])
     const productIds = products.map(item => item.id)
 
-
-    // const results = await runQuery(`SELECT 
-    //     p.*, 
-    //     c.category,
-    //     pp.mrp, 
-    //     pp.discount, 
-    //     i.stock,
-    //     pd.discount_type,
-    //     CASE 
-    //         WHEN pd.offer_price IS NOT NULL 
-    //             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-    //         ELSE NULL
-    //     END AS offer_discount,
-    //     CASE 
-    //         WHEN pd.offer_price IS NOT NULL 
-    //             THEN pd.offer_price
-    //         ELSE pp.price
-    //     END AS price
-
-    //     FROM products p 
-    //     JOIN product_inventory i ON p.id = i.product_id 
-    //     JOIN categories c ON c.id = p.category_id
-    //     JOIN product_pricing pp ON pp.product_id = p.id 
-    //         AND NOW() BETWEEN pp.start_time AND pp.end_time
-    //     LEFT JOIN product_discounts pd ON pd.product_id = p.id
-    //         AND pd.is_active = 1
-    //         AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-    //         AND (pd.end_time IS NULL OR pd.end_time > NOW())
-
-    //     WHERE (p.title LIKE CONCAT('%', ?, '%') OR p.description LIKE CONCAT('%', ?, '%'))
-    //     AND p.status = ? 
-    //     LIMIT ? OFFSET ?`, [query, query, "active", limit, offset]);
-
     const results = await this.getProductsByIdsHelper(productIds, userId)
 
     if(results.length === 0){
-        // throw new Error ("Could not select searched products")
         return {}
     }
 
@@ -152,49 +84,6 @@ exports.getRecentlyOrderedProducts = async (limit, userId) => {
 }
 
 exports.getSingleProduct = async(productId, userId) => {
-    // const results = await runQuery(`SELECT 
-    //                                     p.*,
-    //                                     c.category,
-    //                                     pp.mrp, 
-    //                                     pp.discount, 
-    //                                     i.stock,
-    //                                     pd.discount_type,
-    //                                     pd.start_time,
-    //                                     pd.end_time,
-    //                                     CASE 
-    //                                         WHEN wi.product_id IS NOT NULL 
-    //                                             THEN true 
-    //                                         ELSE false 
-    //                                     END AS wishlisted,
-    //                                     CASE 
-    //                                         WHEN pd.offer_price IS NOT NULL 
-    //                                             THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-    //                                         ELSE NULL
-    //                                     END AS offer_discount,
-    //                                     CASE 
-    //                                         WHEN pd.offer_price IS NOT NULL 
-    //                                             THEN pd.offer_price
-    //                                         ELSE pp.price
-    //                                     END AS price
-    //                                 FROM products p 
-    //                                 JOIN product_inventory i 
-    //                                     ON p.id = i.product_id 
-    //                                 JOIN categories c
-    //                                     ON c.id = p.category_id 
-    //                                 JOIN product_pricing pp 
-    //                                     ON pp.product_id = p.id 
-    //                                     AND p.id = ? 
-    //                                     AND NOW() BETWEEN pp.start_time AND pp.end_time
-    //                                 LEFT JOIN product_discounts pd ON pd.product_id = p.id
-    //                                     AND pd.is_active = 1
-    //                                     AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-    //                                     AND (pd.end_time IS NULL OR pd.end_time > NOW())
-    //                                 LEFT JOIN wishlist_items wi
-    //                                     ON p.id = wi.product_id AND wi.wishlist_id = (
-    //                                         SELECT id FROM wishlists WHERE user_id = ? AND name = ?
-    //                                     )`, 
-    //                                 [productId, userId, "My Wishlist"]);
-
     const results = await this.getProductsByIdsHelper([productId], userId)
 
     if(results.length === 0){
@@ -212,7 +101,8 @@ exports.getSingleProduct = async(productId, userId) => {
 }
 
 exports.getProductsByIdsHelper = async (productIds, userId = null) => {
-    const products = await runQuery(`SELECT 
+    const products = await runQuery(`
+    SELECT 
         p.*, 
         c.category,
         pp.mrp, 
@@ -254,7 +144,8 @@ exports.getProductsByIdsHelper = async (productIds, userId = null) => {
                     SELECT id FROM wishlists WHERE user_id = ? AND name = ?
                 )
             WHERE p.id IN (?)
-            ORDER BY FIELD(p.id, ?)`, ["active", userId, "My Wishlist", productIds, productIds]);
+            ORDER BY FIELD(p.id, ?)
+    `, ["active", userId, "my_wishlist", productIds, productIds]);
 
     return products
 }

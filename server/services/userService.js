@@ -273,11 +273,12 @@ exports.userDetails = async (userId) => {
                                         JOIN wishlist_items wi
                                             ON w.id = wi.wishlist_id
                                         WHERE w.user_id = ? 
-                                            AND w.name = ?`, [userId, "My Wishlist"])
+                                            AND w.name = ?`, [userId, "my_wishlist"])
 
     const [{walletBalance}] = await runQuery(`SELECT balance AS walletBalance FROM wallets WHERE user_id = ?`, [userId])
 
     const userDetails = {
+        username: details.username,
         first_name: details.first_name,
         last_name: details.last_name,
         email: details.email,
@@ -298,4 +299,8 @@ exports.userDetails = async (userId) => {
     return userDetails
 }
 
-this.userDetails(18)
+exports.recentOrders = async (userId, limit = 3) => {
+    const getOrders = await runQuery(`SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT ?`, [userId, limit])
+
+    return getOrders
+}
