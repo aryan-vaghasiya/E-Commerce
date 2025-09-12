@@ -1,3 +1,4 @@
+import { addProductToWishlist, removeProductFromWishlist } from "../products/productActions";
 import { showSnack } from "../snackbar/snackbarActions";
 import { ADD_TO_WISHLIST, REMOVE_FROM_WISHLIST, GET_FULL_WISHLIST, SET_FULL_WISHLIST } from "./wishlistTypes"; 
 
@@ -30,9 +31,7 @@ export const addWishlistDb = (product) => {
             console.log("Please Login");
             return 
         }
-        // console.log(token);
         const productId = product.id
-        // console.log("sending to backend", productId);
         const response = await fetch("http://localhost:3000/wishlist/add", {
             method: "POST",
             headers: {
@@ -46,7 +45,8 @@ export const addWishlistDb = (product) => {
             console.error("Could not add to Wishlist:", error.error);
             return false
         }
-        dispatch(addToWishlist(product))
+        dispatch(addProductToWishlist(product))
+        // dispatch(addToWishlist(product))
         dispatch(showSnack({message: "Item added to Wishlist", severity: "success"}))
         return true
     }
@@ -60,9 +60,7 @@ export const removeWishlistDb = (product) => {
             console.log("Please Login");
             return 
         }
-        // console.log(token);
         const productId = product.id
-        // console.log("sending to backend", productId);
         const response = await fetch("http://localhost:3000/wishlist/remove", {
             method: "POST",
             headers: {
@@ -76,7 +74,8 @@ export const removeWishlistDb = (product) => {
             console.error("Could not remove from Wishlist:", error.error);
             return false
         }
-        dispatch(removeFromWishlist(product))
+        dispatch(removeProductFromWishlist(product))
+        // dispatch(removeFromWishlist(product))
         dispatch(showSnack({message: "Item removed from Wishlist", severity: "success"}))
         return true
     }

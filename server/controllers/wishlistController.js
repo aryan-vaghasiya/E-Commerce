@@ -18,9 +18,10 @@ exports.addWishlistItem = async (req, res) => {
 exports.removeWishlistItem = async (req, res) => {
     const productId = req.body.productId
     const userId = req.user.id;
+    const name = req.body.name || "my_wishlist"
 
     try{
-        await wishlistService.removeWishlistService(productId, userId)
+        await wishlistService.removeWishlistService(productId, userId, name)
         res.status(200).json({ message: "Wishlist Item removed"});
     }
     catch(err){

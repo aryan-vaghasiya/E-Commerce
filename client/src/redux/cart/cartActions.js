@@ -1,4 +1,4 @@
-import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER } from "./cartTypes";
+import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER, REMOVE_FROM_SAVE_FOR_LATER } from "./cartTypes";
 import { showSnack } from "../snackbar/snackbarActions";
 
 export const emptyCart = () => {
@@ -11,6 +11,13 @@ export const cartFromDb = (cartItems) => {
     return{
         type: CART_FROM_DB,
         payload: cartItems
+    }
+}
+
+export const removeFromSavedForLater = (product) => {
+    return{
+        type: REMOVE_FROM_SAVE_FOR_LATER,
+        payload: product
     }
 }
 
@@ -107,7 +114,6 @@ export const fetchCart = (token) => {
             }
             const data = await res.json();
             console.log(data);
-            
             dispatch(cartFromDb(data));
         } 
         catch (err) {
@@ -121,7 +127,7 @@ export const saveForLater = (product) => {
 
         const token = getState().userReducer.token
         if(!token){
-            dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
+            dispatch(showSnack({message: "Restricted action, please login", severity: "warning"}))
             return
         }
 

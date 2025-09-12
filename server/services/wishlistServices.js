@@ -41,7 +41,17 @@ exports.removeWishlistService = async (productId, userId, name = "my_wishlist") 
 
 exports.getWishlistService = async(userId, name = "my_wishlist") => {
 
-    // const getAllWishlists = 
+    const [{noOfItems}] = await runQuery(`
+        SELECT 
+            COUNT(wi.product_id) AS noOfItems
+        FROM wishlists w 
+        JOIN wishlist_items wi 
+            ON w.id = wi.wishlist_id 
+        WHERE w.user_id = ?
+            AND w.name = ?
+        `, [userId, "my_wishlist"])
+
+    // console.log(noOfItems);
 
     const getItems = await runQuery(`SELECT 
                                         ws.id as wishlistId,
@@ -86,5 +96,5 @@ exports.getWishlistService = async(userId, name = "my_wishlist") => {
         console.error("No wishlist items Exist");
         return[];
     }
-    return getItems;
+    return {noOfItems, items: getItems };
 }

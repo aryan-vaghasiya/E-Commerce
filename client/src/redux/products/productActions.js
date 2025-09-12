@@ -1,8 +1,22 @@
-import { FETCH_PRODUCTS_REQUEST, FETCH_PRODUCTS_SUCCESS, FETCH_PRODUCTS_FAILED, SET_CURRENT_PAGE_ALL } from "./productTypes";
+import { FETCH_PRODUCTS_REQUEST, FETCH_PRODUCTS_SUCCESS, FETCH_PRODUCTS_FAILED, SET_CURRENT_PAGE_ALL, ADD_PRODUCT_TO_WISHLIST, REMOVE_PRODUCT_FROM_WISHLIST } from "./productTypes";
 
 export const productsRequest = () => {
     return{
         type: FETCH_PRODUCTS_REQUEST
+    }
+}
+
+export const addProductToWishlist = (item) => {
+    return{
+        type: ADD_PRODUCT_TO_WISHLIST,
+        payload: item
+    }
+}
+
+export const removeProductFromWishlist = (item) => {
+    return{
+        type: REMOVE_PRODUCT_FROM_WISHLIST,
+        payload: item
     }
 }
 

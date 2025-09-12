@@ -1,4 +1,4 @@
-import { ADD_TO_CART, EMPTY_CART, REMOVE_FROM_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER} from "./cartTypes";
+import { ADD_TO_CART, EMPTY_CART, REMOVE_FROM_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER, REMOVE_FROM_SAVE_FOR_LATER} from "./cartTypes";
 
 const initCart = {
     noOfItems: 0,
@@ -14,7 +14,7 @@ const cartReducer = (state=initCart, action) => {
             if(!state.items?.find(prod=> prod.id === action.payload.id)){
                 return{
                     noOfItems: state.noOfItems + 1,
-                    items: [...state.items, {...action.payload, quantity: 1, priceValue: action.payload.price}],
+                    items: [{...action.payload, quantity: 1, priceValue: action.payload.price}, ...state.items],
                     saved: [...state.saved],
                     cartValue: parseFloat((state.cartValue + action.payload.price).toFixed(2))
                 }
@@ -30,8 +30,8 @@ const cartReducer = (state=initCart, action) => {
                                         priceValue: parseFloat(((item.quantity+1)*item.price).toFixed(2))
                                     }
                                 }
-                                return item
-                                }),
+                            return item
+                            }),
                     saved: [...state.saved],
                     cartValue: parseFloat((state.cartValue + action.payload.price).toFixed(2))
                 }
@@ -106,11 +106,19 @@ const cartReducer = (state=initCart, action) => {
                 cartValue: Math.round(cartTotal * 100) / 100
             }
 
-        case SAVE_FOR_LATER: 
+        case SAVE_FOR_LATER:
             return{
                 noOfItems: state.noOfItems,
                 items: [...state.items],
                 saved: state.saved.some((p) => p.id === action.payload.id) ? [...state.saved] : [{...action.payload, quantity: 1, priceValue: action.payload.price}, ...state.saved],
+                cartValue: state.cartValue
+            }
+
+        case REMOVE_FROM_SAVE_FOR_LATER:
+            return{
+                noOfItems: state.noOfItems,
+                items: [...state.items],
+                saved: state.saved.filter(p => p.id !== action.payload.id),
                 cartValue: state.cartValue
             }
 

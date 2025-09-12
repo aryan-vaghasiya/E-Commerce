@@ -1,6 +1,7 @@
 const runQuery = require("../db")
 const cartUtils = require("../utils/cartUtils")
 const wishlistService = require("../services/wishlistServices")
+const productService = require("../services/productService")
 
 exports.addCartService = async (productId, userId) => {
     let cartId;
@@ -82,7 +83,7 @@ exports.addCartBulkService = async (userId, items) => {
                 JOIN wishlists w ON wi.wishlist_id = w.id
                 WHERE w.user_id = ? AND w.name = ? AND wi.product_id = ?`,
             [userId, "save_for_later", productId]
-    );
+        );
     }
 
     const results = await Promise.all([...updates, ...inserts]);
@@ -116,52 +117,129 @@ exports.removeCartItemService = async (productId, userId) => {
 }
 
 exports.getCartService = async(userId) => {
+
+    // const getCartItems = await runQuery(`
+    //     SELECT
+    //         ci.product_id
+    //     FROM cart c
+    //         JOIN cart_item ci
+    //             ON c.id = ci.cart_id
+    //     WHERE c.user_id = ?
+    //         AND c.status = ?
+    //     ORDER BY ci.id DESC
+    //     `, [userId, "active"])
+
+    // const cartProductIds = getCartItems.map(product => product.product_id)
+
+    // const getSavedItems = await runQuery(`
+    //     SELECT
+    //         wi.product_id
+    //     FROM wishlists w
+    //         JOIN wishlist_items wi
+    //             ON w.id = wi.wishlist_id
+    //     WHERE w.user_id = ?
+    //         AND w.name = ?
+    //     `, [userId, "save_for_later"]);
+    
+    // const savedProductIds = getSavedItems.map(product => product.product_id)
+
     const getCart = await runQuery(`SELECT 
-                                        ci.product_id AS id,
-                                        ci.quantity,
-                                        p.title,
-                                        p.description,
-                                        pp.discount,
-                                        pd.discount_type,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                                            ELSE NULL
-                                        END AS offer_discount,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN pd.offer_price
-                                            ELSE pp.price
-                                        END AS price,
-                                        pp.mrp,
-                                        pp.discount,
-                                        p.rating, 
-                                        p.status,
-                                        pi.stock,
-                                        p.brand,
-                                        p.thumbnail,
-                                        c.category
-									FROM products p JOIN product_inventory pi ON p.id = pi.product_id
-                                    JOIN cart_item ci 
-                                        ON p.id = ci.product_id
-                                    JOIN categories c
-                                        ON c.id = p.category_id
-                                    JOIN product_pricing pp 
-                                        ON pp.product_id = p.id
-                                        AND ci.user_id = ? 
-                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
-                                    LEFT JOIN product_discounts pd ON pd.product_id = p.id
-                                        AND pd.is_active = 1
-                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
-                                    `, [userId]);
+        ci.product_id AS id,
+        ci.quantity,
+        p.title,
+        p.description,
+        pp.discount,
+        pd.discount_type,
+        CASE 
+            WHEN pd.offer_price IS NOT NULL 
+                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+            ELSE NULL
+        END AS offer_discount,
+        CASE 
+            WHEN pd.offer_price IS NOT NULL 
+                THEN pd.offer_price
+            ELSE pp.price
+        END AS price,
+        pp.mrp,
+        pp.discount,
+        p.rating, 
+        p.status,
+        pi.stock,
+        p.brand,
+        p.thumbnail,
+        c.category
+    FROM products p JOIN product_inventory pi ON p.id = pi.product_id
+    JOIN cart_item ci 
+        ON p.id = ci.product_id
+    JOIN categories c
+        ON c.id = p.category_id
+    JOIN product_pricing pp 
+        ON pp.product_id = p.id
+        AND ci.user_id = ? 
+        AND NOW() BETWEEN pp.start_time AND pp.end_time
+    LEFT JOIN product_discounts pd ON pd.product_id = p.id
+        AND pd.is_active = 1
+        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+    ORDER BY ci.id DESC
+    `, [userId]);
 
-    if(getCart.length < 0){
-        console.error("No cart items Exist");
-        return{};
-    }
+    const getSaved = await runQuery(`
+        SELECT 
+            wi.product_id AS id,
+            1 AS quantity,
+            p.title,
+            p.description,
+            pp.discount,
+            pd.discount_type,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                ELSE NULL
+            END AS offer_discount,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN pd.offer_price
+                ELSE pp.price
+            END AS price,
+            pp.mrp,
+            pp.discount,
+            p.rating, 
+            p.status,
+            pi.stock,
+            p.brand,
+            p.thumbnail,
+            c.category
+        FROM wishlists w 
+        JOIN wishlist_items wi
+            ON w.id = wi.wishlist_id
+            AND w.user_id = ?
+            AND w.name = ?
+        JOIN products p
+            ON wi.product_id = p.id
+        JOIN product_inventory pi 
+            ON p.id = pi.product_id
+        JOIN categories c
+            ON c.id = p.category_id
+        JOIN product_pricing pp 
+            ON pp.product_id = p.id
+            AND NOW() BETWEEN pp.start_time AND pp.end_time
+        LEFT JOIN product_discounts pd ON pd.product_id = p.id
+            AND pd.is_active = 1
+            AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+            AND (pd.end_time IS NULL OR pd.end_time > NOW())
+        ORDER BY wi.id DESC
+        `, [userId, "save_for_later"]);
 
-    const savedForLater = await wishlistService.getWishlistService(userId, "save_for_later")
+    // if(getCart.length < 0){
+    //     console.error("No cart items Exist");
+    //     return{};
+    // }
 
-    return {items: getCart, saved: savedForLater};
+    // const savedForLater = await wishlistService.getWishlistService(userId, "save_for_later")
+
+    // const items = await productService.getProductsByIdsHelper(cartProductIds, userId)
+    // const saved = await productService.getProductsByIdsHelper(savedProductIds, userId)
+
+    return {items: getCart, saved: getSaved}
 }

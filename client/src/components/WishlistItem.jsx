@@ -13,8 +13,13 @@ import { removeWishlistDb } from '../redux/wishlist/wishlistActions'
 import { getImageUrl } from '../utils/imageUrl'
 import { addToCart } from '../redux/cart/cartActions'
 
-function WishlistItem({item}) {
+function WishlistItem({item, onRemove}) {
 const dispatch = useDispatch()
+
+    const handleRemove = () => {
+        dispatch(removeWishlistDb(item))
+        onRemove(item.id)
+    }
 
     const handleAddToCart = () => {
         dispatch(addToCart(item))
@@ -51,7 +56,8 @@ const dispatch = useDispatch()
                 <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 5 }}>
                     <Tooltip title="Remove from Wishlist">
                         <Button 
-                            onClick={() => dispatch(removeWishlistDb(item))}
+                            // onClick={() => dispatch(removeWishlistDb(item))}
+                            onClick={handleRemove}
                             sx={{ minWidth: "auto", p: 1 }}
                         >
                             <DeleteIcon />
