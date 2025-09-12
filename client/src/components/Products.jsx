@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts, setPageAll } from "../redux/products/productActions";
-import ProductItem from "./ProductItem";
+import ProductCard from "./ProductCard";
 
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -70,7 +70,7 @@ const Products = () => {
                         productsState.isLoading || searchState.isLoading? (
                             Array.from(Array(24)).map((_, index) => (
                                 <Grid key={index} size={{ sm: 4, md: 4, lg: 3 }}>
-                                    <ProductItem loading={true} />
+                                    <ProductCard loading={true} />
                                 </Grid>
                             ))
                         )
@@ -79,7 +79,7 @@ const Products = () => {
                         (
                             productsToShow.map((product) => (
                                 <Grid key={product.id} size={{ sm: 4, md: 4, lg: 3 }}>
-                                    <ProductItem product={product} loading={false} />
+                                    <ProductCard product={product} loading={false} />
                                 </Grid>
                             ))
                         )

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import ProductItem from "./ProductItem";
+import ProductCard from "./ProductCard";
 
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -56,7 +56,7 @@ function ProductsSearched() {
                     (
                         filtered.map((product) => (
                             <Grid key={product.id} size={{ sm: 4, md: 4, lg: 3 }}>
-                                <ProductItem product={product} loading={false} />
+                                <ProductCard product={product} loading={false} />
                             </Grid>
                         ))
                     )

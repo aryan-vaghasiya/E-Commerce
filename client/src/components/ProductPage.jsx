@@ -22,7 +22,6 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
 import styled from 'styled-components'
-import { ButtonBlue } from './ProductItem'
 import { addWishlistDb, removeWishlistDb } from '../redux/wishlist/wishlistActions'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { getImageUrl } from '../utils/imageUrl'
@@ -33,10 +32,7 @@ import OfferTimeLeft from './OfferTimeLeft'
 // dayjs.extend(relativeTime)
 // dayjs.extend(duration)
 
-const ButtonRed = styled(ButtonBlue)`
-background-color: red;
-color: white;
-`
+// ButtonRed is not used in the current implementation
 
 function ProductPage() {
 
