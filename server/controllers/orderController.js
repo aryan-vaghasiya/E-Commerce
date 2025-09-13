@@ -6,8 +6,20 @@ exports.getOrders = async (req, res) => {
     const limit = parseInt(req.query.limit);
     const offset = (page - 1) * limit
 
+    const queryParams = {...req.query, page, limit, offset}
+
+    // const dateOption = req.query.dateOption
+    // const endDate = req.query.endDate
+    // const maxAmount = req.query.maxAmount
+    // const minAmount = req.query.minAmount
+    // const orderBy = req.query.orderBy
+    // const sortBy = req.query.sortBy
+    // const startDate = req.query.startDate
+    // const status = req.query.status
+
     try{
-        const ordersData = await orderService.getOrdersService(userId, page, limit, offset);
+        const ordersData = await orderService.getOrdersService(userId, queryParams);
+        // const ordersData = await orderService.getOrdersService(userId, page, limit, offset);
         return res.status(200).json(ordersData);
     }
     catch(err){

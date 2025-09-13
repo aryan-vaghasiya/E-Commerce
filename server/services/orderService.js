@@ -170,9 +170,119 @@ exports.addOrder = async(userId, order, coupon) => {
 }
 
 
-exports.getOrdersService = async (userId, page, limit, offset) => {
+// exports.getOrdersService = async (userId, page, limit, offset) => {
+exports.getOrdersService = async (userId, queryParams) => {
 
-    const limitedOrders = await runQuery(`SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
+    const {
+        page,
+        limit,
+        offset,
+        dateOption,
+        startDate,
+        endDate,
+        minAmount,
+        maxAmount,
+        orderBy,
+        sortBy,
+        status
+    } = queryParams;
+
+    console.log({
+        page,
+        limit,
+        offset,
+        dateOption,
+        startDate,
+        endDate,
+        minAmount,
+        maxAmount,
+        orderBy,
+        sortBy,
+        status
+    });
+
+    let whereClause = ` WHERE user_id = ?`
+    let orderByClause = ""
+    const params = [userId]
+    const countQueryParams = [userId];
+
+    // if (!orderByClause) {
+    //     orderByClause = " ORDER BY order_date DESC";
+    // }
+
+    if (sortBy) {
+        if (sortBy === "date") orderByClause = " ORDER BY order_date";
+        else if (sortBy === "amount") orderByClause = " ORDER BY final_total";
+    }
+
+    if (orderBy && orderByClause) {
+        const dir = String(orderBy).toUpperCase() === "DESC" ? "DESC" : "ASC";
+        orderByClause += ` ${dir}`;
+    }
+
+    if(dateOption && dateOption !== "custom"){
+        if(dateOption === "last7days"){
+            const day = dayjs().startOf('day').subtract(7, 'day').format("YYYY-MM-DD HH:mm:ss")
+            whereClause += ` AND order_date >= ?`;
+            console.log(day);
+            
+            params.push(day);
+            countQueryParams.push(day)
+        }
+        if(dateOption === "last3months"){
+            const day = dayjs().startOf('day').subtract(3, 'month').format("YYYY-MM-DD HH:mm:ss")
+            whereClause += ` AND order_date >= ?`;
+            console.log(day);
+
+            params.push(day);
+            countQueryParams.push(day)
+        }
+
+        if(dateOption === "thisYear"){
+            const day = dayjs().startOf('year').format("YYYY-MM-DD HH:mm:ss")
+            whereClause += ` AND order_date >= ?`;
+            params.push(day);
+            countQueryParams.push(day)
+        }
+    }
+
+    if(dateOption === "custom" && startDate && endDate){
+        const start = dayjs(startDate).format("YYYY-MM-DD HH:mm:ss")
+        const end = dayjs(endDate).format("YYYY-MM-DD HH:mm:ss")
+
+        whereClause += ` AND order_date BETWEEN ? AND ?`;
+        params.push(start, end);
+        countQueryParams.push(start, end)
+    }
+
+    if(minAmount){
+        whereClause += ` AND final_total >= ?`;
+        params.push(minAmount);
+        countQueryParams.push(minAmount)
+    }
+
+    if(maxAmount){
+        whereClause += ` AND final_total <= ?`;
+        params.push(maxAmount);
+        countQueryParams.push(maxAmount)
+    }
+
+    if(status && status !== "All"){
+        whereClause += ` AND status = ?`;
+        params.push(status);
+        countQueryParams.push(status)
+    }
+
+    params.push(Number(limit) || 10, Number(offset) || 0);
+
+    console.log(whereClause);
+    console.log(orderByClause);
+    console.log(params);
+
+    // const limitedOrders = await runQuery(`SELECT id FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
+    const limitedOrders = await runQuery(`SELECT id FROM orders ${whereClause} ${orderByClause} LIMIT ? OFFSET ?`,params)
+
+
 
     if(limitedOrders.length === 0){
         console.error("No Orders Exist");
