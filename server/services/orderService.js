@@ -187,20 +187,6 @@ exports.getOrdersService = async (userId, queryParams) => {
         status
     } = queryParams;
 
-    console.log({
-        page,
-        limit,
-        offset,
-        dateOption,
-        startDate,
-        endDate,
-        minAmount,
-        maxAmount,
-        orderBy,
-        sortBy,
-        status
-    });
-
     let whereClause = ` WHERE user_id = ?`
     let orderByClause = ""
     const params = [userId]
@@ -224,7 +210,7 @@ exports.getOrdersService = async (userId, queryParams) => {
         if(dateOption === "last7days"){
             const day = dayjs().startOf('day').subtract(7, 'day').format("YYYY-MM-DD HH:mm:ss")
             whereClause += ` AND order_date >= ?`;
-            console.log(day);
+            // console.log(day);
             
             params.push(day);
             countQueryParams.push(day)
@@ -232,7 +218,7 @@ exports.getOrdersService = async (userId, queryParams) => {
         if(dateOption === "last3months"){
             const day = dayjs().startOf('day').subtract(3, 'month').format("YYYY-MM-DD HH:mm:ss")
             whereClause += ` AND order_date >= ?`;
-            console.log(day);
+            // console.log(day);
 
             params.push(day);
             countQueryParams.push(day)
@@ -275,90 +261,153 @@ exports.getOrdersService = async (userId, queryParams) => {
 
     params.push(Number(limit) || 10, Number(offset) || 0);
 
-    console.log(whereClause);
-    console.log(orderByClause);
-    console.log(params);
+    // console.log(whereClause);
+    // console.log(orderByClause);
+    // console.log(params);
 
     // const limitedOrders = await runQuery(`SELECT id FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
     const limitedOrders = await runQuery(`SELECT id FROM orders ${whereClause} ${orderByClause} LIMIT ? OFFSET ?`,params)
 
+    const [{totalFiltered}] = await runQuery(`SELECT COUNT(id) as totalFiltered FROM orders ${whereClause} ${orderByClause}`,params)
 
+    const [{total}] = await runQuery(`SELECT COUNT(id) as total FROM orders WHERE user_id = ?`,[userId])
 
     if(limitedOrders.length === 0){
-        console.error("No Orders Exist");
-        return{};
+        console.error("No Orders Exist 1");
+        // return{}
+        return {
+            orders: [],
+            currentPage : page,
+            pages: Math.ceil (totalFiltered / limit),
+            totalFiltered,
+            total
+        }
     }
 
     const orderIds = limitedOrders.map(order => order.id)
 
+    const getOrders = await runQuery(
+        `SELECT
+            o.id AS order_id,
+            o.total,
+            o.discount_amount,
+            o.final_total,
+            o.status,
+            SUM(oi.quantity) AS noOfItems,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', p.id,
+                    'quantity', oi.quantity,
+                    'price', oi.purchase_price,
+                    'title', p.title,
+                    'brand', p.brand,
+                    'thumbnail', p.thumbnail,
+                    'rating', p.rating,
+                    'category', c.category
+                )
+            ) AS items
+        FROM orders o
+        JOIN order_item oi ON o.id = oi.order_id
+        JOIN products p   ON oi.product_id = p.id
+        JOIN categories c ON c.id = p.category_id
+        WHERE o.id IN (?)
+        GROUP BY o.id
+        ORDER BY FIELD(o.id, ?)`,
+        [orderIds, orderIds]
+    );
 
-    const getOrders = await runQuery(`SELECT
-                                        oi.order_id,
-                                        oi.product_id AS id,
-                                        oi.quantity, 
-                                        oi.purchase_price AS price,
-                                        p.title, 
-                                        p.description, 
-                                        p.rating, 
-                                        p.brand, 
-                                        p.thumbnail, 
-                                        c.category,
-                                        o.total,
-                                        o.discount_amount,
-                                        o.final_total,
-                                        o.status
-                                    FROM order_item oi 
-                                        JOIN products p 
-                                            ON oi.product_id = p.id
-                                        JOIN categories c 
-                                            ON c.id = p.category_id
-                                        JOIN orders o 
-                                            ON oi.order_id = o.id
-                                        WHERE o.id IN (?)
-                                        ORDER BY FIELD(oi.order_id, ?)`, [orderIds, orderIds]);
-    if(getOrders.length === 0){
-        console.error("Cannot fetch orders");
-        return{};
-    }
     // console.log(getOrders);
 
-    const grouped = {};
-    getOrders.forEach(item => {
-        if (!grouped[item.order_id]) {
-            grouped[item.order_id] = {
-                                        order_id: item.order_id,
-                                        noOfItems: 0,
-                                        items: [],
-                                        final_total: item.final_total,
-                                        cartValue: item.total,
-                                        discount: item.discount_amount,
-                                        status: item.status
-                                    }
-        }
-        grouped[item.order_id].items.push({
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            title: item.title,
-            brand: item.brand,
-            thumbnail: item.thumbnail,
-            rating: item.rating,
-            category: item.category
-        });
-        grouped[item.order_id].noOfItems += item.quantity;
-    });
+    if (getOrders.length === 0) {
+        console.error("Cannot fetch orders");
+        return {};
+    }
 
-    const orders = Object.values(grouped);
+    const orders = getOrders.map(order => ({
+        order_id: order.order_id,
+        noOfItems: order.noOfItems,
+        // items: JSON.parse(order.items),   // parse JSON array
+        items: order.items,
+        final_total: order.final_total,
+        cartValue: order.total,
+        discount: order.discount_amount,
+        status: order.status
+    }));
+
     // console.log(orders);
-
-    const [{total}] = await runQuery(`SELECT COUNT(*) as total FROM orders WHERE user_id = ?`, [userId])
 
     return {
         orders,
-        currentPage : page,
-        pages: Math.ceil (total / limit),
+        currentPage: page,
+        pages: Math.ceil(totalFiltered / limit),
+        totalFiltered,
         total
-    }
+    };
+
+    // const getOrders = await runQuery(`SELECT
+    //                                     oi.order_id,
+    //                                     oi.product_id AS id,
+    //                                     oi.quantity, 
+    //                                     oi.purchase_price AS price,
+    //                                     p.title, 
+    //                                     p.description, 
+    //                                     p.rating, 
+    //                                     p.brand, 
+    //                                     p.thumbnail, 
+    //                                     c.category,
+    //                                     o.total,
+    //                                     o.discount_amount,
+    //                                     o.final_total,
+    //                                     o.status
+    //                                 FROM order_item oi 
+    //                                     JOIN products p 
+    //                                         ON oi.product_id = p.id
+    //                                     JOIN categories c 
+    //                                         ON c.id = p.category_id
+    //                                     JOIN orders o 
+    //                                         ON oi.order_id = o.id
+    //                                     WHERE o.id IN (?)
+    //                                     ORDER BY FIELD(oi.order_id, ?)`, [orderIds, orderIds]);
+    // if(getOrders.length === 0){
+    //     console.error("Cannot fetch orders");
+    //     return{};
+    // }
+
+    // const grouped = {};
+    // getOrders.forEach(item => {
+    //     if (!grouped[item.order_id]) {
+    //         grouped[item.order_id] = {
+    //                                     order_id: item.order_id,
+    //                                     noOfItems: 0,
+    //                                     items: [],
+    //                                     final_total: item.final_total,
+    //                                     cartValue: item.total,
+    //                                     discount: item.discount_amount,
+    //                                     status: item.status
+    //                                 }
+    //     }
+    //     grouped[item.order_id].items.push({
+    //         id: item.id,
+    //         quantity: item.quantity,
+    //         price: item.price,
+    //         title: item.title,
+    //         brand: item.brand,
+    //         thumbnail: item.thumbnail,
+    //         rating: item.rating,
+    //         category: item.category
+    //     });
+    //     grouped[item.order_id].noOfItems += item.quantity;
+    // });
+
+    // const orders = Object.values(grouped);
+
+    // return {
+    //     orders,
+    //     currentPage : page,
+    //     pages: Math.ceil (totalFiltered / limit),
+    //     totalFiltered,
+    //     total
+    // }
 }
 
 

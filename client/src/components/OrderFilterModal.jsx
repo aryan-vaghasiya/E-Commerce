@@ -71,9 +71,20 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
 
     const validateDateRange = (value) => {
         if (dateOption === 'custom' && startDate && endDate) {
-            const diffInMonths = dayjs(endDate).diff(dayjs(startDate), 'month', true)
+            const start = dayjs(startDate);
+            const end = dayjs(endDate);
+
+            // if (start.isAfter(end)) {
+            //     return 'Start date cannot be after end date';
+            // }
+
+            if (end.isBefore(start)) {
+                return 'End date cannot be before start date';
+            }
+
+            const diffInMonths = end.diff(start, 'month', true);
             if (diffInMonths > 12) {
-                return 'Date range cannot exceed 1 year'
+                return 'Date range cannot exceed 1 year';
             }
         }
         return true
@@ -95,6 +106,8 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
 
     // Form submission
     const onSubmit = (data) => {
+        console.log("start",dayjs(data.startDate).format("DD-MM-YYYY HH:mm:ss"));
+        console.log("end",dayjs(data.endDate).format("DD-MM-YYYY HH:mm:ss"));
         // Clean up empty values
         console.log(data);
         const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
@@ -103,6 +116,8 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
             }
             return acc
         }, {})
+
+        console.log(cleanedData);
 
         onApplyFilters(cleanedData)
         onClose()
@@ -134,6 +149,19 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
             trigger("minAmount");
         }
     }, [maxAmount, trigger]);
+
+    useEffect(() => {
+        if (startDate || endDate) {
+            trigger("startDate");
+            trigger("endDate");
+        }
+    }, [startDate, endDate, trigger]);
+
+    // useEffect(() => {
+    //     if (endDate) {
+    //         trigger("startDate");
+    //     }
+    // }, [endDate, trigger]);
 
     return (
             <Dialog
@@ -237,14 +265,13 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                                                     control={control}
                                                     rules={{
                                                         required: dateOption === 'custom' ? 'Start date is required' : false,
-                                                        validate: validateDateRange
+                                                        // validate: validateDateRange,
                                                     }}
                                                     render={({ field }) => (
                                                         <DatePicker
                                                             {...field}
                                                             label="Start Date"
                                                             maxDate={dayjs()}
-                                                            // minDate={dayjs().subtract(1, 'year')}
                                                             slotProps={{
                                                                 textField: {
                                                                     fullWidth: true,
@@ -263,14 +290,15 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                                                     control={control}
                                                     rules={{
                                                         required: dateOption === 'custom' ? 'End date is required' : false,
-                                                        validate: validateDateRange
+                                                        validate: validateDateRange,
+                                                        min: startDate || dayjs().subtract(10, 'year')
                                                     }}
                                                     render={({ field }) => (
                                                         <DatePicker
                                                             {...field}
                                                             label="End Date"
                                                             maxDate={dayjs()}
-                                                            minDate={startDate || dayjs().subtract(1, 'year')}
+                                                            minDate={startDate}
                                                             slotProps={{
                                                                 textField: {
                                                                     fullWidth: true,
@@ -457,7 +485,7 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                             variant='outlined'
                             fullWidth={isMobile}
                         >
-                            Clear All
+                            Restore Default
                         </Button>
                         <Box sx={{ flex: { sm: 1 } }} />
                         {/* <Button 

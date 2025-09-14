@@ -28,6 +28,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import '@fontsource-variable/playfair-display';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
     const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
         <Drawer
@@ -257,6 +258,19 @@ function NavBar() {
                                     value={input}
                                 />
                             </Box>
+
+                            {
+                                userState.username ? 
+                                <NavLink to="/my-wishlist">
+                                    <IconButton color="inherit" sx={{ p: { xs: 0.5, sm: 1 } }}>
+                                        <Badge badgeContent={noOfItems} color="secondary">
+                                            <FavoriteIcon sx={{ fontSize: { xs: 28, sm: 32 } }} /> 
+                                        </Badge>
+                                    </IconButton>
+                                </NavLink>
+                                :
+                                null
+                            }
 
                             {/* Cart */}
                             <NavLink to="/cart">
