@@ -1,121 +1,3 @@
-// import { Box, CardMedia, Typography } from "@mui/material"
-// import StarIcon from '@mui/icons-material/Star'
-// import { getImageUrl } from "../utils/imageUrl"
-
-// function OrderItem({ item }) {
-//     return (
-//         <Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-//             <Box sx={{ p: { xs: 2, md: 3 } }}>
-//                 <Box sx={{
-//                     display: "flex",
-//                     gap: { xs: 2, md: 3 },
-//                     flexDirection: { xs: 'column', sm: 'row' },
-//                     alignItems: { xs: 'center', sm: 'flex-start' }
-//                 }}>
-//                     {/* Product Image */}
-//                     <CardMedia
-//                         component="img"
-//                         sx={{ 
-//                             width: { xs: '100%', sm: 120, md: 140 },
-//                             maxWidth: { xs: 200, sm: 120, md: 140 },
-//                             height: { xs: 120, sm: 120, md: 140 },
-//                             objectFit: 'contain',
-//                             borderRadius: 2,
-//                             bgcolor: 'grey.100',
-//                             border: '1px solid',
-//                             borderColor: 'grey.200',
-//                             flexShrink: 0
-//                         }}
-//                         image={getImageUrl(item.thumbnail)}
-//                         alt={item.title}
-//                     />
-                    
-//                     {/* Product Details */}
-//                     <Box sx={{ 
-//                         display: "flex", 
-//                         flexDirection: "column", 
-//                         justifyContent: "center",
-//                         flex: 1,
-//                         textAlign: { xs: 'center', sm: 'left' },
-//                         minWidth: 0
-//                     }}>
-//                         <Typography 
-//                             variant='subtitle1' 
-//                             fontWeight="600"
-//                             sx={{ 
-//                                 mb: 1,
-//                                 fontSize: { xs: '1rem', md: '1.1rem' },
-//                                 lineHeight: 1.3
-//                             }}
-//                         >
-//                             {item.title}
-//                         </Typography>
-                        
-//                         <Typography 
-//                             variant="body2" 
-//                             color="text.secondary" 
-//                             sx={{ mb: 0.5, fontSize: { xs: '0.8rem', md: '0.875rem' } }}
-//                         >
-//                             <strong>Brand:</strong> {item.brand}
-//                         </Typography>
-                        
-//                         <Box sx={{ 
-//                             display: "flex", 
-//                             alignItems: "center", 
-//                             mb: 1,
-//                             justifyContent: { xs: 'center', sm: 'flex-start' }
-//                         }}>
-//                             <StarIcon sx={{ color: "#FF8C00", fontSize: { xs: 16, md: 18 }, mr: 0.5 }} />
-//                             <Typography 
-//                                 variant="body2" 
-//                                 sx={{ fontSize: { xs: '0.8rem', md: '0.875rem' } }}
-//                             >
-//                                 {item.rating}
-//                             </Typography>
-//                         </Box>
-                        
-//                         <Typography 
-//                             variant="body1" 
-//                             fontWeight="600"
-//                             color="primary.main"
-//                             sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}
-//                         >
-//                             ${item.price}
-//                         </Typography>
-//                     </Box>
-                    
-//                     {/* Quantity and Total */}
-//                     <Box sx={{ 
-//                         display: "flex", 
-//                         flexDirection: { xs: 'row', sm: 'column' },
-//                         alignItems: { xs: 'center', sm: 'flex-end' },
-//                         gap: { xs: 3, sm: 1 },
-//                         textAlign: { xs: 'center', sm: 'right' },
-//                         minWidth: { sm: 80, md: 100 }
-//                     }}>
-//                         <Typography 
-//                             variant="body2" 
-//                             color="text.secondary"
-//                             sx={{ fontSize: { xs: '0.8rem', md: '0.875rem' } }}
-//                         >
-//                             Qty: {item.quantity}
-//                         </Typography>
-//                         <Typography 
-//                             variant="body1" 
-//                             fontWeight="bold"
-//                             sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}
-//                         >
-//                             ${(item.quantity * item.price).toFixed(2)}
-//                         </Typography>
-//                     </Box>
-//                 </Box>
-//             </Box>
-//         </Box>
-//     )
-// }
-
-// export default OrderItem
-
 import { Box, CardMedia, Typography, Paper, Stack } from "@mui/material"
 import StarIcon from '@mui/icons-material/Star'
 import { getImageUrl } from "../utils/imageUrl"
@@ -123,11 +5,13 @@ import { getImageUrl } from "../utils/imageUrl"
 function OrderItem({ item }) {
     return (
         <Box sx={{ 
-            borderBottom: '1px solid', 
+            borderBottom: '2px solid', 
             borderColor: 'grey.200',
             '&:last-child': {
                 borderBottom: 'none'
-            }
+            },
+            mx: 2,
+            my: 1
         }}>
             <Box sx={{ p: 1.5 }}>
                 <Box sx={{
@@ -151,24 +35,29 @@ function OrderItem({ item }) {
                     </Paper>
                     
                     {/* Product Details - Horizontal Layout */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography 
-                            variant='body2' 
-                            fontWeight="600"
-                            sx={{ 
-                                fontSize: { xs: '0.85rem', md: '0.9rem' },
-                                lineHeight: 1.2,
-                                mb: 0.3,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                            }}
-                        >
-                            {item.title}
-                        </Typography>
-                        
-                        <Stack direction="row" spacing={1} sx={{ mb: 0.3 }}>
+                    <Box sx={{minWidth: 0, flex: 1, display: "flex", flexDirection: "row" }}>
+                        <Box sx={{flex: 1}}>
+                            <Typography 
+                                variant='body2' 
+                                fontWeight="600"
+                                sx={{ 
+                                    fontSize: { xs: '0.85rem', md: '0.9rem' },
+                                    lineHeight: 1.2,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 1,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                    // display: "box", // or just block, but "box" works with line-clamp
+                                    // lineClamp: 2,   // clamp to 2 lines
+                                    // boxOrient: "vertical", 
+                                    // overflow: "hidden",
+                                    // textOverflow: "ellipsis",
+                                }}
+                            >
+                                {item.title}
+                                {/* Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. */}
+                            </Typography>
+                            
                             <Typography variant="caption" color="text.secondary" >
                                 {item.brand}
                             </Typography>
@@ -178,9 +67,9 @@ function OrderItem({ item }) {
                                     {item.rating}
                                 </Typography>
                             </Box>
-                        </Stack>
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        </Box>
+                        <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-around", ml: 1}}>
+                        {/* <Stack direction="row" justifyContent="space-between" alignItems="center"> */}
                             <Typography 
                                 variant="body2" 
                                 fontWeight="600"
@@ -203,7 +92,8 @@ function OrderItem({ item }) {
                             >
                                 ${(item.quantity * item.price).toFixed(2)}
                             </Typography>
-                        </Stack>
+                        {/* </Stack> */}
+                        </Box>
                     </Box>
                 </Box>
             </Box>

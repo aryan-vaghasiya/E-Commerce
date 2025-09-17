@@ -43,6 +43,7 @@ import AdminCampaignsAdd from './components/AdminCampaignsTemplates'
 import AdminCampaignsTemplates from './components/AdminCampaignsTemplates'
 import AdminCampaignDetails from './components/AdminCampaignDetails'
 import UserReferrals from './components/UserReferrals'
+import MyOrderPage from './components/MyOrderPage'
 
 function App() {
 
@@ -66,6 +67,7 @@ function App() {
                 <Route path='/login' element={<Login />} />
                 <Route path='/signup' element={<Signup />} />
                 <Route path='/my-orders' element={<MyOrders />} />
+                <Route path='/my-orders/:orderId' element={<MyOrderPage />} />
                 <Route path='/my-wishlist' element={<MyWishlist />} />
                 <Route path='/my-profile' element={<MyProfile />} />
                 <Route path='/my-wallet' element={<MyWallet />} />

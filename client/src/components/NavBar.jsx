@@ -188,7 +188,6 @@ function NavBar() {
         }
     }
 
-    // Navigation items for mobile drawer
     const navigationItems = [
         { name: "Home", path: "/" },
         { name: "Products", path: "/products" },
@@ -199,7 +198,6 @@ function NavBar() {
             <AppBar position="sticky" elevation={1}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters sx={{ minHeight: { xs: 56, sm: 64 } }}>
-                        {/* Mobile Menu Button */}
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
@@ -210,7 +208,6 @@ function NavBar() {
                             <MenuIcon sx={{fontSize: 30}}/>
                         </IconButton>
 
-                        {/* Logo */}
                         <Box sx={{ display: 'flex', alignItems: 'center', mr: { xs: 1, md: 2 } }}>
                             <Box sx={{ width: { xs: "60px", md: "80px" }, mr: 1 }}>
                                 <NavLink to="/">
@@ -223,7 +220,6 @@ function NavBar() {
                             </Box>
                         </Box>
 
-                        {/* Desktop Navigation */}
                         <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 'auto' }}>
                             {navigationItems.map((item) => (
                                 <NavLink key={item.name} to={item.path}>
@@ -236,9 +232,7 @@ function NavBar() {
                             ))}
                         </Box>
 
-                        {/* Right side items */}
                         <Box sx={{ display: "flex", alignItems: "center", ml: "auto", gap: { xs: 0.5, sm: 1 } }}>
-                            {/* Desktop Search */}
                             <Box sx={{ 
                                 display: { xs: 'none', sm: 'flex' },
                                 bgcolor: "white", 
@@ -259,20 +253,19 @@ function NavBar() {
                                 />
                             </Box>
 
-                            {
-                                userState.username ? 
+                            {/* {
+                                userState.userName ? 
                                 <NavLink to="/my-wishlist">
                                     <IconButton color="inherit" sx={{ p: { xs: 0.5, sm: 1 } }}>
-                                        <Badge badgeContent={noOfItems} color="secondary">
+                                        <Badge badgeContent="0" color="secondary">
                                             <FavoriteIcon sx={{ fontSize: { xs: 28, sm: 32 } }} /> 
                                         </Badge>
                                     </IconButton>
                                 </NavLink>
                                 :
                                 null
-                            }
+                            } */}
 
-                            {/* Cart */}
                             <NavLink to="/cart">
                                 <IconButton color="inherit" sx={{ p: { xs: 0.5, sm: 1 } }}>
                                     <Badge badgeContent={noOfItems} color="secondary">
@@ -281,7 +274,6 @@ function NavBar() {
                                 </IconButton>
                             </NavLink>
 
-                            {/* User Menu */}
                             <Tooltip title="Account">
                                 <IconButton 
                                     onClick={handleMenu}
@@ -294,7 +286,6 @@ function NavBar() {
                             </Tooltip>
                         </Box>
 
-                        {/* Account Menu */}
                         <Menu
                             anchorEl={anchorEl}
                             id="account-menu"

@@ -169,8 +169,6 @@ exports.addOrder = async(userId, order, coupon) => {
     this.sendOrderEmail(userId, orderId, order, coupon)
 }
 
-
-// exports.getOrdersService = async (userId, page, limit, offset) => {
 exports.getOrdersService = async (userId, queryParams) => {
 
     const {
@@ -192,10 +190,6 @@ exports.getOrdersService = async (userId, queryParams) => {
     const params = [userId]
     const countQueryParams = [userId];
 
-    // if (!orderByClause) {
-    //     orderByClause = " ORDER BY order_date DESC";
-    // }
-
     if (sortBy) {
         if (sortBy === "date") orderByClause = " ORDER BY order_date";
         else if (sortBy === "amount") orderByClause = " ORDER BY final_total";
@@ -210,16 +204,13 @@ exports.getOrdersService = async (userId, queryParams) => {
         if(dateOption === "last7days"){
             const day = dayjs().startOf('day').subtract(7, 'day').format("YYYY-MM-DD HH:mm:ss")
             whereClause += ` AND order_date >= ?`;
-            // console.log(day);
-            
             params.push(day);
             countQueryParams.push(day)
         }
+
         if(dateOption === "last3months"){
             const day = dayjs().startOf('day').subtract(3, 'month').format("YYYY-MM-DD HH:mm:ss")
             whereClause += ` AND order_date >= ?`;
-            // console.log(day);
-
             params.push(day);
             countQueryParams.push(day)
         }
@@ -235,7 +226,6 @@ exports.getOrdersService = async (userId, queryParams) => {
     if(dateOption === "custom" && startDate && endDate){
         const start = dayjs(startDate).format("YYYY-MM-DD HH:mm:ss")
         const end = dayjs(endDate).format("YYYY-MM-DD HH:mm:ss")
-
         whereClause += ` AND order_date BETWEEN ? AND ?`;
         params.push(start, end);
         countQueryParams.push(start, end)
@@ -261,11 +251,6 @@ exports.getOrdersService = async (userId, queryParams) => {
 
     params.push(Number(limit) || 10, Number(offset) || 0);
 
-    // console.log(whereClause);
-    // console.log(orderByClause);
-    // console.log(params);
-
-    // const limitedOrders = await runQuery(`SELECT id FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT ? OFFSET ?`,[userId, limit, offset])
     const limitedOrders = await runQuery(`SELECT id FROM orders ${whereClause} ${orderByClause} LIMIT ? OFFSET ?`,params)
 
     const [{totalFiltered}] = await runQuery(`SELECT COUNT(id) as totalFiltered FROM orders ${whereClause} ${orderByClause}`,params)
@@ -274,7 +259,6 @@ exports.getOrdersService = async (userId, queryParams) => {
 
     if(limitedOrders.length === 0){
         console.error("No Orders Exist 1");
-        // return{}
         return {
             orders: [],
             currentPage : page,
@@ -286,37 +270,37 @@ exports.getOrdersService = async (userId, queryParams) => {
 
     const orderIds = limitedOrders.map(order => order.id)
 
-    const getOrders = await runQuery(
-        `SELECT
-            o.id AS order_id,
-            o.total,
-            o.discount_amount,
-            o.final_total,
-            o.status,
-            SUM(oi.quantity) AS noOfItems,
-            JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'id', p.id,
-                    'quantity', oi.quantity,
-                    'price', oi.purchase_price,
-                    'title', p.title,
-                    'brand', p.brand,
-                    'thumbnail', p.thumbnail,
-                    'rating', p.rating,
-                    'category', c.category
-                )
-            ) AS items
-        FROM orders o
-        JOIN order_item oi ON o.id = oi.order_id
-        JOIN products p   ON oi.product_id = p.id
-        JOIN categories c ON c.id = p.category_id
-        WHERE o.id IN (?)
-        GROUP BY o.id
-        ORDER BY FIELD(o.id, ?)`,
-        [orderIds, orderIds]
-    );
+    // const getOrders = await runQuery(
+    //     `SELECT
+    //         o.id AS order_id,
+    //         o.total,
+    //         o.discount_amount,
+    //         o.final_total,
+    //         o.status,
+    //         SUM(oi.quantity) AS noOfItems,
+    //         JSON_ARRAYAGG(
+    //             JSON_OBJECT(
+    //                 'id', p.id,
+    //                 'quantity', oi.quantity,
+    //                 'price', oi.purchase_price,
+    //                 'title', p.title,
+    //                 'brand', p.brand,
+    //                 'thumbnail', p.thumbnail,
+    //                 'rating', p.rating,
+    //                 'category', c.category
+    //             )
+    //         ) AS items
+    //     FROM orders o
+    //     JOIN order_item oi ON o.id = oi.order_id
+    //     JOIN products p   ON oi.product_id = p.id
+    //     JOIN categories c ON c.id = p.category_id
+    //     WHERE o.id IN (?)
+    //     GROUP BY o.id
+    //     ORDER BY FIELD(o.id, ?)`,
+    //     [orderIds, orderIds]
+    // );
 
-    // console.log(getOrders);
+    const getOrders = await this.getOrdersByIdsHelper(orderIds)
 
     if (getOrders.length === 0) {
         console.error("Cannot fetch orders");
@@ -326,7 +310,6 @@ exports.getOrdersService = async (userId, queryParams) => {
     const orders = getOrders.map(order => ({
         order_id: order.order_id,
         noOfItems: order.noOfItems,
-        // items: JSON.parse(order.items),   // parse JSON array
         items: order.items,
         final_total: order.final_total,
         cartValue: order.total,
@@ -334,7 +317,6 @@ exports.getOrdersService = async (userId, queryParams) => {
         status: order.status
     }));
 
-    // console.log(orders);
 
     return {
         orders,
@@ -343,71 +325,6 @@ exports.getOrdersService = async (userId, queryParams) => {
         totalFiltered,
         total
     };
-
-    // const getOrders = await runQuery(`SELECT
-    //                                     oi.order_id,
-    //                                     oi.product_id AS id,
-    //                                     oi.quantity, 
-    //                                     oi.purchase_price AS price,
-    //                                     p.title, 
-    //                                     p.description, 
-    //                                     p.rating, 
-    //                                     p.brand, 
-    //                                     p.thumbnail, 
-    //                                     c.category,
-    //                                     o.total,
-    //                                     o.discount_amount,
-    //                                     o.final_total,
-    //                                     o.status
-    //                                 FROM order_item oi 
-    //                                     JOIN products p 
-    //                                         ON oi.product_id = p.id
-    //                                     JOIN categories c 
-    //                                         ON c.id = p.category_id
-    //                                     JOIN orders o 
-    //                                         ON oi.order_id = o.id
-    //                                     WHERE o.id IN (?)
-    //                                     ORDER BY FIELD(oi.order_id, ?)`, [orderIds, orderIds]);
-    // if(getOrders.length === 0){
-    //     console.error("Cannot fetch orders");
-    //     return{};
-    // }
-
-    // const grouped = {};
-    // getOrders.forEach(item => {
-    //     if (!grouped[item.order_id]) {
-    //         grouped[item.order_id] = {
-    //                                     order_id: item.order_id,
-    //                                     noOfItems: 0,
-    //                                     items: [],
-    //                                     final_total: item.final_total,
-    //                                     cartValue: item.total,
-    //                                     discount: item.discount_amount,
-    //                                     status: item.status
-    //                                 }
-    //     }
-    //     grouped[item.order_id].items.push({
-    //         id: item.id,
-    //         quantity: item.quantity,
-    //         price: item.price,
-    //         title: item.title,
-    //         brand: item.brand,
-    //         thumbnail: item.thumbnail,
-    //         rating: item.rating,
-    //         category: item.category
-    //     });
-    //     grouped[item.order_id].noOfItems += item.quantity;
-    // });
-
-    // const orders = Object.values(grouped);
-
-    // return {
-    //     orders,
-    //     currentPage : page,
-    //     pages: Math.ceil (totalFiltered / limit),
-    //     totalFiltered,
-    //     total
-    // }
 }
 
 
@@ -691,4 +608,62 @@ exports.giveReferralReward = async (referralData) => {
     catch(err){
         await runQuery(`UPDATE referral_uses SET reward_status = ?, reward_amount = ? WHERE id = ?`, ["failed", reward_amount, referralData.id])
     }
+}
+
+exports.getSingleOrderData = async (userId, orderId) => {
+    const [user] = await runQuery(`
+        SELECT
+            first_name,
+            last_name,
+            addLine1,
+            addLine2,
+            state,
+            city,
+            pincode,
+            number,
+            email
+        FROM
+        users
+        WHERE id = ?
+        `, [userId])
+
+    const [order] = await this.getOrdersByIdsHelper([orderId])
+
+    return {...order, user}
+}
+
+exports.getOrdersByIdsHelper = async (orderIds) => {
+    const orders = await runQuery(
+        `SELECT
+            o.id AS order_id,
+            o.total,
+            o.discount_amount,
+            o.final_total,
+            o.status,
+            o.order_date,
+            o.last_updated,
+            SUM(oi.quantity) AS noOfItems,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', p.id,
+                    'quantity', oi.quantity,
+                    'price', oi.purchase_price,
+                    'title', p.title,
+                    'brand', p.brand,
+                    'thumbnail', p.thumbnail,
+                    'rating', p.rating,
+                    'category', c.category
+                )
+            ) AS items
+        FROM orders o
+        JOIN order_item oi ON o.id = oi.order_id
+        JOIN products p   ON oi.product_id = p.id
+        JOIN categories c ON c.id = p.category_id
+        WHERE o.id IN (?)
+        GROUP BY o.id
+        ORDER BY FIELD(o.id, ?)`,
+        [orderIds, orderIds]
+    );
+
+    return orders
 }

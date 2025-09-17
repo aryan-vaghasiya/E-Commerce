@@ -80,38 +80,24 @@ function CartItem({ item }) {
                     }}>
                         <Box>
                             <Typography variant='h6' sx={{ 
-                                mb: { xs: 1, md: 1.5 }, 
+                                // mb: { xs: 1, md: 1.5 }, 
+                                // mb: 1, 
                                 lineHeight: 1.3,
                                 fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
                                 fontWeight: 600
                             }}>
                                 {item.title}
                             </Typography>
-                            
-                            {/* <Typography 
-                                variant="body2" 
-                                color="text.secondary" 
-                                sx={{
-                                    display: {xs: "none", sm: "block"},
-                                    mb: 2,
-                                    overflow: 'hidden',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                }}
-                            >
-                                {item.description}
-                            </Typography> */}
 
-                            <Box sx={{ 
+                            {/* <Box sx={{ 
                                 display: 'flex', 
                                 gap: { xs: 1, md: 2 }, 
                                 mb: 1, 
                                 flexWrap: 'wrap',
                                 alignItems: 'center'
-                            }}>
+                            }}> */}
                                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', md: '0.875rem' } }}>
-                                    <strong>Brand:</strong> {item.brand}
+                                    {item.brand}
                                 </Typography>
                                 <Box sx={{ display: "flex", alignItems: "center" }}>
                                     <StarIcon sx={{ color: "#FF8C00", fontSize: { xs: 14, md: 16 }, mr: 0.5 }} />
@@ -119,7 +105,7 @@ function CartItem({ item }) {
                                         {item.rating?.toFixed(1)}
                                     </Typography>
                                 </Box>
-                            </Box>
+                            {/* </Box> */}
 
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline', mb: { xs: 1.5, md: 2 }, flexWrap: 'wrap' }}>
                                 <Typography variant="h6" color="primary.main" fontWeight="bold" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>

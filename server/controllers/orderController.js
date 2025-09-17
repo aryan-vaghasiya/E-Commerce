@@ -8,18 +8,8 @@ exports.getOrders = async (req, res) => {
 
     const queryParams = {...req.query, page, limit, offset}
 
-    // const dateOption = req.query.dateOption
-    // const endDate = req.query.endDate
-    // const maxAmount = req.query.maxAmount
-    // const minAmount = req.query.minAmount
-    // const orderBy = req.query.orderBy
-    // const sortBy = req.query.sortBy
-    // const startDate = req.query.startDate
-    // const status = req.query.status
-
     try{
         const ordersData = await orderService.getOrdersService(userId, queryParams);
-        // const ordersData = await orderService.getOrdersService(userId, page, limit, offset);
         return res.status(200).json(ordersData);
     }
     catch(err){
@@ -85,5 +75,18 @@ exports.cancelOrderByUser = async (req, res) => {
     catch(err){
         console.error("Error cancelling Order: ", err.message);
         res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getSingleOrder = async (req, res) => {
+    const orderId = req.params.id
+    const userId = req.user.id
+
+    try{
+        const order = await orderService.getSingleOrderData(userId, orderId);
+        return res.status(200).json(order);
+    }
+    catch(err){
+        res.status(503).json({error : err.message});
     }
 }

@@ -7,5 +7,6 @@ router.post("/add-order", orderController.addToOrders);
 router.post("/check-coupon", orderController.checkCoupon);
 router.get("/get-orders", orderController.getOrders);
 router.post("/cancel-user", orderController.cancelOrderByUser);
+router.get("/:id", orderController.getSingleOrder);
 
 module.exports = router;

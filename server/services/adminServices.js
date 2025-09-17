@@ -2008,6 +2008,15 @@ exports.getCouponReportDates = async (couponId, fromTime, toTime, limit, sortBy,
     return {dates: groupedDateUsages, totalDateRedeems}
 }
 
+exports.getFirstBasicTemplate = async () => {
+    const basicTemplatePath = path.join(__dirname, "../mailer/templates", "basic.hbs")
+
+    const basicTemplateData = await fs.readFile(basicTemplatePath, 'utf-8')
+
+    // console.log(basicTemplateData);
+    return basicTemplateData
+}
+
 exports.getSingleTemplateContent = async (username, template) => {
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
 
@@ -2086,7 +2095,7 @@ exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
 
     const newFilePath = path.join(adminTemplatesDir, fileName.trim() + extension.trim())
 
-    const checkDuplicate = fs.pathExists(newFilePath)
+    const checkDuplicate = await fs.pathExists(newFilePath)
     if(checkDuplicate){
         throw new Error("Template already exists, try a different name")
     }
@@ -2125,7 +2134,7 @@ exports.renameTemplateFile = async (username, oldFileName, newFileName) => {
         throw new Error("File not found")
     }
 
-    const checkDuplicate = fs.pathExists(newTemplatePath)
+    const checkDuplicate = await fs.pathExists(newTemplatePath)
     if(checkDuplicate){
         throw new Error("Template name already exists, try a different name")
     }
