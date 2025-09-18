@@ -18,15 +18,30 @@ import FormLabel from '@mui/material/FormLabel';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import dayjs from 'dayjs';
+import CloseIcon from '@mui/icons-material/Close';
+import FilterIcon from '@mui/icons-material/FilterList';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import Modal from '@mui/material/Modal';
 import Chip from '@mui/material/Chip';
-import { alignItems, getValue, maxHeight, maxWidth } from '@mui/system';
+import { alignItems, getValue, Grid, maxHeight, maxWidth, useMediaQuery, useTheme } from '@mui/system';
 import Tooltip from '@mui/material/Tooltip';
+import { Dialog, DialogActions, DialogContent, DialogTitle, InputLabel, MenuItem, Select } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 function AdminCoupons() {
-    const { register, handleSubmit, control, reset, watch, resetField, setValue } = useForm();
+    const { register, handleSubmit, control, reset, watch, resetField, setValue, formState: {errors} } = useForm({
+        defaultValues: {
+            search: "",
+            discount_type: "any",
+            applies_to: "any",
+            is_active: "any",
+            start_date: null,
+            end_date: null
+        }
+    });
     const navigate = useNavigate()
 
     const token = useSelector(state => state.userReducer.token);
@@ -40,13 +55,25 @@ function AdminCoupons() {
         page: 0,
         pageSize: 10,
     });
+    const [activeFilters, setActiveFilters] = useState({
+        search: "",
+        discount_type: "any",
+        applies_to: "any",
+        is_active: "any",
+        start_date: null,
+        end_date: null
+    })
     const [hasFilter, setHasFilter] = useState(false);
     const [open, setOpen] = useState(false);
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
     const handleOpen = () => setOpen(true);
+
     const handleClose = (event, reason) => {
-        if (reason === "backdropClick") {
-            handleSubmit(handleFilter)();
-        }
+        // if (reason === "backdropClick") {
+        //     handleSubmit(handleFilter)();
+        // }
         setOpen(false);
     }
     const watchAllFields = watch()
@@ -54,10 +81,10 @@ function AdminCoupons() {
     const discountTypeFixed = watch("discount_type_fixed");
     const discountTypePercentage = watch("discount_type_percentage");
     const applyOnProduct = watch("apply_on_product");
+    const applyOnCategory = watch("apply_on_category");
     const applyOnCart = watch("apply_on_cart");
     const statusActive = watch("status_active");
     const statusInactive = watch("status_inactive");
-    // console.log(watchAllFields);
 
     const style = {
         position: 'absolute',
@@ -72,31 +99,21 @@ function AdminCoupons() {
         '&::-webkit-scrollbar': {
             display: 'none',
         },
-        // bgcolor: 'background.paper',
-        // border: '2px solid #000',
         boxShadow: 24,
-        // p: 4,
     };
 
     const getLabel = (key, value) => {
-        
         switch (key) {
-            case "discount_type_fixed":
-                return `Type: Fixed`;
-            case "discount_type_percentage":
-                return `Type: Percentage`;
-            case "apply_on_product":
-                return `On: Product`;
-            case "apply_on_cart":
-                return `On: Cart`;
-            case "status_active":
-                return "Active";
-            case "status_inactive":
-                return "Inactive";
+            case "discount_type":
+                return `Type: ${value}`;
+            case "applies_to":
+                return `On: ${value}`;
+            case "is_active":
+                return `Status: ${value === '1' ? "Active" : "Inactive"}`;
             case "start_date":
-                return `From: ${value}`;
+                return `From: ${dayjs(value).format("DD MMM, YYYY")}`;
             case "end_date":
-                return `To: ${value}`;
+                return `To: ${dayjs(value).format("DD MMM, YYYY")}`;
             case "search":
                 return `Search: ${value}`;
             default:
@@ -106,28 +123,19 @@ function AdminCoupons() {
 
     const clearFilters = () => {
         reset()
+        // handleFilter()
+        handleSubmit(handleFilter)()
         setHasFilter(false)
-        handleFilter()
     }
 
     const fetchCoupons = async (page, limit, filters = {}) => {
-        // console.log(filters);
         setLoading(true);
         setError(null);
-
         setHasFilter(Object.values(filters).length > 0 ? true : false)
 
-        // if(Object.values(filters).length > 0) {
-        //     setHasFilter(true)
-        // }
-        // else {
-        //     setHasFilter(false)
-        // }
         try {
             const params = new URLSearchParams({page, limit, ...filters})
-            // console.log(params.toString());
-            
-            // const response = await fetch(`http://localhost:3000/admin/get-coupons?page=${page}&limit=${limit}`, {
+            // console.log(Object.fromEntries(params));
             const response = await fetch(`http://localhost:3000/admin/get-coupons?${params.toString()}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -141,14 +149,10 @@ function AdminCoupons() {
                 return
             }
 
-            handleClose()
             const result = await response.json()
-            // console.log(result)
             setCoupons(result.coupons)
-            // const activeOnly = result.coupons.filter(coupon => coupon.is_active === 1 )
-            // console.log(activeOnly)
-            // setActiveCoupons(activeOnly)
             setTotalCoupons(result.total)
+            handleClose()
         } catch (err) {
             console.error(err.message)
             setError(err.message)
@@ -159,50 +163,40 @@ function AdminCoupons() {
 
     const handleFilter = (data = {}) => {
         // console.log(data);
+        setActiveFilters(data)
         const params = new URLSearchParams();
 
-        if (data.search) params.set("search", data.search);
+        if (data.search) params.set("search", data.search.trim());
 
-        if (data.discount_type_fixed && !data.discount_type_percentage)
-            params.set("discount_type", "fixed");
-        else if (data.discount_type_percentage && !data.discount_type_fixed)
-            params.set("discount_type", "percent");
+        if (data.discount_type && data.discount_type !== "any"){
+            params.set("discount_type", data.discount_type)
+        }
 
-        if (data.apply_on_product && !data.apply_on_cart)
-            params.set("apply_on", "product");
-        else if (data.apply_on_cart && !data.apply_on_product)
-            params.set("apply_on", "all");
+        if (data.applies_to && data.applies_to !== "any"){
+            params.set("applies_to", data.applies_to)
+        }
 
-        if (data.status_active && !data.status_inactive)
-            params.set("is_active", 1);
-        else if (data.status_inactive && !data.status_active)
-            params.set("is_active", 0);
+        if (data.is_active !== "any"){
+            params.set("is_active", data.is_active)
+        }
 
         if (data.start_date) params.set("start_date", dayjs(data.start_date).format("YYYY-MM-DD"));
         if (data.end_date) params.set("end_date", dayjs(data.end_date).format("YYYY-MM-DD"));
-
-        // console.log(Object.fromEntries(params));
-        // console.log(params.toString());
 
         fetchCoupons(paginationModel.page + 1, paginationModel.pageSize, Object.fromEntries(params))
     }
 
     const handleRowClick = (event) => {
-        // console.log(event.row.id);
         navigate(`/admin/coupons/${event.row.id}`)
     }
 
     useEffect(() => {
-        // console.log("fetching...");
-        // fetchCoupons(paginationModel.page + 1, paginationModel.pageSize);
-        handleFilter(watchAllFields)
+        handleFilter(activeFilters)
     }, [paginationModel]);
 
     const handlePaginationChange = (newModel) => {
-        // console.log(newModel);
-        
-        setPaginationModel(newModel);
-        fetchCoupons(newModel.page + 1, newModel.pageSize);
+        setPaginationModel(newModel)
+        fetchCoupons(newModel.page + 1, newModel.pageSize)
     };
 
     const columns = [
@@ -248,13 +242,6 @@ function AdminCoupons() {
             editable: false,
             align: "center"
         },
-        // {
-        //     field: 'created_at',
-        //     headerName: 'Created at',
-        //     width: 110,
-        //     editable: false,
-        //     align: "center"
-        // },
         {
             field: 'times_used',
             headerName: 'Coupons Used',
@@ -284,7 +271,7 @@ function AdminCoupons() {
             headerName: 'Edit Product',
             width: 110,
             renderCell : (params) => 
-            <Tooltip title={params.row.is_active ? "Edit Coupon" : "Inactive"}>
+            <Tooltip title={params.row.is_active ? "Edit Coupon" : "Inactive, can't edit"}>
             <span>
             <IconButton 
                 disabled={!params.row.is_active}
@@ -303,9 +290,190 @@ function AdminCoupons() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            <Modal
+            <Dialog
                 open={open}
                 onClose={handleClose}
+                maxWidth="sm"
+                fullWidth
+                fullScreen={isMobile}
+                slotProps={{
+                    paper:{
+                        sx: {
+                            borderRadius: isMobile ? 0 : 3,
+                            m: isMobile ? 1 : 2,
+                            maxHeight: '90vh',
+                            height: "auto"
+                        }
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    pb: 1,
+                    px: { xs: 2, sm: 3 }
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FilterIcon color="primary" />
+                        <Typography variant="h6">Filter Coupons</Typography>
+                    </Box>
+                    <IconButton onClick={handleClose} size="small">
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <Divider />
+                <Box component="form" onSubmit={handleSubmit(handleFilter)}>
+                    {/* Content */}
+                    <DialogContent sx={{ 
+                        px: { xs: 2, sm: 3 },
+                        py: { xs: 2, sm: 3 }
+                    }}>
+
+                        <Stack spacing={3}>
+                            <TextField
+                                label="Search Coupon (name or code)"
+                                variant="outlined"
+                                {...register("search")}
+                                fullWidth
+                            />
+
+                            <Controller
+                                name="discount_type"
+                                control={control}
+                                // defaultValue={"any"}
+                                render={({ field }) => (
+                                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                        <InputLabel>Discount Type</InputLabel>
+                                        <Select {...field} label="Discount Type">
+                                            <MenuItem value="fixed">Fixed Amount</MenuItem>
+                                            <MenuItem value="percent">Percentage</MenuItem>
+                                            <MenuItem value="any">All</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                )}
+                            />
+
+                            <Controller
+                                name="applies_to"
+                                control={control}
+                                // defaultValue={"any"}
+                                render={({ field }) => (
+                                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                        <InputLabel>Applies on</InputLabel>
+                                        <Select {...field} label="Applies on" >
+                                            <MenuItem value="all">Cart</MenuItem>
+                                            <MenuItem value="product">Products</MenuItem>
+                                            <MenuItem value="category">Categories</MenuItem>
+                                            <MenuItem value="any">All</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                )}
+                            />
+
+                            <Controller
+                                name="is_active"
+                                control={control}
+                                // defaultValue={"any"}
+                                render={({ field }) => (
+                                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                        <InputLabel>Coupon Status</InputLabel>
+                                        <Select {...field} label="Coupon Status">
+                                            <MenuItem value={1}>Active</MenuItem>
+                                            <MenuItem value={0}>Inactive</MenuItem>
+                                            <MenuItem value="any">All</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                )}
+                            />
+
+                            <Grid container spacing={2}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <Grid size={{xs: 12, md: 6}}>
+                                    <Controller
+                                        name="start_date"
+                                        control={control}
+                                        // defaultValue={null}
+                                        render={({ field }) => (
+                                            <DatePicker
+                                                {...field}
+                                                label="Start Date"
+                                                maxDate={dayjs()}   
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        size: isMobile ? 'small' : 'medium',
+                                                        error: !!errors.start_date,
+                                                        helperText: errors.start_date?.message
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </Grid>
+                                <Grid size={{xs: 12, md: 6}}>
+                                    <Controller
+                                        name="end_date"
+                                        control={control}
+                                        // defaultValue={null}
+                                        // rules={{
+                                        //     required: dateOption === 'custom' ? 'End date is required' : false,
+                                        //     validate: validateDateRange,
+                                        //     min: startDate || dayjs().subtract(10, 'year')
+                                        // }}
+                                        render={({ field }) => (
+                                            <DatePicker
+                                                {...field}
+                                                label="End Date"
+                                                maxDate={dayjs()}
+                                                // minDate={startDate}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        size: isMobile ? 'small' : 'medium',
+                                                        error: !!errors.end_date,
+                                                        helperText: errors.end_date?.message
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </Grid>
+                            </LocalizationProvider>
+                            </Grid>
+                        </Stack>    
+                    </DialogContent>
+                    <Divider />
+                    <DialogActions sx={{ 
+                        p: { xs: 2, sm: 3 },
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 1
+                    }}>
+                        <Button 
+                            onClick={() => reset()}
+                            color="primary"
+                            variant='outlined'
+                            fullWidth={isMobile}
+                        >
+                            Reset Filters
+                        </Button>
+                        <Button 
+                            type="submit"
+                            variant="contained"
+                            fullWidth={isMobile}
+                            startIcon={<FilterIcon />}
+                        >
+                            Apply Filters
+                        </Button>
+                    </DialogActions>
+                </Box>
+            </Dialog>
+
+            <Modal
+                // open={open}
+                open={false}
+                // onClose={handleClose}
+                onClose={false}
             >
                 <Box sx={style}>
                     <Card sx={{width: "auto"}}>
@@ -320,7 +488,7 @@ function AdminCoupons() {
                                         fullWidth
                                     />
 
-                                    <FormControl component="fieldset">
+                                    {/* <FormControl component="fieldset">
                                         <FormLabel component="legend">Discount Type</FormLabel>
                                         <FormGroup >
                                             <FormControlLabel
@@ -332,9 +500,25 @@ function AdminCoupons() {
                                                 label="Percentage"
                                             />
                                         </FormGroup>
-                                    </FormControl>
+                                    </FormControl> */}
 
-                                    <FormControl component="fieldset">
+                                    <Controller
+                                        name="discount_type"
+                                        control={control}
+                                        // defaultValue={"any"}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                                <InputLabel>Discount Type</InputLabel>
+                                                <Select {...field} label="Discount Type">
+                                                    <MenuItem value="fixed">Fixed Amount</MenuItem>
+                                                    <MenuItem value="percent">Percentage</MenuItem>
+                                                    <MenuItem value="any">All</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+
+                                    {/* <FormControl component="fieldset">
                                         <FormLabel component="legend">Applies On</FormLabel>
                                         <FormGroup>
                                             <FormControlLabel
@@ -342,15 +526,35 @@ function AdminCoupons() {
                                                 label="Product"
                                             />
                                             <FormControlLabel
+                                                control={<Checkbox {...register("apply_on_category")} checked={!!applyOnCategory}/>}
+                                                label="Category"
+                                            />
+                                            <FormControlLabel
                                                 control={<Checkbox {...register("apply_on_cart")} checked={!!applyOnCart}/>}
                                                 label="Cart"
                                             />
                                         </FormGroup>
-                                    </FormControl>
+                                    </FormControl> */}
 
-                                    <FormControl component="fieldset">
+                                    <Controller
+                                        name="applies_to"
+                                        control={control}
+                                        // defaultValue={"any"}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                                <InputLabel>Applies on</InputLabel>
+                                                <Select {...field} label="Applies on" >
+                                                    <MenuItem value="all">Cart</MenuItem>
+                                                    <MenuItem value="product">Products</MenuItem>
+                                                    <MenuItem value="category">Categories</MenuItem>
+                                                    <MenuItem value="any">All</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+
+                                    {/* <FormControl component="fieldset">
                                         <FormLabel component="legend">Status</FormLabel>
-                                        {/* <FormGroup row> */}
                                         <FormGroup >
                                             <FormControlLabel
                                                 control={<Checkbox {...register("status_active")} checked={!!statusActive}/>}
@@ -361,9 +565,25 @@ function AdminCoupons() {
                                                 label="Inactive"
                                             />
                                         </FormGroup>
-                                    </FormControl>
+                                    </FormControl> */}
 
-                                    <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                                    <Controller
+                                        name="is_active"
+                                        control={control}
+                                        // defaultValue={"any"}
+                                        render={({ field }) => (
+                                            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                                                <InputLabel>Coupon Status</InputLabel>
+                                                <Select {...field} label="Coupon Status">
+                                                    <MenuItem value={1}>Active</MenuItem>
+                                                    <MenuItem value={0}>Inactive</MenuItem>
+                                                    <MenuItem value="any">All</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        )}
+                                    />
+
+                                    {/* <Box sx={{display: "flex", justifyContent: "space-between"}}>
                                         <FormGroup row sx={{width: "100%"}}>
                                             <Controller
                                                 name="start_date"
@@ -399,7 +619,66 @@ function AdminCoupons() {
                                                 )}
                                             />
                                         </FormGroup>
-                                    </Box>
+                                    </Box> */}
+
+                                    <Grid container spacing={2}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <Grid size={{xs: 12, md: 6}}>
+                                            <Controller
+                                                name="start_date"
+                                                control={control}
+                                                // defaultValue={null}
+                                                // rules={{
+                                                //     required: dateOption === 'custom' ? 'Start date is required' : false,
+                                                //     // validate: validateDateRange,
+                                                // }}
+                                                render={({ field }) => (
+                                                    <DatePicker
+                                                        {...field}
+                                                        label="Start Date"
+                                                        maxDate={dayjs()}   
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                size: isMobile ? 'small' : 'medium',
+                                                                error: !!errors.start_date,
+                                                                helperText: errors.start_date?.message
+                                                            }
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        </Grid>
+                                        <Grid size={{xs: 12, md: 6}}>
+                                            <Controller
+                                                name="end_date"
+                                                control={control}
+                                                // defaultValue={null}
+                                                // rules={{
+                                                //     required: dateOption === 'custom' ? 'End date is required' : false,
+                                                //     validate: validateDateRange,
+                                                //     min: startDate || dayjs().subtract(10, 'year')
+                                                // }}
+                                                render={({ field }) => (
+                                                    <DatePicker
+                                                        {...field}
+                                                        label="End Date"
+                                                        maxDate={dayjs()}
+                                                        // minDate={startDate}
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                size: isMobile ? 'small' : 'medium',
+                                                                error: !!errors.end_date,
+                                                                helperText: errors.end_date?.message
+                                                            }
+                                                        }}
+                                                    />
+                                                )}
+                                            />
+                                        </Grid>
+                                    </LocalizationProvider>
+                                    </Grid>
 
                                     <Box sx={{display : "flex", justifyContent: "flex-end"}}>
                                         <Button variant="outlined" color="primary" onClick={() => reset()} sx={{mr: 1}}>
@@ -415,6 +694,7 @@ function AdminCoupons() {
                     </Card>
                 </Box>
             </Modal>
+
             <Box sx={{display : "flex", justifyContent : "space-between", pb: 1}}>
                 <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Coupons</Typography>
                 {/* <Box sx={{ width: "100%", maxWidth: "90%", mb: 2, display: "flex", justifyContent: "flex-end" }}> */}
@@ -426,18 +706,18 @@ function AdminCoupons() {
             </Box>
             <Divider sx={{mt: 1, mb: 2}}/>
             <Box sx={{ height: "auto", display: "flex", alignItems:"center", flexDirection: "column"}}>
-                {
-                    hasFilter ?
+                {hasFilter ?
                     <Box sx={{display: "flex", justifyContent: "space-between", width: "100%", alignItems: "flex-start"}}>
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                            {Object.entries(watchAllFields).map(([key, value]) => {
-                                if (!value) return null;
+                            {Object.entries(activeFilters).map(([key, value]) => {
+                                if (value === undefined || value === null || value === "" || value === "any") return null;
                                 return (
                                     <Chip
                                         key={key}
                                         label={getLabel(key, value)}
                                         onDelete={() => {
-                                            setValue(key, "")
+                                            // setValue(key, "")
+                                            resetField(key)
                                             handleSubmit(handleFilter)()
                                         }}
                                         // deleteIcon={<CloseIcon />}

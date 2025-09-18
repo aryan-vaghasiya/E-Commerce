@@ -78,18 +78,18 @@ exports.addOrder = async(userId, order, coupon) => {
 
         orderItems = newCart.items.map(item => {
             if(item.coupon_discount && item.coupon_discount > 0){
-                const item_price = item.price - (item.coupon_discount/item.quantity)
-                return {product_id: item.id, quantity: item.quantity, purchase_price: parseFloat((item_price).toFixed(2))}
+                const discount_amount = item.coupon_discount/item.quantity
+                const item_price = item.price - discount_amount
+                return {product_id: item.id, quantity: item.quantity, purchase_price: parseFloat((item_price).toFixed(2)), discount_amount, selling_price: item.price}
             }
             else{
-                return {product_id: item.id, quantity: item.quantity, purchase_price: item.price}
+                return {product_id: item.id, quantity: item.quantity, purchase_price: item.price, discount_amount: 0, selling_price: item.price}
             }
         })
 
         for(let i = 0; i < orderItems.length; i++){
             // console.log(orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price);
-            
-            await runQuery(`INSERT INTO order_item (order_id, product_id, quantity, purchase_price) VALUES (?, ?, ?, ?)`, [orderId,orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price])
+            await runQuery(`INSERT INTO order_item (order_id, product_id, quantity, purchase_price, discount_amount, selling_price) VALUES (?, ?, ?, ?, ?, ?)`, [orderId,orderItems[i].product_id, orderItems[i].quantity, orderItems[i].purchase_price, orderItems[i].discount_amount, orderItems[i].selling_price])
         }
 
         const updateDiscount = await runQuery(`UPDATE orders SET 
@@ -116,7 +116,7 @@ exports.addOrder = async(userId, order, coupon) => {
         orderId = insert.insertId;
 
         const insertItem = await runQuery(`
-            INSERT INTO order_item (order_id, product_id, quantity, purchase_price) 
+            INSERT INTO order_item (order_id, product_id, quantity, purchase_price, selling_price) 
             SELECT 
                 ?, 
                 ci.product_id, 
@@ -126,6 +126,11 @@ exports.addOrder = async(userId, order, coupon) => {
                         THEN pd.offer_price
                     ELSE pp.price
                 END AS purchase_price
+                CASE 
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN pd.offer_price
+                    ELSE pp.price
+                END AS selling_price
 
             FROM cart_item ci 
             JOIN product_pricing pp 
@@ -627,7 +632,40 @@ exports.getSingleOrderData = async (userId, orderId) => {
         WHERE id = ?
         `, [userId])
 
-    const [order] = await this.getOrdersByIdsHelper([orderId])
+    const [order] = await runQuery(
+        `SELECT
+            o.id AS order_id,
+            o.total,
+            o.discount_amount,
+            o.final_total,
+            o.status,
+            o.order_date,
+            o.last_updated,
+            SUM(oi.quantity) AS noOfItems,
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'id', p.id,
+                    'quantity', oi.quantity,
+                    'purchase_price', oi.purchase_price,
+                    'selling_price', oi.selling_price,
+                    'discount_amount', oi.discount_amount,
+                    'title', p.title,
+                    'brand', p.brand,
+                    'thumbnail', p.thumbnail,
+                    'rating', p.rating,
+                    'category', c.category
+                )
+            ) AS items
+        FROM orders o
+        JOIN order_item oi ON o.id = oi.order_id
+        JOIN products p   ON oi.product_id = p.id
+        JOIN categories c ON c.id = p.category_id
+        WHERE o.id = ?
+        GROUP BY o.id`,
+        [orderId]
+    );
+
+    // console.log(order);
 
     return {...order, user}
 }

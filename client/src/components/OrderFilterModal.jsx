@@ -175,7 +175,8 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                         sx: {
                             borderRadius: isMobile ? 0 : 3,
                             m: isMobile ? 1 : 2,
-                            maxHeight: '90vh'
+                            maxHeight: '90vh',
+                            height: "auto"
                         }
                     }
                 }}
@@ -485,9 +486,9 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                             variant='outlined'
                             fullWidth={isMobile}
                         >
-                            Restore Default
+                            Reset Filters
                         </Button>
-                        <Box sx={{ flex: { sm: 1 } }} />
+                        {/* <Box sx={{ flex: { sm: 1 } }} /> */}
                         {/* <Button 
                             onClick={onClose}
                             color="inherit"

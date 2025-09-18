@@ -257,10 +257,10 @@ const MyOrderPage = () => {
                                                                 </Typography>
                                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                     <Typography variant="body2" color="primary.main" fontWeight="600">
-                                                                        ${item.price} x {item.quantity}
+                                                                        ${item.purchase_price} x {item.quantity}
                                                                     </Typography>
                                                                     <Typography variant="subtitle1" fontWeight="bold">
-                                                                        ${(item.quantity * item.price).toFixed(2)}
+                                                                        ${(item.quantity * item.purchase_price).toFixed(2)}
                                                                     </Typography>
                                                                 </Box>
                                                             </Stack>

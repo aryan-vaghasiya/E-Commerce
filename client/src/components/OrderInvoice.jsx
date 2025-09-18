@@ -124,12 +124,13 @@ const styles = StyleSheet.create({
     tableRowEven: {
         backgroundColor: '#fafafa'
     },
-    col1: { width: '8%' },
-    col2: { width: '40%' },
-    col3: { width: '15%' },
-    col4: { width: '12%' },
-    col5: { width: '15%', textAlign: 'right' },
-    col6: { width: '10%', textAlign: 'right' },
+    col1: { width: '8%', border: "1px solid black" },
+    col2: { width: '30%', marginRight: 10, border: "1px solid black" },
+    col3: { width: '10%', border: "1px solid black" },
+    col4: { width: '15%', border: "1px solid black" },
+    col5: { width: '15%', textAlign: 'right', border: "1px solid black" },
+    col6: { width: '10%', textAlign: 'right', border: "1px solid black" },
+    col7: { width: '12%', textAlign: 'right', border: "1px solid black" },
     itemName: {
         fontSize: 10,
         fontWeight: 'bold',
@@ -227,7 +228,7 @@ const OrderInvoice = ({ orderData }) => {
     }
 
     const calculateSubtotal = () => {
-        return orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        return orderData.items.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0)
     }
 
     return (
@@ -306,11 +307,12 @@ const OrderInvoice = ({ orderData }) => {
                     {/* Table Header */}
                     <View style={styles.tableHeader}>
                         <Text style={styles.col1}>#</Text>
-                        <Text style={styles.col2}>Item Description</Text>
-                        <Text style={styles.col3}>Brand</Text>
-                        <Text style={styles.col4}>Unit Price</Text>
-                        <Text style={styles.col5}>Quantity</Text>
-                        <Text style={styles.col6}>Total</Text>
+                        <Text style={styles.col2}>Title</Text>
+                        <Text style={styles.col4}>Unit Price ($)</Text>
+                        <Text style={styles.col3}>Quantity</Text>
+                        <Text style={styles.col5}>Gross Amount ($)</Text>
+                        <Text style={styles.col6}>Discount ($)</Text>
+                        <Text style={styles.col7}>Total ($)</Text>
                     </View>
 
                     {/* Table Rows */}
@@ -324,15 +326,19 @@ const OrderInvoice = ({ orderData }) => {
                         >
                             <Text style={styles.col1}>{index + 1}</Text>
                             <View style={styles.col2}>
-                                <Text style={styles.itemName}>{item.title}</Text>
+                                {/* <Text style={styles.itemName}>{item.title}</Text> */}
+                                <Text style={styles.itemName}>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</Text>
                             </View>
-                            <Text style={styles.col3}>{item.brand}</Text>
                             <Text style={[styles.col4, styles.priceText]}>
-                                ${item.price.toFixed(2)}
+                                {item.selling_price.toFixed(2)}
                             </Text>
-                            <Text style={styles.col5}>{item.quantity}</Text>
+                            <Text style={[styles.col3, styles.priceText]}>{item.quantity}</Text>
+                            <Text style={styles.col5}>{(item.selling_price * item.quantity).toFixed(2)}</Text>
                             <Text style={[styles.col6, styles.priceText]}>
-                                ${(item.price * item.quantity).toFixed(2)}
+                                -{(item.discount_amount * item.quantity).toFixed(2)}
+                            </Text>
+                            <Text style={[styles.col7, styles.priceText]}>
+                                {(item.purchase_price * item.quantity).toFixed(2)}
                             </Text>
                         </View>
                     ))}

@@ -426,9 +426,6 @@ function MyOrders() {
                                                         </Typography>
                                                     </Box>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <Typography variant="body2" fontWeight="600" color="primary.main">
-                                                            ${order.final_total || order.cartValue}
-                                                        </Typography>
                                                         <Chip 
                                                             label={order.status.toUpperCase()} 
                                                             color={statusConfig.color}
@@ -440,11 +437,13 @@ function MyOrders() {
                                                                 '& .MuiChip-label': { px: 1 }
                                                             }}
                                                         />
+                                                        <Typography variant="body1" fontWeight="600" color="primary.main">
+                                                            ${order.final_total || order.cartValue}
+                                                        </Typography>
                                                     </Box>
                                                 </Box>
                                             </Box>
 
-                                            {/* Action Buttons */}
                                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: "center" }}>
                                                 {(order.status === "pending" || order.status === "accepted") && (
                                                     <Button 
@@ -483,8 +482,7 @@ function MyOrders() {
                                                     </IconButton>
                                                 </Tooltip>
                                                 
-                                                {/* Mobile expand button */}
-                                                {isMobile && (
+                                                {/* {isMobile && (
                                                     <IconButton
                                                         onClick={(event) => {
                                                             event.stopPropagation()
@@ -495,30 +493,27 @@ function MyOrders() {
                                                     >
                                                         {expandedOrder === order.order_id ? <ExpandLess /> : <ExpandMore />}
                                                     </IconButton>
-                                                )}
+                                                )} */}
                                             </Box>
                                         </Box>
 
-                                        {/* Discount info */}
-                                        {order.final_total && order.discount > 0 && (
+                                        {/* {order.final_total && order.discount > 0 && (
                                             <Typography variant="caption" color="success.main" sx={{ mt: 0.5, display: 'block' }}>
                                                 Saved ${order.discount} with discount!
                                             </Typography>
-                                        )}
+                                        )} */}
                                     </Box>
                                 </Box>
 
-                                {/* Order Items */}
-                                {!isMobile && (
+                                {/* {!isMobile && ( */}
                                     <Box sx={{ bgcolor: 'white' }}>
                                         {order.items.map(item => (
                                             <OrderItem key={item.id} item={item} />
                                         ))}
                                     </Box>
-                                )}
+                                {/* )} */}
 
-                                {/* Collapsible items for mobile */}
-                                {isMobile && (
+                                {/* {isMobile && (
                                     <Collapse in={expandedOrder === order.order_id} timeout="auto">
                                         <Box sx={{ bgcolor: 'white' }}>
                                             {order.items.map(item => (
@@ -526,7 +521,7 @@ function MyOrders() {
                                             ))}
                                         </Box>
                                     </Collapse>
-                                )}
+                                )} */}
 
                                 {/* <Box sx={{ 
                                     p: 1.5, 

@@ -48,9 +48,6 @@ exports.addToOrders = async (req, res) => {
     const userId = req.user.id;
     const {order} = req.body;
     const {coupon} = req.body;
-    // console.log(coupon);
-    
-    // console.log(req.body);
 
     try{
         await orderService.addOrder(userId, order, coupon);

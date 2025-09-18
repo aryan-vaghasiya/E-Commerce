@@ -970,11 +970,13 @@ exports.getAllCoupons = async(queryParams) => {
         offset,
         search = "",
         discount_type = "",
-        apply_on = "",
+        applies_to = "",
         is_active = "",
         start_date = "",
         end_date = ""
     } = queryParams;
+
+    // console.log(queryParams);
 
     let whereClause = ` WHERE 1=1`
     const params = []
@@ -988,17 +990,15 @@ exports.getAllCoupons = async(queryParams) => {
     }
 
     if (discount_type) {
-        // console.log(discount_type);
-        
         whereClause += ` AND discount_type = ?`;
         params.push(discount_type);
         countParams.push(discount_type)
     }
 
-    if (apply_on) {
+    if (applies_to) {
         whereClause += ` AND applies_to = ?`;
-        params.push(apply_on);
-        countParams.push(apply_on)
+        params.push(applies_to);
+        countParams.push(applies_to)
     }
 
     if (is_active) {
@@ -1050,14 +1050,14 @@ exports.getAllCoupons = async(queryParams) => {
     const results = await runQuery(dataQuery, params);
     // console.log(results);
 
-    if(results.length === 0){
-        throw new Error ("Could not select all coupons")
-    }
-
     const [{total}] = await runQuery(`SELECT COUNT(*) as total FROM coupons ${whereClause}`,countParams)
-    if(!total){
-        throw new Error ("Could not count total coupons")
-    }
+    // if(!total){
+    //     throw new Error ("Could not count total coupons")
+    // }
+
+    // if(results.length === 0){
+    //     throw new Error ("Could not select all coupons")
+    // }
 
     const allCoupons = {
         coupons : results,
@@ -1612,7 +1612,6 @@ exports.getCouponReportProducts = async (couponId, fromTime, toTime, limit, sort
 
                                 WHERE p.id IN (?)
                                 ORDER BY p.id ASC`, [productIds]);
-                                // ORDER BY p.id ASC`, [productIds]);
 
     products = products.map(item => {
         let coupon_discount_amount = coupon.discount_type === "fixed"
@@ -1634,9 +1633,6 @@ exports.getCouponReportProducts = async (couponId, fromTime, toTime, limit, sort
                                     )
                                 : coupon.discount_value * total_quantity;
 
-        // totalProductsSold += total_quantity
-        // totalProductsDiscounts += total_product_discount
-        // totalProductsSales += total_purchase_price
         return {
             ...item,
             coupon_discount_amount: coupon_discount_amount, 
