@@ -8,7 +8,7 @@ const InvoicePreview = ({ orderData }) => {
     return (
         <PDFViewer 
             style={{ 
-                minHeight: "500px",
+                minHeight: "1200px",
                 width: '100%', 
                 height: '100%', 
                 border: 'none' 

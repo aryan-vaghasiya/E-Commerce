@@ -431,7 +431,7 @@ const MyOrderPage = () => {
 
                                         {orderData.discount_amount > 0 && (
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <Typography variant="body2">Discount</Typography>
+                                                <Typography variant="body2">Discount ({(orderData.coupon?.code).toUpperCase()})</Typography>
                                                 <Typography variant="body2" color="success.main">
                                                     -${orderData.discount_amount.toFixed(2)}
                                                 </Typography>
@@ -464,7 +464,7 @@ const MyOrderPage = () => {
                                             Download Invoice
                                         </Button> */}
 
-                                        {orderData.status === "delivered" ?
+                                        {/* {orderData.status === "delivered" ? */}
                                         <PDFDownloadLink
                                             document={<OrderInvoice orderData={orderData} />}
                                             fileName={`invoice-${orderData.order_id}.pdf`}
@@ -482,9 +482,9 @@ const MyOrderPage = () => {
                                                 </Button>
                                             )}
                                         </PDFDownloadLink>
-                                        :
+                                        {/* :
                                         null
-                                        }
+                                        } */}
 
                                     </Stack>
                                 </CardContent>

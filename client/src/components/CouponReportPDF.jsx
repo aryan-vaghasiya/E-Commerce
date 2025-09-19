@@ -11,42 +11,6 @@ import dayjs from 'dayjs';
 import { saveAs } from 'file-saver';
 import { useState } from 'react';
 
-// const styles = StyleSheet.create({
-//     table: {
-//         width: '100%',
-//     },
-//     row: {
-//         display: 'flex',
-//         flexDirection: 'row',
-//         borderTop: '1px solid #EEE',
-//         paddingTop: 8,
-//         paddingBottom: 8,
-//     },
-//     header: {
-//         borderTop: 'none',
-//     },
-//     bold: {
-//         fontWeight: 'bold',
-//     },
-
-//     col1: {
-//         width: '10%',
-//     },
-//     col2: {
-//         width: '30%',
-//         paddingHorizontal: "5px"
-//     },
-//     col3: {
-//         width: '30%',
-//     },
-//     col4: {
-//         width: '30%',
-//     },
-//     textRight: {
-//         textAlign: "right"
-//     }
-// })
-
 const tableStyles = StyleSheet.create({
     table: {
         display: "table",
@@ -109,57 +73,6 @@ const styles = StyleSheet.create({
     row: { marginVertical: 2, fontSize: 12 },
     divider: { borderBottom: "1pt solid #000", marginVertical: 6 },
 });
-
-// const tableStyles = StyleSheet.create({
-//     // wrapper around the whole table
-//     table: {
-//         display: "table",
-//         width: "auto",
-//         borderStyle: "solid",
-//         borderWidth: 1,
-//         borderRightWidth: 0,
-//         borderBottomWidth: 0,
-//         marginVertical: 10,
-//     },
-
-//     // single row
-//     tableRow: {
-//         flexDirection: "row",
-//     },
-
-//     // header row
-//     tableHeader: {
-//         backgroundColor: "#f2f2f2",
-//     },
-
-//     // cell (base)
-//     tableCell: {
-//         borderStyle: "solid",
-//         borderWidth: 1,
-//         borderLeftWidth: 0,
-//         borderTopWidth: 0,
-//         padding: 4,
-//         fontSize: 10,
-//         flexGrow: 1, // default cell expands equally
-//         textAlign: "center",
-//     },
-
-//     // left aligned (e.g. product/category name)
-//     tableCellLeft: {
-//         textAlign: "left",
-//     },
-
-//     // bold cell
-//     tableCellBold: {
-//         fontWeight: "bold",
-//     },
-
-//     // header cell text
-//     headerText: {
-//         fontSize: 11,
-//         fontWeight: "bold",
-//     },
-// });
 
 const UsersTable = ({ users }) => (
     <View style={{padding: 5}}>

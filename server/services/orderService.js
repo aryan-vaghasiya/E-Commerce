@@ -125,7 +125,7 @@ exports.addOrder = async(userId, order, coupon) => {
                     WHEN pd.offer_price IS NOT NULL 
                         THEN pd.offer_price
                     ELSE pp.price
-                END AS purchase_price
+                END AS purchase_price,
                 CASE 
                     WHEN pd.offer_price IS NOT NULL 
                         THEN pd.offer_price
@@ -655,11 +655,21 @@ exports.getSingleOrderData = async (userId, orderId) => {
                     'rating', p.rating,
                     'category', c.category
                 )
-            ) AS items
+            ) AS items,
+            JSON_OBJECT(
+                'id', cp.id,
+                'name', cp.name,
+                'code', cp.code,
+                'discount_type', cp.discount_type,
+                'discount_value', cp.discount_value,
+                'threshold_amount', cp.threshold_amount,
+                'applies_to', cp.applies_to
+            ) AS coupon
         FROM orders o
         JOIN order_item oi ON o.id = oi.order_id
         JOIN products p   ON oi.product_id = p.id
         JOIN categories c ON c.id = p.category_id
+        LEFT JOIN coupons cp ON o.coupon_id = cp.id
         WHERE o.id = ?
         GROUP BY o.id`,
         [orderId]
