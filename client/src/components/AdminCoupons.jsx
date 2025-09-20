@@ -19,10 +19,11 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import Chip from '@mui/material/Chip';
 import { Grid, useMediaQuery, useTheme } from '@mui/system';
 import Tooltip from '@mui/material/Tooltip';
-import { Dialog, DialogActions, DialogContent, DialogTitle, InputLabel, MenuItem, Select } from '@mui/material';
+import { Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, InputLabel, MenuItem, Select } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import ClearIcon from '@mui/icons-material/Clear';
 
 function AdminCoupons() {
     const { register, handleSubmit, control, reset, watch, resetField, formState: {errors} } = useForm({
@@ -59,6 +60,9 @@ function AdminCoupons() {
     const [filterParams, setFilterParams] = useState({});
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
+    const startDate = watch("start_date")
+    const endDate = watch("end_date")
 
     const handleOpen = () => setOpen(true);
 
@@ -161,7 +165,7 @@ function AdminCoupons() {
     };
 
     const handleFilter = (filters = {}) => {
-        // console.log(filters);
+        console.log(filters);
         setActiveFilters(filters)
 
         setFilterParams(buildFilterParams(filters))
@@ -180,6 +184,17 @@ function AdminCoupons() {
     const handlePaginationChange = (newModel) => {
         setPaginationModel(newModel)
     };
+
+    const validateDateRange = (value) => {
+        if (startDate && endDate) {
+            const start = dayjs(startDate);
+            const end = dayjs(endDate);
+            if (end.isBefore(start)) {
+                return 'End date cannot be before start date';
+            }
+        }
+        return true
+    }
 
     const columns = [
         {
@@ -370,47 +385,108 @@ function AdminCoupons() {
                                         <Controller
                                             name="start_date"
                                             control={control}
+                                            rules={{
+                                                // required: endDate ? 'Start date is required' : false,
+                                            }}
                                             render={({ field }) => (
-                                                <DatePicker
-                                                    {...field}
-                                                    label="Start Date"
-                                                    maxDate={dayjs()}   
-                                                    slotProps={{
-                                                        textField: {
-                                                            fullWidth: true,
-                                                            size: isMobile ? 'small' : 'medium',
-                                                            error: !!errors.start_date,
-                                                            helperText: errors.start_date?.message
-                                                        }
-                                                    }}
-                                                />
+                                                <Box sx={{ position: 'relative' }}>
+                                                    <DatePicker
+                                                        {...field}
+                                                        label="Start Date"
+                                                        maxDate={endDate || dayjs()}
+                                                        disableHighlightToday
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                size: isMobile ? 'small' : 'medium',
+                                                                error: !!errors.start_date,
+                                                                helperText: errors.start_date?.message,
+                                                                onKeyDown: (e) => {
+                                                                    if (e.key !== 'Tab') {
+                                                                        e.preventDefault();
+                                                                    }
+                                                                },
+                                                                onPaste: (e) => {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                    {field.value && (
+                                                        <IconButton
+                                                            onClick={() => field.onChange(null)}
+                                                            size="small"
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                right: 40,
+                                                                top: '50%',
+                                                                transform: 'translateY(-50%)',
+                                                                zIndex: 1
+                                                            }}
+                                                        >
+                                                            <ClearIcon fontSize="small" />
+                                                        </IconButton>
+                                                    )}
+                                                </Box>
                                             )}
-                                        />
+                                        /> 
                                     </Grid>
                                     <Grid size={{xs: 12, md: 6}}>
                                         <Controller
                                             name="end_date"
                                             control={control}
+                                            rules={{
+                                                // required: startDate ? 'End date is required' : false,
+                                                validate: validateDateRange,
+                                                min: startDate || dayjs().subtract(10, 'year')
+                                            }}
                                             render={({ field }) => (
-                                                <DatePicker
-                                                    {...field}
-                                                    label="End Date"
-                                                    maxDate={dayjs()}
-                                                    slotProps={{
-                                                        textField: {
-                                                            fullWidth: true,
-                                                            size: isMobile ? 'small' : 'medium',
-                                                            error: !!errors.end_date,
-                                                            helperText: errors.end_date?.message
-                                                        }
-                                                    }}
-                                                />
+                                                <Box sx={{ position: 'relative' }}>
+                                                    <DatePicker
+                                                        {...field}
+                                                        label="End Date"
+                                                        maxDate={dayjs()}
+                                                        minDate={startDate}
+                                                        disableHighlightToday
+                                                        slotProps={{
+                                                            textField: {
+                                                                fullWidth: true,
+                                                                size: isMobile ? 'small' : 'medium',
+                                                                error: !!errors.end_date,
+                                                                helperText: errors.end_date?.message,
+                                                                onKeyDown: (e) => {
+                                                                    if (e.key !== 'Tab') {
+                                                                        e.preventDefault();
+                                                                    }
+                                                                },
+                                                                onPaste: (e) => {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                    {field.value && (
+                                                        <IconButton
+                                                            onClick={() => field.onChange(null)}
+                                                            size="small"
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                right: 40,
+                                                                top: '50%',
+                                                                transform: 'translateY(-50%)',
+                                                                zIndex: 1
+                                                            }}
+                                                        >
+                                                            <ClearIcon fontSize="small" />
+                                                        </IconButton>
+                                                    )}
+                                                </Box>
                                             )}
                                         />
                                     </Grid>
                                 </LocalizationProvider>
                             </Grid>
-                        </Stack>    
+                        </Stack>
                     </DialogContent>
                     <Divider />
                     <DialogActions sx={{ 

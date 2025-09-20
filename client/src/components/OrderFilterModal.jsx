@@ -272,7 +272,7 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                                                         <DatePicker
                                                             {...field}
                                                             label="Start Date"
-                                                            maxDate={dayjs()}
+                                                            maxDate={endDate || dayjs()}
                                                             slotProps={{
                                                                 textField: {
                                                                     fullWidth: true,

@@ -24,32 +24,7 @@ function MyCart() {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const [loading, setLoading] = useState(true)
-
-    // Dummy data for saved items
-    // const [savedItems] = useState([
-    //     {
-    //         id: 'saved1',
-    //         title: 'Wireless Bluetooth Headphones',
-    //         description: 'Premium quality wireless headphones with noise cancellation',
-    //         brand: 'AudioTech',
-    //         price: 89.99,
-    //         rating: 4.5,
-    //         thumbnail: 'headphones.jpg',
-    //         stock: 15,
-    //         status: 'active'
-    //     },
-    //     {
-    //         id: 'saved2',
-    //         title: 'Smart Fitness Watch',
-    //         description: 'Advanced fitness tracking with heart rate monitor',
-    //         brand: 'FitPro',
-    //         price: 199.99,
-    //         rating: 4.3,
-    //         thumbnail: 'watch.jpg',
-    //         stock: 0,
-    //         status: 'active'
-    //     }
-    // ])
+    const shippingCharges = 4.99
 
     const checkOutNavigate = async () => {
         if (userState.token) {
@@ -105,7 +80,7 @@ function MyCart() {
             }}
         >
             <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
-                Order Summary
+                Cart Summary
             </Typography>
             <Divider sx={{ mb: 2 }} />
             
@@ -118,13 +93,22 @@ function MyCart() {
             ) : (
                 <>
                     <Box sx={{ mb: 3 }}>
+                        {cartValue < 50 ?
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+                                <Typography variant='caption' color='error'>
+                                {`Shop worth ${(50 - cartValue).toFixed(2)} more for FREE Shipping`}
+                                </Typography>
+                            </Box>
+                            :
+                            null
+                        }
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="body2">Items ({noOfItems})</Typography>
                             <Typography variant="body2">${cartValue?.toFixed(2)}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="body2">Shipping</Typography>
-                            <Typography variant="body2" color="success.main">FREE</Typography>
+                            <Typography variant="body2" color="success.main">{cartValue >= 50 ? `FREE` : `+$${shippingCharges}`}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="body2">Tax</Typography>
@@ -136,7 +120,7 @@ function MyCart() {
                                 Total
                             </Typography>
                             <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
-                                ${cartValue?.toFixed(2)}
+                                ${(cartValue + shippingCharges).toFixed(2)}
                             </Typography>
                         </Box>
                     </Box>

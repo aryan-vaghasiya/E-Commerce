@@ -30,9 +30,11 @@ exports.addOrder = async(userId, order, coupon) => {
                                         WHERE ci.user_id = ? 
                                             AND ci.cart_id = ?`, [userId, cartId]);
 
+    const freeShippingApplicable = order.cartValue >= 50 ? true : false
+    const shippingCharges = freeShippingApplicable ? 0.00 : 4.99
     const userWallet = await walletService.getWallet(userId)
     const currentCartValue = order.newCartValue ? order.newCartValue : order.cartValue
-    const isBalanceSufficient = await walletService.compareBalance(userWallet, currentCartValue)
+    const isBalanceSufficient = await walletService.compareBalance(userWallet, currentCartValue + shippingCharges)
 
     if(!isBalanceSufficient){
         throw new Error("Insufficient balance in Wallet")
@@ -96,9 +98,10 @@ exports.addOrder = async(userId, order, coupon) => {
                                                     total = ?,
                                                     coupon_id = ?, 
                                                     coupon_code = ?,
-                                                    discount_amount = ?
+                                                    discount_amount = ?,
+                                                    shipping = ?
                                                     WHERE id = ?`,
-            [newCart.cartValue, couponData.id, couponData.code, newCart.discountValue, orderId]);
+            [newCart.cartValue, couponData.id, couponData.code, newCart.discountValue, shippingCharges, orderId]);
         if (updateDiscount.affectedRows === 0) {
             throw new Error("Couldn't update Total");
         }
@@ -154,15 +157,16 @@ exports.addOrder = async(userId, order, coupon) => {
                     SELECT SUM(quantity * purchase_price)
                     FROM order_item
                     WHERE order_id = ?
-                )
+                ),
+                shipping = ?
                 WHERE id = ?`,
-            [orderId, orderId]);
+            [orderId, shippingCharges, orderId]);
         if (setTotal.affectedRows === 0) {
             throw new Error("Couldn't update Total");
         }
     }
 
-    await walletService.orderWalletPayment(userWallet, orderId, currentCartValue)
+    await walletService.orderWalletPayment(userWallet, orderId, currentCartValue + shippingCharges)
     // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
     const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
@@ -656,20 +660,29 @@ exports.getSingleOrderData = async (userId, orderId) => {
                     'category', c.category
                 )
             ) AS items,
-            JSON_OBJECT(
-                'id', cp.id,
-                'name', cp.name,
-                'code', cp.code,
-                'discount_type', cp.discount_type,
-                'discount_value', cp.discount_value,
-                'threshold_amount', cp.threshold_amount,
-                'applies_to', cp.applies_to
-            ) AS coupon
+            CASE 
+                WHEN o.coupon_id IS NOT NULL 
+                    THEN 
+                        JSON_OBJECT(
+                            'id', cp.id,
+                            'name', cp.name,
+                            'code', cp.code,
+                            'discount_type', cp.discount_type,
+                            'discount_value', cp.discount_value,
+                            'threshold_amount', cp.threshold_amount,
+                            'applies_to', cp.applies_to
+                        )
+                ELSE NULL
+            END AS coupon
         FROM orders o
-        JOIN order_item oi ON o.id = oi.order_id
-        JOIN products p   ON oi.product_id = p.id
-        JOIN categories c ON c.id = p.category_id
-        LEFT JOIN coupons cp ON o.coupon_id = cp.id
+        JOIN order_item oi 
+            ON o.id = oi.order_id
+        JOIN products p 
+            ON oi.product_id = p.id
+        JOIN categories c 
+            ON c.id = p.category_id
+        LEFT JOIN coupons cp 
+            ON o.coupon_id = cp.id
         WHERE o.id = ?
         GROUP BY o.id`,
         [orderId]

@@ -33,6 +33,8 @@ function CheckOut() {
     const [newCart, setNewCart] = useState(null)
     const [isCouponApplied, setIsCouponApplied] = useState(false)
     const cartItems = newCart ? newCart.items : cartReducer.items
+    const freeShippingApplicable = (newCart?.cartValue || cartReducer.cartValue) >= 50 ? true : false
+    const shippingCharges = freeShippingApplicable ? 0.00 : 4.99
 
 
     const { register, handleSubmit, control, getValues, formState: { errors } } = useForm({
@@ -123,7 +125,6 @@ function CheckOut() {
 
     return (
         <Box sx={{ display: { sm: "flex", xs: "block" }, justifyContent: "center", py: 3, bgcolor: "#EEEEEE" }}>
-            {/* <div className='pt-16 pb-6 flex justify-center bg-gray-100 font-[Inter] min-h-screen '> */}
             <Snackbar
                 open={snackbarState.show}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -265,84 +266,136 @@ function CheckOut() {
                 <Card sx={{ textAlign: "center", mb: "auto" , maxWidth: "100%", maxHeight: "500px", overflowY: "auto"}}>
                     <Typography sx={{ mt: 3, mb: 1 }}>Order Summary</Typography>
                     <Divider variant='middle' flexItem />
-                    {
-                        cartItems.map(item =>
-                            <Box key={item.id}>
-                                <Toolbar sx={{my: 1}} >
-                                    <Box >
-                                        <img src={getImageUrl(item.thumbnail)} alt="Product Image" className='max-w-30' />
-                                    </Box>
-                                    <Box sx={{ textAlign: "left", width: "100%" }}>
+                    {cartItems.map(item =>
+                        <Box key={item.id}>
+                            <Toolbar sx={{my: 1}} >
+                                <Box >
+                                    <img src={getImageUrl(item.thumbnail)} alt="Product Image" className='max-w-30' />
+                                </Box>
+                                <Box sx={{ textAlign: "left", width: "100%" }}>
 
-                                        <Typography variant='subtitle1' sx={{ fontWeight: "bold" }}>{item.title}</Typography>
-                                        <Typography sx={{ fontSize: 12 }}>Brand: {item.brand}</Typography>
-                                        <Box sx={{ display: "inline-flex", alignItems: "center" }}>
-                                            <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
-                                            <Typography sx={{ fontSize: 14, pt: 0.3, pr: 0.2 }}>
-                                                {item.rating}
-                                            </Typography>
-                                        </Box>
-                                        <Typography sx={{ fontSize: 14, display: "flex" }}>{item.quantity} x <span style={{ marginLeft: "auto" }}>${(item.price).toFixed(2)}</span> </Typography>
-                                        <Divider variant='fullWidth' sx={{pt: 0.5}}/>
-                                        <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue).toFixed(2)}</span> </Typography>
-                                        {
-                                            item.coupon_discount ? 
-                                            <Box>
-                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5, fontWeight: 500}} color='success'>
-                                                    Coupon Discount: 
-                                                    <span style={{ marginLeft: "auto" }}>
-                                                        - ${(item.coupon_discount).toFixed(2)}
-                                                    </span> 
-                                                </Typography>
-                                                <Divider variant='fullWidth' sx={{pt: 0.5}}/>
-                                                <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue - item.coupon_discount).toFixed(2)}</span> </Typography>
-                                            </Box>
-                                            :
-                                            null
-                                        }
-                                        {/* <Typography sx={{ fontSize: 14, display: "flex" }}>Quantity: <span style={{ marginLeft: "auto" }}>{item.quantity}</span></Typography>
-                                        <Typography sx={{ fontSize: 14, display: "flex" }}>Total: <span style={{ marginLeft: "auto" }}>${item.priceValue}</span></Typography> */}
+                                    <Typography variant='subtitle1' sx={{ fontWeight: "bold" }}>{item.title}</Typography>
+                                    <Typography sx={{ fontSize: 12 }}>Brand: {item.brand}</Typography>
+                                    <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+                                        <StarIcon sx={{ color: "#FF8C00", fontSize: 20 }}></StarIcon>
+                                        <Typography sx={{ fontSize: 14, pt: 0.3, pr: 0.2 }}>
+                                            {item.rating}
+                                        </Typography>
                                     </Box>
-                                </Toolbar>
-                                <Divider variant='middle'/>
-                            </Box>
+                                    <Typography sx={{ fontSize: 14, display: "flex" }}>{item.quantity} x <span style={{ marginLeft: "auto" }}>${(item.price).toFixed(2)}</span> </Typography>
+                                    <Divider variant='fullWidth' sx={{pt: 0.5}}/>
+                                    <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue).toFixed(2)}</span> </Typography>
+                                    {
+                                        item.coupon_discount ? 
+                                        <Box>
+                                            <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5, fontWeight: 500}} color='success'>
+                                                Coupon Discount: 
+                                                <span style={{ marginLeft: "auto" }}>
+                                                    - ${(item.coupon_discount).toFixed(2)}
+                                                </span> 
+                                            </Typography>
+                                            <Divider variant='fullWidth' sx={{pt: 0.5}}/>
+                                            <Typography sx={{ fontSize: 14, display: "flex", pt: 0.5}}><span style={{ marginLeft: "auto" }}>${(item.priceValue - item.coupon_discount).toFixed(2)}</span> </Typography>
+                                        </Box>
+                                        :
+                                        null
+                                    }
+                                </Box>
+                            </Toolbar>
+                            <Divider variant='middle'/>
+                        </Box>
                         )
                     }
                     <Divider variant='middle'/>
-                    <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
+
+                    <Stack gap={0.5} sx={{my: 1}}>
+                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, mx: "auto"}}>
+                            Sub Total: 
+                            <span style={{ marginLeft: "auto" }}>
+                                ${isCouponApplied ? (newCart?.newCartValue).toFixed(2) : (cartReducer.cartValue).toFixed(2)}
+                            </span>
+                        </Typography>
+                        {
+                            isCouponApplied && couponData.applies_to === "all" ? 
+                            <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
+                                Coupon Discount: 
+                                <span style={{ marginLeft: "auto" }}>
+                                    - ${(newCart?.discountValue).toFixed(2)}
+                                </span>
+                            </Typography>
+                            :
+                            null
+                        }
+                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, mx: "auto"}}>
+                            Shipping: 
+                            <span style={{ marginLeft: "auto" }}>
+                                {/* {(newCart?.cartValue || cartReducer.cartValue) >= 50 ? `FREE` : `$${shippingCharges}`} */}
+                                ${shippingCharges.toFixed(2)}
+                            </span>
+                        </Typography>
+                        <Divider variant='middle'/>
+                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, mx: "auto"}}>
+                            Order Total: 
+                            <span style={{ marginLeft: "auto" }}>
+                                ${((newCart?.newCartValue || cartReducer.cartValue) + shippingCharges).toFixed(2)}
+                            </span>
+                        </Typography>
+                    </Stack>
+                    {/* {
+                        isCouponApplied && couponData.applies_to === "all" ? 
+                        <Box>
+                            <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
+                                Coupon Discount: 
+                                <span style={{ marginLeft: "auto" }}>
+                                    - ${(newCart?.discountValue).toFixed(2)}
+                                </span>
+                            </Typography>
+                            <Divider variant='middle'/>
+                            <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
+                                Order Total: 
+                                <span style={{ marginLeft: "auto" }}>
+                                    ${(newCart?.newCartValue).toFixed(2)}
+                                </span>
+                            </Typography>
+                        </Box>
+                        :
+                        null
+                    } */}
+
+
+                    {/* <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
                         {isCouponApplied && couponData.applies_to === "all" ? "Sub" : "Order"} Total: 
                         <span style={{ marginLeft: "auto" }}>
-                            {/* ${cartReducer.products.reduce((accumulator, currentvalue) => accumulator + currentvalue.priceValue, 0)} */}
-                            {/* ${(cartReducer.cartValue).toFixed(2)} */}
                             ${isCouponApplied && couponData.applies_to !== "all" ? (newCart?.newCartValue).toFixed(2) : (cartReducer.cartValue).toFixed(2)}
                         </span>
                     </Typography>
                     {
                         isCouponApplied && couponData.applies_to === "all" ? 
                         <Box>
-                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
-                            Coupon Discount: 
-                            <span style={{ marginLeft: "auto" }}>
-                                - ${(newCart?.discountValue).toFixed(2)}
-                            </span>
-                        </Typography>
-                        <Divider variant='middle'/>
-                        <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
-                            Order Total: 
-                            <span style={{ marginLeft: "auto" }}>
-                                ${(newCart?.newCartValue).toFixed(2)}
-                            </span>
-                        </Typography>
+                            <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto", fontWeight: 500}} color='success'>
+                                Coupon Discount: 
+                                <span style={{ marginLeft: "auto" }}>
+                                    - ${(newCart?.discountValue).toFixed(2)}
+                                </span>
+                            </Typography>
+                            <Divider variant='middle'/>
+                            <Typography sx={{ fontSize: 14, display: "flex", width: "95%", px: 2, py: 1, mx: "auto"}}>
+                                Order Total: 
+                                <span style={{ marginLeft: "auto" }}>
+                                    ${(newCart?.newCartValue).toFixed(2)}
+                                </span>
+                            </Typography>
                         </Box>
                         :
                         null
-                    }
+                    } */}
                 </Card>
                 <Card sx={{mt: 2}}>
                     <Typography sx={{ p: 1, fontSize: "14px", bgcolor: "#3B92CA", color: "white"}}>APPLY COUPON</Typography>
                     <Box sx={{display: "flex", flexDirection: "column", p: 2}}>
                         <Stack spacing={2}>
                             <TextField
+                                slotProps={{htmlInput: { maxLength: 10 }}}
                                 disabled={isCouponApplied}
                                 label="Coupon Code"
                                 value={couponQuery}
@@ -354,197 +407,11 @@ function CheckOut() {
                                 :
                                 <Button variant='contained' onClick={handleCouponQuery}>Apply</Button>
                             }
-                            {/* <Button variant='contained' onClick={handleCouponQuery}>Apply</Button> */}
                         </Stack>
-                        {/* <TextField label="Coupon Code" type='text' sx={{ width: "100%", mr: 1 }} {...register("coupon_code", {
-                            pattern: {
-                                value: /^.{5,}$/,
-                                message: "Coupon Code must be 5 or more characters"
-                            },
-                        })}
-                            error={!!errors.coupon_code}
-                            helperText={errors.coupon_code ? errors.coupon_code.message : ""}
-                        /> */}
                     </Box>
                 </Card>
             </Box>
             {/* <DevTool control={control} /> */}
-
-
-            {/* <form className=' flex flex-col m-2 w-fit bg-white py-5 px-5 rounded-2xl mx-8 shadow-xl h-150' noValidate>
-                <div className='flex flex-col'>
-                    <input id='email' type="text" className='bg-gray-200 m-2 w-full mx-auto p-2.5 rounded-xl mb-1' placeholder='Enter your Email'
-                        {...register("email",
-                            {
-                                required: {
-                                    value: true,
-                                    message: "This field is Required"
-                                },
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: "Enter valid email"
-                                }
-                            })}
-                    />
-                    {
-                        errors.email ?
-                            <p className='text-red-600 text-xs ml-2'> {errors.email.message}</p>
-                            :
-                            null
-                    }
-                    <h2 className='m-2 font-bold mt-5 text-center'>Shipping</h2>
-                    <div className='inline-flex'>
-                        <div>
-                            <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3 mb-1' placeholder='First Name'
-                                {...register("fName",
-                                    {
-                                        required: {
-                                            value: true,
-                                            message: "This field is Required"
-                                        },
-                                        pattern: {
-                                            value: /^.{5,20}$/,
-                                            message: "Must have 5 - 20 characters"
-                                        }
-                                    })}
-                            />
-                            {
-                                errors.fName ?
-                                    <p className='text-red-600 text-xs ml-2 w-fit'> {errors.fName.message}</p>
-                                    :
-                                    null
-                            }
-                        </div>
-                        <div>
-                            <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3 mb-1' placeholder='Last Name'
-                                {...register("lName",
-                                    {
-                                        pattern: {
-                                            value: /^.{5,20}$/,
-                                            message: "Must have 5 - 20 characters"
-                                        }
-                                    })}
-                            />
-                            {
-                                errors.lName ?
-                                    <p className='text-red-600 text-xs ml-2 w-fit'> {errors.lName.message}</p>
-                                    :
-                                    null
-                            }
-                        </div>
-                    </div>
-                    <div>
-                        <input type="number" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='Phone Number'
-                            {...register("pNumber",
-                                {
-                                    required: {
-                                        value: true,
-                                        message: "This field is Required"
-                                    },
-                                    pattern: {
-                                        value: /^[0-9]{10}$/,
-                                        message: "Invalid Mobile Number"
-                                    }
-                                })}
-                        />
-                        {
-                            errors.pNumber ?
-                                <p className='text-red-600 text-xs ml-2 w-fit'> {errors.pNumber.message}</p>
-                                :
-                                null
-                        }
-                    </div>
-                    <div>
-                        <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='Address Line 1'
-                            {...register("add1",
-                                {
-                                    required: {
-                                        value: true,
-                                        message: "This field is Required"
-                                    }
-                                })}
-                        />
-                        {
-                            errors.add1 ?
-                                <p className='text-red-600 text-xs ml-2 w-fit'> {errors.add1.message}</p>
-                                :
-                                null
-                        }
-                    </div>
-                    <div>
-                        <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='Address Line 2' />
-                    </div>
-                    <div className='inline-flex'>
-                        <div>
-                            <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='State'
-                                {...register("state",
-                                    {
-                                        required: {
-                                            value: true,
-                                            message: "This field is Required"
-                                        }
-                                    })}
-                            />
-                            {
-                                errors.state ?
-                                    <p className='text-red-600 text-xs ml-2 w-fit'> {errors.state.message}</p>
-                                    :
-                                    null
-                            }
-                        </div>
-                        <div>
-                            <input type="text" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='City'
-                                {...register("city",
-                                    {
-                                        required: {
-                                            value: true,
-                                            message: "This field is Required"
-                                        }
-                                    })}
-                            />
-                            {
-                                errors.city ?
-                                    <p className='text-red-600 text-xs ml-2 w-fit'> {errors.city.message}</p>
-                                    :
-                                    null
-                            }
-                        </div>
-                        <div>
-                            <input type="number" className='bg-gray-200 m-2 w-fit mx-auto p-1.5 rounded-lg mr-3' placeholder='Pincode'
-                                {...register("pincode",
-                                    {
-                                        required: {
-                                            value: true,
-                                            message: "This field is Required"
-                                        },
-                                        pattern: {
-                                            value: /^[0-9]{6}$/,
-                                            message: "Invalid Pincode"
-                                        }
-                                    })}
-                            />
-                            {
-                                errors.pincode ?
-                                    <p className='text-red-600 text-xs ml-2 w-fit'> {errors.pincode.message}</p>
-                                    :
-                                    null
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div className='flex flex-col items-center my-10 h-full justify-around'>
-                    <p>Cart Value: $
-                        {
-                            parseFloat(
-                                cartReducer.products.reduce((acc, item) => {
-                                    return acc + item.priceValue
-                                }, 0)
-                            ).toFixed(2)
-                        }
-                    </p>
-                    <button onClick={handleSubmit(handleCheckout)} className='m-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 my-1 rounded-2xl active:scale-95'>Place Order</button>
-                </div>
-            </form> */}
         </Box>
     )
 }
