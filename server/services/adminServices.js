@@ -49,7 +49,7 @@ exports.getDashboard = async() => {
                                             u.last_name,
                                             o.status,
                                             DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
-                                            o.total,
+                                            o.subtotal,
                                             o.final_total
                                         FROM orders o JOIN users u on o.user_id = u.id
                                         ORDER BY o.order_date DESC
@@ -72,7 +72,7 @@ exports.getAllOrders = async(page, limit, offset) => {
                                         u.last_name,
                                         o.status,
                                         DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
-                                        o.total,
+                                        o.subtotal,
                                         o.final_total
                                     FROM orders o JOIN users u on o.user_id = u.id
                                     ORDER BY o.order_date DESC
@@ -191,7 +191,7 @@ exports.getOrderData = async (orderId) => {
                                         o.status,
                                         DATE_FORMAT(o.order_date, '%d/%m/%Y') as order_date,
                                         DATE_FORMAT(o.order_date, '%H:%i:%s') as order_time,
-                                        o.total,
+                                        o.subtotal,
                                         o.discount_amount,
                                         o.final_total,
                                         u.first_name,
@@ -1434,7 +1434,7 @@ exports.getCouponUsages = async (couponId, limit, offset) => {
                                     u.user_id,
                                     u.used_at,
                                     o.id as order_id,
-                                    o.total,
+                                    o.subtotal,
                                     o.discount_amount,
                                     o.final_total
 

@@ -15,7 +15,7 @@ exports.addOrder = async(userId, order, coupon) => {
     }
     const cartId = checkCart[0].id; 
 
-    const [{totalOrders}] = await runQuery(`SELECT COUNT(*) as totalOrders FROM orders WHERE user_id = ?`, [userId])
+    const [{totalOrders}] = await runQuery(`SELECT COUNT(id) as totalOrders FROM orders WHERE user_id = ?`, [userId])
     console.log(totalOrders);
 
     let isReferral = false
@@ -34,7 +34,7 @@ exports.addOrder = async(userId, order, coupon) => {
     const shippingCharges = freeShippingApplicable ? 0.00 : 4.99
     const userWallet = await walletService.getWallet(userId)
     const currentCartValue = order.newCartValue ? order.newCartValue : order.cartValue
-    const isBalanceSufficient = await walletService.compareBalance(userWallet, currentCartValue + shippingCharges)
+    const isBalanceSufficient = await walletService.compareBalance(userWallet, parseFloat((currentCartValue + shippingCharges).toFixed(2)))
 
     if(!isBalanceSufficient){
         throw new Error("Insufficient balance in Wallet")
@@ -72,7 +72,7 @@ exports.addOrder = async(userId, order, coupon) => {
             throw new Error("Cart value mismatch")
         }
 
-        const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
+        const insert = await runQuery("INSERT INTO orders (user_id, subtotal) VALUES (?, 0)", [userId]);
         if (insert.affectedRows === 0) {
             throw new Error("Couldn't insert Order");
         }
@@ -95,7 +95,7 @@ exports.addOrder = async(userId, order, coupon) => {
         }
 
         const updateDiscount = await runQuery(`UPDATE orders SET 
-                                                    total = ?,
+                                                    subtotal = ?,
                                                     coupon_id = ?, 
                                                     coupon_code = ?,
                                                     discount_amount = ?,
@@ -112,7 +112,7 @@ exports.addOrder = async(userId, order, coupon) => {
     }
 
     else{
-        const insert = await runQuery("INSERT INTO orders (user_id, total) VALUES (?, 0)", [userId]);
+        const insert = await runQuery("INSERT INTO orders (user_id, subtotal) VALUES (?, 0)", [userId]);
         if (insert.affectedRows === 0) {
             throw new Error("Couldn't insert Order");
         }
@@ -153,7 +153,7 @@ exports.addOrder = async(userId, order, coupon) => {
         }
 
         const setTotal = await runQuery(`UPDATE orders
-                SET total = (
+                SET subtotal = (
                     SELECT SUM(quantity * purchase_price)
                     FROM order_item
                     WHERE order_id = ?
@@ -166,7 +166,7 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
-    await walletService.orderWalletPayment(userWallet, orderId, currentCartValue + shippingCharges)
+    await walletService.orderWalletPayment(userWallet, orderId, parseFloat((currentCartValue + shippingCharges).toFixed(2)))
     // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
     const emptyCart = await runQuery(`DELETE FROM cart_item WHERE cart_id = ?`, [cartId])
@@ -321,7 +321,7 @@ exports.getOrdersService = async (userId, queryParams) => {
         noOfItems: order.noOfItems,
         items: order.items,
         final_total: order.final_total,
-        cartValue: order.total,
+        cartValue: order.subtotal,
         discount: order.discount_amount,
         status: order.status
     }));
@@ -639,8 +639,9 @@ exports.getSingleOrderData = async (userId, orderId) => {
     const [order] = await runQuery(
         `SELECT
             o.id AS order_id,
-            o.total,
+            o.subtotal,
             o.discount_amount,
+            o.shipping,
             o.final_total,
             o.status,
             o.order_date,
@@ -697,8 +698,9 @@ exports.getOrdersByIdsHelper = async (orderIds) => {
     const orders = await runQuery(
         `SELECT
             o.id AS order_id,
-            o.total,
+            o.subtotal,
             o.discount_amount,
+            o.shipping,
             o.final_total,
             o.status,
             o.order_date,

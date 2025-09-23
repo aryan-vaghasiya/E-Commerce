@@ -426,7 +426,7 @@ const MyOrderPage = () => {
                                     <Stack spacing={1.5}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <Typography variant="body2">Subtotal ({orderData.items.length} items)</Typography>
-                                            <Typography variant="body2">${orderData.total.toFixed(2)}</Typography>
+                                            <Typography variant="body2">${orderData.subtotal.toFixed(2)}</Typography>
                                         </Box>
 
                                         {orderData.discount_amount > 0 && (

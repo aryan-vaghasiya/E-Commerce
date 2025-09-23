@@ -397,7 +397,7 @@ const OrderInvoice = ({ orderData }) => {
                                 Subtotal ({orderData.items.length} items):
                             </Text>
                             <Text style={styles.summaryValue}>
-                                ${breakLongNumbers(orderData.total.toFixed(2))}
+                                ${breakLongNumbers(orderData.subtotal.toFixed(2))}
                             </Text>
                         </View>
 
