@@ -13,27 +13,49 @@ const MyOrderPage = () => {
     const theme = useTheme()
     const navigate = useNavigate()
     const { orderId } = useParams()
-    const {state} = useLocation()
     const userState = useSelector(state => state.userReducer)
-
-    // console.log(state);
 
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     const [orderData, setOrderData] = useState(null)
     const [loading, setLoading] = useState(true)
 
-    const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
-    const cancelledSteps = ["Order Placed", "Order Cancelled"]
-    const allStatus = ["pending", "accepted", "dispatched", "delivered"]
+    // const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
+    // const cancelledSteps = ["Order Placed", "Order Cancelled"]
+    // const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
-    const getCurrentStatus = (status) => {
-        const index = allStatus.indexOf(status)
-        return status === "delivered"? index+1 : status !== "cancelled" ? index : null
-    }
-
-        const isStepFailed = (step) => {
-        return step === 1;
+    const statusLabels = {
+        pending: "Order Placed",
+        accepted: "Order Accepted",
+        dispatched: "Order Dispatched",
+        delivered: "Order Delivered",
+        cancelled: "Order Cancelled"
     };
+
+    const fullOrderLifecycle = ["pending", "accepted", "dispatched", "delivered"];
+
+    const statusHistory = orderData?.statuses || [];
+    let activeStep = statusHistory.length - 1;
+    const isCancelled = statusHistory.some(step => step.status === 'cancelled');
+
+    const historyMap = new Map();
+    statusHistory.forEach(item => {
+        if (!historyMap.has(item.status)) {
+            historyMap.set(item.status, item);
+        }
+    });
+    const lastCompletedStatus = statusHistory.length > 0 ? statusHistory[statusHistory.length - 1].status : '';
+    
+    orderData?.status !== "cancelled" ? 
+    activeStep = fullOrderLifecycle.indexOf(lastCompletedStatus) : null
+
+    // const getCurrentStatus = (status) => {
+    //     const index = allStatus.indexOf(status)
+    //     return status === "delivered"? index+1 : status !== "cancelled" ? index : null
+    // }
+
+    // const isStepFailed = (step) => {
+    //     return step === 1;
+    // };
 
     const fetchOrder = async () => {
         // setLoading(true)
@@ -60,67 +82,6 @@ const MyOrderPage = () => {
     }
 
     useEffect(() => {
-        // setTimeout(() => {
-        //     // setLoading(true)
-        //     setOrderData({
-        //         id: orderId || 'ORD-2024-001',
-        //         status: 'dispatched',
-        //         orderDate: '2024-09-15T10:30:00Z',
-        //         expectedDelivery: '2024-09-18T18:00:00Z',
-        //         totalAmount: 299.97,
-        //         subtotal: 249.98,
-        //         discount: 25.00,
-        //         shipping: 0.00,
-        //         tax: 24.99,
-        //         finalTotal: 274.97,
-        //         paymentMethod: 'Credit Card',
-        //         trackingNumber: 'TRK123456789',
-        //         user: {
-        //             name: 'John Doe',
-        //             email: 'john.doe@example.com',
-        //             phone: '+1 (555) 123-4567',
-        //             address: {
-        //                 street: '123 Main Street, Apt 4B',
-        //                 city: 'New York',
-        //                 state: 'NY',
-        //                 zipCode: '10001',
-        //                 country: 'United States'
-        //             }
-        //         },
-        //         items: [
-        //             {
-        //                 id: 1,
-        //                 name: 'Wireless Bluetooth Headphones',
-        //                 image: 'headphones.jpg',
-        //                 price: 89.99,
-        //                 quantity: 2,
-        //                 total: 179.98,
-        //                 brand: 'AudioTech',
-        //                 rating: 4.5
-        //             },
-        //             {
-        //                 id: 2,
-        //                 name: 'Smart Fitness Watch',
-        //                 image: 'watch.jpg',
-        //                 price: 199.99,
-        //                 quantity: 1,
-        //                 total: 199.99,
-        //                 brand: 'FitPro',
-        //                 rating: 4.3
-        //             }
-        //         ],
-        //         timeline: [
-        //             { status: 'placed', date: '2024-09-15T10:30:00Z', completed: true },
-        //             { status: 'confirmed', date: '2024-09-15T11:15:00Z', completed: true },
-        //             { status: 'dispatched', date: '2024-09-16T09:00:00Z', completed: true },
-        //             { status: 'delivered', date: null, completed: false }
-        //         ]
-        //     })
-
-        //     setLoading(false)
-        //     // setOrderData(state)
-        // }, 1000)
-
         fetchOrder()
     }, [orderId])
 
@@ -139,11 +100,6 @@ const MyOrderPage = () => {
             default: 
                 return { color: 'default', icon: <Pending />, label: 'Unknown' }
         }
-    }
-
-    const handleDownloadInvoice = () => {
-        // Implement invoice download logic
-        console.log('Downloading invoice...')
     }
 
     if (loading) {
@@ -174,25 +130,31 @@ const MyOrderPage = () => {
             <Container maxWidth="lg">
 
                 <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <IconButton onClick={() => navigate('/my-orders')} sx={{ p: 1 }}>
-                            <ArrowBack />
-                        </IconButton>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="h5" fontWeight="bold" color="primary.main">
-                                Order #{orderData.order_id}
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-                                <Chip
-                                    icon={statusConfig.icon}
-                                    label={statusConfig.label}
-                                    color={statusConfig.color}
-                                    variant="filled"
-                                />
-                                <Typography variant="body2" color="text.secondary">
-                                    Placed on {dayjs(orderData.order_date).format("DD MMM, YYYY")}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent:"space-between", gap: 2 }}>
+                        <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
+                            <IconButton onClick={() => navigate('/my-orders')} sx={{ p: 1 }}>
+                                <ArrowBack />
+                            </IconButton>
+                            <Box sx={{ flex: 1 }}>
+                                <Typography variant="h5" fontWeight="bold" color="primary.main">
+                                    Order #{orderData.order_id}
                                 </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
+                                    <Chip
+                                        icon={statusConfig.icon}
+                                        label={statusConfig.label}
+                                        color={statusConfig.color}
+                                        variant="filled"
+                                    />
+                                    <Typography variant="body2" color="text.secondary">
+                                        Placed on {dayjs(orderData.order_date).format("DD MMM, YYYY")}
+                                    </Typography>
+                                </Box>
                             </Box>
+                        </Box>
+                        <Box>
+                            <Button>Cancel</Button>
+                            <Button>Reorder</Button>
                         </Box>
                     </Box>
                 </Paper>
@@ -210,23 +172,6 @@ const MyOrderPage = () => {
                                             <React.Fragment key={item.id}>
                                                 <ListItem sx={{ px: 0, py: 1.5 }}>
                                                     <ListItemAvatar>
-                                                        {/* <Avatar
-                                                            variant="rounded"
-                                                            sx={{ 
-                                                                width: 60, 
-                                                                height: 60, 
-                                                                bgcolor: 'grey.100',
-                                                                border: '1px solid',
-                                                                borderColor: 'grey.200'
-                                                            }}
-                                                        >
-
-                                                            <img 
-                                                                src={getImageUrl(item.thumbnail)} 
-                                                                alt={item.name}
-                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                            />
-                                                        </Avatar> */}
                                                         <Paper elevation={1} sx={{ borderRadius: 2, overflow: 'hidden', flexShrink: 0, mr: 1 }}>
                                                             <CardMedia
                                                                 component="img"
@@ -288,7 +233,47 @@ const MyOrderPage = () => {
                                         </Box>
                                     )}
 
-                                    {orderData.status === "cancelled" ? (
+                                    <Box sx={{pt: 1.5}}>
+                                    {isCancelled?
+                                        <Stepper activeStep={activeStep} alternativeLabel>
+                                            {statusHistory.map((historyItem, index) => {
+                                                const labelProps = { error: index === activeStep };
+                                                // const formattedDate = new Date(historyItem.created_at).toLocaleString('en-IN', {
+                                                //     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'
+                                                // });
+
+                                                return (
+                                                    <Step key={index}>
+                                                        {/* <StepLabel {...labelProps} optional={<span>{formattedDate}</span>}> */}
+                                                        <StepLabel {...labelProps} optional={dayjs(historyItem.created_at).format("DD MMM, h:mm A")}>
+                                                            {statusLabels[historyItem.status]}
+                                                        </StepLabel>
+                                                    </Step>
+                                                );
+                                            })}
+                                        </Stepper>
+                                        :
+                                        <Stepper activeStep={activeStep} alternativeLabel>
+                                            {fullOrderLifecycle.map((statusKey) => {
+                                                const historyData = historyMap.get(statusKey);
+                                                // const formattedDate = historyData ? new Date(historyData.created_at).toLocaleString('en-IN', {
+                                                //     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'
+                                                // }) : null;
+
+                                                return (
+                                                    <Step key={statusKey} completed={historyMap.has(statusKey)}>
+                                                        {/* <StepLabel optional={formattedDate ? <span>{formattedDate}</span> : null}> */}
+                                                        <StepLabel optional={historyData?.created_at ? dayjs(historyData?.created_at).format("DD MMM, h:mm A") : null}>
+                                                            {statusLabels[statusKey]}
+                                                        </StepLabel>
+                                                    </Step>
+                                                );
+                                            })}
+                                        </Stepper>
+                                    }
+                                    </Box>
+
+                                    {/* {orderData.status === "cancelled" ? (
                                         <Stepper 
                                             activeStep={1} 
                                             alternativeLabel
@@ -334,28 +319,7 @@ const MyOrderPage = () => {
                                                 </Step>
                                             ))}
                                         </Stepper>
-                                    )}
-
-                                    {/* <Stepper 
-                                        activeStep={orderData.timeline.filter(t => t.completed).length - 1}
-                                        orientation={isMobile ? 'vertical' : 'horizontal'}
-                                        sx={{ mt: 2 }}
-                                    >
-                                        {orderData.timeline.map((step, index) => (
-                                            <Step key={step.status} completed={step.completed}>
-                                                <StepLabel>
-                                                    <Typography variant="body2" fontWeight={step.completed ? 600 : 400}>
-                                                        {getStatusConfig(step.status).label}
-                                                    </Typography>
-                                                    {step.date && (
-                                                        <Typography variant="caption" color="text.secondary" display="block">
-                                                            {new Date(step.date).toLocaleDateString()} at {new Date(step.date).toLocaleTimeString()}
-                                                        </Typography>
-                                                    )}
-                                                </StepLabel>
-                                            </Step>
-                                        ))}
-                                    </Stepper> */}
+                                    )} */}
                                 </CardContent>
                             </Card>
                         </Stack>
@@ -454,37 +418,27 @@ const MyOrderPage = () => {
                                             </Typography>
                                         </Box>
 
-                                        {/* <Button
-                                            variant="contained"
-                                            fullWidth
-                                            startIcon={<Download />}
-                                            onClick={handleDownloadInvoice}
-                                            sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
-                                        >
-                                            Download Invoice
-                                        </Button> */}
-
-                                        {/* {orderData.status === "delivered" ? */}
-                                        <PDFDownloadLink
-                                            document={<OrderInvoice orderData={orderData} />}
-                                            fileName={`invoice-${orderData.order_id}.pdf`}
-                                            style={{ textDecoration: 'none', width: '100%' }}
-                                        >
-                                            {({ blob, url, loading, error }) => (
-                                                <Button
-                                                    variant="contained"
-                                                    fullWidth
-                                                    startIcon={<Download />}
-                                                    disabled={loading}
-                                                    sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
-                                                >
-                                                    {loading ? 'Generating PDF...' : 'Download Invoice'}
-                                                </Button>
-                                            )}
-                                        </PDFDownloadLink>
-                                        {/* :
-                                        null
-                                        } */}
+                                        {orderData.status === "delivered" ?
+                                            <PDFDownloadLink
+                                                document={<OrderInvoice orderData={orderData} />}
+                                                fileName={`invoice-${orderData.order_id}.pdf`}
+                                                style={{ textDecoration: 'none', width: '100%' }}
+                                            >
+                                                {({ blob, url, loading, error }) => (
+                                                    <Button
+                                                        variant="contained"
+                                                        fullWidth
+                                                        startIcon={<Download />}
+                                                        disabled={loading}
+                                                        sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
+                                                    >
+                                                        {loading ? 'Generating PDF...' : 'Download Invoice'}
+                                                    </Button>
+                                                )}
+                                            </PDFDownloadLink>
+                                            :
+                                            null
+                                        }
 
                                     </Stack>
                                 </CardContent>
@@ -492,7 +446,7 @@ const MyOrderPage = () => {
                         </Stack>
                     </Grid>
                 </Grid>
-                <InvoicePreview orderData={orderData}/>
+                {/* <InvoicePreview orderData={orderData}/> */}
             </Container>
         </Box>
     )

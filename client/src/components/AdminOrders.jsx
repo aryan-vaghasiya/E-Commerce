@@ -78,7 +78,7 @@ function AdminOrders() {
 
     const columns = [
         { 
-            field: 'id', headerName: 'Order ID', width: 90, align : "center"
+            field: 'id', headerName: 'Order ID', width: 90, align : "right"
         },
         {
             field: 'first_name',
@@ -102,14 +102,16 @@ function AdminOrders() {
             field: 'order_date',
             headerName: 'Date Added',
             width: 110,
+            align: "right",
             editable: false,
         },
         {
-            field: 'total',
+            field: 'subtotal',
             headerName: 'Total',
             width: 110,
             editable: false,
-            renderCell: (params) => <span>${params.value}</span>
+            align: "right",
+            renderCell: (params) => <span>${(params.value).toFixed(2)}</span>
         },
         {
             field: 'action',

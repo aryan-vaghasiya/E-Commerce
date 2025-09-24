@@ -5,7 +5,6 @@ import {
     View,
     StyleSheet,
     Image,
-    Font
 } from '@react-pdf/renderer'
 import dayjs from 'dayjs'
 import cartifyLogo from "../assets/cartify-logo.png"
@@ -325,7 +324,7 @@ const OrderInvoice = ({ orderData }) => {
                                         </Text>
                                     )}
                             </View>
-                            {/* <Text style={[tableStyles.tableCol, tableStyles.textLeft, {maxWidth: "30%"}]}>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</Text> */}
+                            {/* <Text style={[tableStyles.tableCol, tableStyles.textLeft, {maxWidth: "30%"}]}>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was in the 1960s with the release of sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like PageMaker including versions of Lorem Ipsum. It was in the 1960s with the release of sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like PageMaker including versions of Lorem Ipsum.</Text> */}
                             {/* <Text style={[tableStyles.tableCol, tableStyles.textRight, {maxWidth: "10%"}]}>{item.quantity}</Text> */}
                             <Text style={[tableStyles.tableCol, tableStyles.textRight, {maxWidth: "11%"}]}>
                                 {breakLongNumbers(item.selling_price.toFixed(2))}

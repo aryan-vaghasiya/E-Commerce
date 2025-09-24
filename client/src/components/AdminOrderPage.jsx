@@ -246,7 +246,7 @@ function AdminOrderPage() {
                                 <Typography fontSize={16} fontWeight={500} sx={{display: "flex", alignItems: "center"}}>
                                     CART TOTAL: 
                                     <Typography variant='span' fontSize={20} fontWeight={500} sx={{ml: "auto"}}>
-                                        ${order.total}
+                                        ${order.final_total}
                                     </Typography> 
                                 </Typography>
                                 <Typography fontSize={16} fontWeight={500} sx={{display: "flex", alignItems: "center"}}>
@@ -267,7 +267,7 @@ function AdminOrderPage() {
                             <Typography fontSize={16} fontWeight={500}>
                                 ORDER TOTAL:
                                 <Typography variant='span' color='success' fontSize={26} fontWeight={500}>
-                                    {` $${order.total}`} 
+                                    {` $${order.final_total}`} 
                                 </Typography>
                             </Typography>
                         }

@@ -97,15 +97,22 @@ exports.getAllOrders = async(page, limit, offset) => {
     return adminOrders
 }
 
-exports.setOrderStatus = async(ids, status) => {
+exports.setOrderStatus = async(id, status, note = "seller status update") => {
     // console.log(id, status);
     
-    const setAccept = await runQuery(`UPDATE orders SET status = ? WHERE id IN ?`, [status, [ids]])
+    const setAccept = await runQuery(`UPDATE orders SET status = ? WHERE id = ?`, [status, id])
     if(setAccept.affectedRows === 0){
         throw new Error("Could not Update Order Status")
     }
 
-    this.sendOrderStatusEmail(ids[0])
+    const statusRecord = await runQuery(`INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)`, [id, status, note])
+
+    if(statusRecord.affectedRows === 0){
+        throw new Error("Could not record status history")
+    }
+
+    // this.sendOrderStatusEmail(ids[0])
+    this.sendOrderStatusEmail(id)
 }
 
 exports.sendOrderStatusEmail = async (id, status) => {
@@ -300,8 +307,11 @@ exports.orderRefund = async (orderId, userId, reason = "", cancelledBy) => {
                             && orderPayment.final_total === orderPayment.amount 
                             && orderPayment.payment_status === "paid";
 
+    let statusNote = 'Cancelled by seller'
+
     if (cancelledBy === "user") {
         isEligibleForRefund = isEligibleForRefund && orderPayment.order_status !== "dispatched";
+        statusNote = 'Cancelled by you'
     }
 
     if(!isEligibleForRefund){
@@ -318,7 +328,7 @@ exports.orderRefund = async (orderId, userId, reason = "", cancelledBy) => {
         throw new Error ("Could not add refund record")
     }
 
-    await this.setOrderStatus([orderPayment.order_id], "cancelled")
+    await this.setOrderStatus([orderPayment.order_id], "cancelled", statusNote)
 
     const orderItems = await runQuery(`SELECT product_id, quantity FROM order_item WHERE order_id = ?`, [orderId])
     for (const item of orderItems) {

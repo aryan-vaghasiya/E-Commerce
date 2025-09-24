@@ -43,16 +43,16 @@ exports.getOrders = async (req, res) => {
 }
 
 exports.orderStatus = async (req, res) => {
-    const {ids} = req.body
+    const {id} = req.body
     const {status} = req.body
     // console.log(id);
     
     try{
-        const data = await adminServices.setOrderStatus(ids, status);
+        const data = await adminServices.setOrderStatus(id, status);
         res.status(200).json(data);
     }
     catch(err){
-        console.error("Error accepting Orders: ", err.message);
+        console.error("Error updating order status: ", err.message);
         res.status(500).json({ error: err.message });
     }
 }

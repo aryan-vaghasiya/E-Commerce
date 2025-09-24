@@ -146,7 +146,7 @@ function AdminDashboard() {
                                             <TableCell align="left">{row.first_name} {row.last_name}</TableCell>
                                             <TableCell align="left">{row.status}</TableCell>
                                             <TableCell align="right">{row.order_date}</TableCell>
-                                            <TableCell align="right">${row.total}</TableCell>
+                                            <TableCell align="right">${row.subtotal}</TableCell>
                                             <TableCell align="center">
                                                 <IconButton onClick={() => navigate(`/admin/order/${row.id}`)} sx={{p: 0}}>
                                                     <AssignmentIcon></AssignmentIcon>

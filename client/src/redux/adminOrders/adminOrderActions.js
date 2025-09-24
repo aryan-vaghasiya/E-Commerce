@@ -50,16 +50,16 @@ export const fetchAdminOrders = (page, limit) => {
     }
 }
 
-export const updateOrderStatus = (ids, status) => {
+// export const updateOrderStatus = (ids, status) => {
+export const updateOrderStatus = (id, status) => {
     return async(dispatch, getState) => {
         const token = getState().userReducer.token
-        const idArray = Array.isArray(ids)
-            ? ids
-            : ids instanceof Set
-            ? Array.from(ids)
-            : [ids];
+        // const idArray = Array.isArray(ids)
+        //     ? ids
+        //     : ids instanceof Set
+        //     ? Array.from(ids)
+        //     : [ids];
 
-        // const idArray = Array.from(id) || [id]
         // console.log(idArray);
         try{
             const response = await fetch(`http://localhost:3000/admin/order-status`, {
@@ -69,7 +69,7 @@ export const updateOrderStatus = (ids, status) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    ids: idArray,
+                    id,
                     status
                 })
             })

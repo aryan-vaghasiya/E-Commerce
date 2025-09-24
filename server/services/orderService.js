@@ -166,6 +166,8 @@ exports.addOrder = async(userId, order, coupon) => {
         }
     }
 
+    const orderStatus = await runQuery(`INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)`, [orderId, 'pending', 'order placed'])
+
     await walletService.orderWalletPayment(userWallet, orderId, parseFloat((currentCartValue + shippingCharges).toFixed(2)))
     // await walletService.withdrawAmount(userWallet, currentCartValue, "PAYMENT")
 
@@ -636,8 +638,103 @@ exports.getSingleOrderData = async (userId, orderId) => {
         WHERE id = ?
         `, [userId])
 
-    const [order] = await runQuery(
-        `SELECT
+    // const [order] = await runQuery(
+    //     `SELECT
+    //         o.id AS order_id,
+    //         o.subtotal,
+    //         o.discount_amount,
+    //         o.shipping,
+    //         o.final_total,
+    //         o.status,
+    //         o.order_date,
+    //         o.last_updated,
+    //         SUM(oi.quantity) AS noOfItems,
+    //         JSON_ARRAYAGG(
+    //             JSON_OBJECT(
+    //                 'id', p.id,
+    //                 'quantity', oi.quantity,
+    //                 'purchase_price', oi.purchase_price,
+    //                 'selling_price', oi.selling_price,
+    //                 'discount_amount', oi.discount_amount,
+    //                 'title', p.title,
+    //                 'brand', p.brand,
+    //                 'thumbnail', p.thumbnail,
+    //                 'rating', p.rating,
+    //                 'category', c.category
+    //             )
+    //         ) AS items,
+    //         CASE 
+    //             WHEN o.coupon_id IS NOT NULL 
+    //                 THEN 
+    //                     JSON_OBJECT(
+    //                         'id', cp.id,
+    //                         'name', cp.name,
+    //                         'code', cp.code,
+    //                         'discount_type', cp.discount_type,
+    //                         'discount_value', cp.discount_value,
+    //                         'threshold_amount', cp.threshold_amount,
+    //                         'applies_to', cp.applies_to
+    //                     )
+    //             ELSE NULL
+    //         END AS coupon
+    //     FROM orders o
+    //     JOIN order_item oi 
+    //         ON o.id = oi.order_id
+    //     JOIN products p 
+    //         ON oi.product_id = p.id
+    //     JOIN categories c 
+    //         ON c.id = p.category_id
+    //     LEFT JOIN coupons cp 
+    //         ON o.coupon_id = cp.id
+    //     WHERE o.id = ?
+    //     GROUP BY o.id`,
+    //     [orderId]
+    // );
+
+    // console.log(order);
+
+    const [order] = await runQuery(`
+        WITH 
+        OrderItems AS (
+            SELECT
+                oi.order_id,
+                SUM(oi.quantity) AS noOfItems,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', p.id,
+                        'quantity', oi.quantity,
+                        'purchase_price', oi.purchase_price,
+                        'selling_price', oi.selling_price,
+                        'discount_amount', oi.discount_amount,
+                        'title', p.title,
+                        'brand', p.brand,
+                        'thumbnail', p.thumbnail,
+                        'rating', p.rating,
+                        'category', c.category
+                    )
+                ) AS items
+            FROM order_item oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN categories c ON c.id = p.category_id
+            GROUP BY oi.order_id
+        ),
+
+        OrderStatus AS (
+            SELECT
+                os.order_id,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', os.id,
+                        'status', os.status,
+                        'notes', os.notes,
+                        'created_at', os.created_at
+                    )
+                ) AS statuses
+            FROM order_status_history os
+            GROUP BY os.order_id
+        )
+
+        SELECT
             o.id AS order_id,
             o.subtotal,
             o.discount_amount,
@@ -646,21 +743,8 @@ exports.getSingleOrderData = async (userId, orderId) => {
             o.status,
             o.order_date,
             o.last_updated,
-            SUM(oi.quantity) AS noOfItems,
-            JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'id', p.id,
-                    'quantity', oi.quantity,
-                    'purchase_price', oi.purchase_price,
-                    'selling_price', oi.selling_price,
-                    'discount_amount', oi.discount_amount,
-                    'title', p.title,
-                    'brand', p.brand,
-                    'thumbnail', p.thumbnail,
-                    'rating', p.rating,
-                    'category', c.category
-                )
-            ) AS items,
+            oi.noOfItems,
+            oi.items,
             CASE 
                 WHEN o.coupon_id IS NOT NULL 
                     THEN 
@@ -674,22 +758,16 @@ exports.getSingleOrderData = async (userId, orderId) => {
                             'applies_to', cp.applies_to
                         )
                 ELSE NULL
-            END AS coupon
+            END AS coupon,
+            os.statuses
         FROM orders o
-        JOIN order_item oi 
+        JOIN OrderItems oi 
             ON o.id = oi.order_id
-        JOIN products p 
-            ON oi.product_id = p.id
-        JOIN categories c 
-            ON c.id = p.category_id
+        LEFT JOIN OrderStatus os
+            ON o.id = os.order_id
         LEFT JOIN coupons cp 
             ON o.coupon_id = cp.id
-        WHERE o.id = ?
-        GROUP BY o.id`,
-        [orderId]
-    );
-
-    // console.log(order);
+        WHERE o.id = ?`, [orderId])
 
     return {...order, user}
 }
