@@ -48,9 +48,6 @@ function MyOrders() {
     })
 
     const activeFilterCount = Object.keys(activeFilters).length
-    const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
-    const cancelledSteps = ["Order Placed", "Order Cancelled"]
-    const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
     const fetchOrders = async (token, page = 1, limit = 10, filters = activeFilters) => {
         setLoading(true)
@@ -131,7 +128,7 @@ function MyOrders() {
         setSelectedOrderId(orderId)
         setOpenDialog(true)
     }
-    
+
     const handleDialogClose = () => {
         setOpenDialog(false)
         setSelectedOrderId(null)
@@ -141,15 +138,6 @@ function MyOrders() {
         fetchOrders(userState.token, value, 10, activeFilters)
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
     }
-
-    const getCurrentStatus = (status) => {
-        const index = allStatus.indexOf(status)
-        return status === "delivered"? index+1 : status !== "cancelled" ? index : null
-    }
-
-    const isStepFailed = (step) => {
-        return step === 1;
-    };
 
     const getStatusConfig = (status) => {
         switch(status) {
@@ -175,10 +163,6 @@ function MyOrders() {
             params.set(key, value)
         }
         fetchOrders(userState.token, 1, 10, Object.fromEntries(params))
-    }
-
-    const handleExpandOrder = (orderId) => {
-        setExpandedOrder(expandedOrder === orderId ? null : orderId)
     }
 
     useEffect(() => {
@@ -314,7 +298,6 @@ function MyOrders() {
 
             <Container maxWidth="md" sx={{ px: { xs: 1, md: 3 } }}>
                 {loading ? (
-                    // Redesigned Loading Skeletons
                     Array.from(Array(3)).map((_, index) => (
                         <Card key={index} elevation={2} sx={{ mb: 1.5, borderRadius: 2 }}>
                             <Box sx={{ p: 2 }}>
@@ -370,7 +353,6 @@ function MyOrders() {
                                     label={activeFilterCount} 
                                     size="small" 
                                     sx={{ 
-                                        // bgcolor: 'primary.dark',
                                         bgcolor: "warning.main",
                                         color: 'white',
                                         height: 20,
@@ -390,11 +372,6 @@ function MyOrders() {
                                 overflow: 'hidden',
                                 border: '1px solid',
                                 borderColor: 'grey.200',
-                                // '&:hover': {
-                                //     boxShadow: 6,
-                                //     transform: 'translateY(-2px)',
-                                //     transition: 'all 0.2s ease-in-out'
-                                // }
                             }}>
 
                                 <Box sx={{ 
@@ -481,19 +458,6 @@ function MyOrders() {
                                                         <ArrowForward/>
                                                     </IconButton>
                                                 </Tooltip>
-                                                
-                                                {/* {isMobile && (
-                                                    <IconButton
-                                                        onClick={(event) => {
-                                                            event.stopPropagation()
-                                                            handleExpandOrder(order.order_id)
-                                                        }}
-                                                        size="small"
-                                                        sx={{ p: 0.5 }}
-                                                    >
-                                                        {expandedOrder === order.order_id ? <ExpandLess /> : <ExpandMore />}
-                                                    </IconButton>
-                                                )} */}
                                             </Box>
                                         </Box>
 
@@ -505,85 +469,17 @@ function MyOrders() {
                                     </Box>
                                 </Box>
 
-                                {/* {!isMobile && ( */}
-                                    <Box sx={{ bgcolor: 'white' }}>
-                                        {order.items.map(item => (
-                                            <OrderItem key={item.id} item={item} />
-                                        ))}
-                                    </Box>
-                                {/* )} */}
-
-                                {/* {isMobile && (
-                                    <Collapse in={expandedOrder === order.order_id} timeout="auto">
-                                        <Box sx={{ bgcolor: 'white' }}>
-                                            {order.items.map(item => (
-                                                <OrderItem key={item.id} item={item} />
-                                            ))}
-                                        </Box>
-                                    </Collapse>
-                                )} */}
-
-                                {/* <Box sx={{ 
-                                    p: 1.5, 
-                                    bgcolor: 'grey.50',
-                                    borderTop: '1px solid',
-                                    borderColor: 'divider'
-                                }}>
-                                    {order.status === "cancelled" ? (
-                                        <Stepper 
-                                            activeStep={1} 
-                                            alternativeLabel
-                                            sx={{
-                                                '& .MuiStepLabel-label': {
-                                                    fontSize: '0.7rem',
-                                                    mt: 0.5
-                                                },
-                                                '& .MuiStepConnector-line': {
-                                                    borderTopWidth: 2
-                                                }
-                                            }}
-                                        >
-                                            {cancelledSteps.map((label, index) => {
-                                                const labelProps = {};
-                                                if (isStepFailed(index)) {
-                                                    labelProps.error = true;
-                                                }
-                                                return (
-                                                    <Step key={label}>
-                                                        <StepLabel {...labelProps}>{label}</StepLabel>
-                                                    </Step>
-                                                );
-                                            })}
-                                        </Stepper>
-                                    ) : (
-                                        <Stepper 
-                                            activeStep={getCurrentStatus(order.status)} 
-                                            alternativeLabel
-                                            sx={{
-                                                '& .MuiStepLabel-label': {
-                                                    fontSize: '0.7rem',
-                                                    mt: 0.5
-                                                },
-                                                '& .MuiStepConnector-line': {
-                                                    borderTopWidth: 2
-                                                }
-                                            }}
-                                        >
-                                            {steps.map((label) => (
-                                                <Step key={label}>
-                                                    <StepLabel>{label}</StepLabel>
-                                                </Step>
-                                            ))}
-                                        </Stepper>
-                                    )}
-                                </Box> */}
+                                <Box sx={{ bgcolor: 'white' }}>
+                                    {order.items.map(item => (
+                                        <OrderItem key={item.id} item={item} />
+                                    ))}
+                                </Box>
                             </Card>
                         )
                     })}
                     </>
                 )}
 
-                {/* Styled Pagination */}
                 {!loading && allOrders?.length > 0 && (
                     <Box sx={{ 
                         display: "flex", 

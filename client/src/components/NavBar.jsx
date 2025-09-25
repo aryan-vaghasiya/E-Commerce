@@ -29,6 +29,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import '@fontsource-variable/playfair-display';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import { InputAdornment } from "@mui/material"
 
     const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
         <Drawer
@@ -52,7 +53,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
                 </IconButton>
             </Box>
 
-            <List sx={{ pt: 2 }}>
+            {/* <List sx={{ pt: 2 }}>
                 {navigationItems.map((item) => (
                     <ListItem 
                         key={item.name} 
@@ -77,7 +78,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
                         />
                     </ListItem>
                 ))}
-            </List>
+            </List> */}
 
             <Box sx={{ p: 2, mt: 'auto' }}>
                 <Box sx={{ 
@@ -155,15 +156,40 @@ function NavBar() {
         setInput(e.target.value)
     }
 
-    useEffect(() => {
-        const timeOut = setTimeout(() => {
-            dispatch(setSearchQuery(input))
-            if (input.trim() === "") return;
-            dispatch(searchProducts(input))
-        }, 1000)
+    const handleEnter = (e) => {
+        if (e.key === "Enter" && input.trim().length > 0) {
+            dispatch(setSearchQuery(e.target.value))
+            dispatch(searchProducts(e.target.value))
+            // navigate("/products")
+        }
+        if (e.key === "Enter" && input.trim().length === 0){
+            dispatch(setSearchQuery(e.target.value))
+        }
+    }
 
-        return () => clearInterval(timeOut)
-    }, [input])
+    const handleSearchSubmit = (e) => {
+        e.preventDefault()
+        if (input.trim().length > 0) {
+            console.log("I ran");
+            dispatch(setSearchQuery(input.trim()))
+            dispatch(searchProducts(input.trim()))
+            navigate("/products/search")
+        }
+        if (input.trim().length === 0){
+            console.log("I ran 2");
+            dispatch(setSearchQuery(input.trim()))
+        }
+    }
+
+    // useEffect(() => {
+    //     const timeOut = setTimeout(() => {
+    //         dispatch(setSearchQuery(input))
+    //         if (input.trim() === "") return;
+    //         dispatch(searchProducts(input))
+    //     }, 1000)
+
+    //     return () => clearInterval(timeOut)
+    // }, [input])
 
     const HandleLogin = async (e) => {
         e.preventDefault()
@@ -220,7 +246,7 @@ function NavBar() {
                             </Box>
                         </Box>
 
-                        <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 'auto' }}>
+                        {/* <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 'auto' }}>
                             {navigationItems.map((item) => (
                                 <NavLink key={item.name} to={item.path}>
                                     {({ isActive }) => (
@@ -230,7 +256,7 @@ function NavBar() {
                                     )}
                                 </NavLink>
                             ))}
-                        </Box>
+                        </Box> */}
 
                         <Box sx={{ display: "flex", alignItems: "center", ml: "auto", gap: { xs: 0.5, sm: 1 } }}>
                             <Box sx={{ 
@@ -242,15 +268,35 @@ function NavBar() {
                                 minWidth: { sm: "200px", md: "250px", lg: "300px" }, 
                                 alignItems: "center" 
                             }}>
-                                <SearchIcon color="primary" sx={{ mr: 1 }} />
+                                {/* <SearchIcon color="primary" sx={{ mr: 1 }} />
                                 <TextField 
                                     variant="standard" 
                                     placeholder="Search products..." 
                                     fullWidth
                                     slotProps={{ input: { disableUnderline: true } }} 
                                     onChange={handleChange}
+                                    onKeyDown={handleEnter}
                                     value={input}
-                                />
+                                /> */}
+                                <form onSubmit={handleSearchSubmit}>
+                                    <TextField
+                                        variant="standard"
+                                        placeholder="Search products..."
+                                        fullWidth
+                                        size="small"
+                                        value={input}
+                                        onChange={handleChange}
+                                        slotProps={{ 
+                                            input: { 
+                                                disableUnderline: true, 
+                                                startAdornment: 
+                                                <InputAdornment position="start">
+                                                    <SearchIcon />
+                                                </InputAdornment> 
+                                                } 
+                                            }}
+                                    />
+                                </form>
                             </Box>
 
                             {/* {

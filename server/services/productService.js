@@ -30,6 +30,10 @@ exports.getSearchedProducts = async (page, limit, offset, query, userId) => {
     const products = await runQuery(`SELECT id FROM products WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) LIMIT ? OFFSET ?`, [query, query, limit, offset])
     const productIds = products.map(item => item.id)
 
+    if(productIds.length === 0){
+        return {}
+    }
+
     const results = await this.getProductsByIdsHelper(productIds, userId)
 
     if(results.length === 0){

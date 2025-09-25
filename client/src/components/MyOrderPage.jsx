@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Container, Typography, Paper, Card, CardContent, Button, Divider, Chip, Stack, Grid, Avatar, List, ListItem, ListItemAvatar, ListItemText, Stepper, Step, StepLabel, useTheme, useMediaQuery, IconButton, CardMedia } from '@mui/material'
 import { ArrowBack, Download, Person, Phone, LocationOn, Email, LocalShipping, CheckCircle, Cancel, Pending, Receipt } from '@mui/icons-material'
-import { useLocation, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useSelector } from 'react-redux'
 import { getImageUrl } from '../utils/imageUrl'
 import dayjs from 'dayjs'
@@ -18,10 +18,6 @@ const MyOrderPage = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     const [orderData, setOrderData] = useState(null)
     const [loading, setLoading] = useState(true)
-
-    // const steps = ["Order Placed", "Order Accepted", "Order Dispatched", "Order Delivered"]
-    // const cancelledSteps = ["Order Placed", "Order Cancelled"]
-    // const allStatus = ["pending", "accepted", "dispatched", "delivered"]
 
     const statusLabels = {
         pending: "Order Placed",
@@ -47,15 +43,6 @@ const MyOrderPage = () => {
     
     orderData?.status !== "cancelled" ? 
     activeStep = fullOrderLifecycle.indexOf(lastCompletedStatus) : null
-
-    // const getCurrentStatus = (status) => {
-    //     const index = allStatus.indexOf(status)
-    //     return status === "delivered"? index+1 : status !== "cancelled" ? index : null
-    // }
-
-    // const isStepFailed = (step) => {
-    //     return step === 1;
-    // };
 
     const fetchOrder = async () => {
         // setLoading(true)
@@ -128,7 +115,6 @@ const MyOrderPage = () => {
     return (
         <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh', py: 2 }}>
             <Container maxWidth="lg">
-
                 <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent:"space-between", gap: 2 }}>
                         <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
@@ -139,7 +125,7 @@ const MyOrderPage = () => {
                                 <Typography variant="h5" fontWeight="bold" color="primary.main">
                                     Order #{orderData.order_id}
                                 </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: {xs: "flex-start", sm: "center"}, gap: 2, mt: 0.5, flexDirection: {xs: "column", sm: "row"} }}>
                                     <Chip
                                         icon={statusConfig.icon}
                                         label={statusConfig.label}
@@ -152,10 +138,10 @@ const MyOrderPage = () => {
                                 </Box>
                             </Box>
                         </Box>
-                        <Box>
+                        {/* <Box>
                             <Button>Cancel</Button>
                             <Button>Reorder</Button>
-                        </Box>
+                        </Box> */}
                     </Box>
                 </Paper>
 
@@ -238,13 +224,9 @@ const MyOrderPage = () => {
                                         <Stepper activeStep={activeStep} alternativeLabel>
                                             {statusHistory.map((historyItem, index) => {
                                                 const labelProps = { error: index === activeStep };
-                                                // const formattedDate = new Date(historyItem.created_at).toLocaleString('en-IN', {
-                                                //     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'
-                                                // });
 
                                                 return (
                                                     <Step key={index}>
-                                                        {/* <StepLabel {...labelProps} optional={<span>{formattedDate}</span>}> */}
                                                         <StepLabel {...labelProps} optional={dayjs(historyItem.created_at).format("DD MMM, h:mm A")}>
                                                             {statusLabels[historyItem.status]}
                                                         </StepLabel>
@@ -256,13 +238,9 @@ const MyOrderPage = () => {
                                         <Stepper activeStep={activeStep} alternativeLabel>
                                             {fullOrderLifecycle.map((statusKey) => {
                                                 const historyData = historyMap.get(statusKey);
-                                                // const formattedDate = historyData ? new Date(historyData.created_at).toLocaleString('en-IN', {
-                                                //     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'
-                                                // }) : null;
 
                                                 return (
                                                     <Step key={statusKey} completed={historyMap.has(statusKey)}>
-                                                        {/* <StepLabel optional={formattedDate ? <span>{formattedDate}</span> : null}> */}
                                                         <StepLabel optional={historyData?.created_at ? dayjs(historyData?.created_at).format("DD MMM, h:mm A") : null}>
                                                             {statusLabels[statusKey]}
                                                         </StepLabel>
@@ -272,54 +250,6 @@ const MyOrderPage = () => {
                                         </Stepper>
                                     }
                                     </Box>
-
-                                    {/* {orderData.status === "cancelled" ? (
-                                        <Stepper 
-                                            activeStep={1} 
-                                            alternativeLabel
-                                            sx={{
-                                                '& .MuiStepLabel-label': {
-                                                    fontSize: '0.7rem',
-                                                    mt: 0.5
-                                                },
-                                                '& .MuiStepConnector-line': {
-                                                    borderTopWidth: 2
-                                                },
-                                            }}
-                                        >
-                                            {cancelledSteps.map((label, index) => {
-                                                const labelProps = {};
-                                                if (isStepFailed(index)) {
-                                                    labelProps.error = true;
-                                                }
-                                                return (
-                                                    <Step key={label}>
-                                                        <StepLabel {...labelProps}>{label}</StepLabel>
-                                                    </Step>
-                                                );
-                                            })}
-                                        </Stepper>
-                                    ) : (
-                                        <Stepper 
-                                            activeStep={getCurrentStatus(orderData.status)} 
-                                            alternativeLabel
-                                            sx={{
-                                                '& .MuiStepLabel-label': {
-                                                    fontSize: '0.7rem',
-                                                    mt: 0.5
-                                                },
-                                                '& .MuiStepConnector-line': {
-                                                    borderTopWidth: 2
-                                                },
-                                            }}
-                                        >
-                                            {steps.map((label) => (
-                                                <Step key={label}>
-                                                    <StepLabel>{label}</StepLabel>
-                                                </Step>
-                                            ))}
-                                        </Stepper>
-                                    )} */}
                                 </CardContent>
                             </Card>
                         </Stack>

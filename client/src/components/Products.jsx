@@ -14,35 +14,39 @@ import { searchProducts, setPageSearch } from "../redux/search/searchActions";
 
 const Products = () => {
     const productsState = useSelector((state) => state.productReducer)
-    const searchState = useSelector((state) => state.searchReducer)
+    // const searchState = useSelector((state) => state.searchReducer)
     const snackbarState = useSelector((state) => state.snackbarReducer)
     const dispatch = useDispatch();
 
     // window.scrollTo({top: 0, behavior: 'smooth'})
 
     const handlePage = (event, value) => {
-        if(searchState.query.trim() !== ""){
-            dispatch(setPageSearch(value))
-        }
-        else{
-            dispatch(setPageAll(value))
-        }
-        // dispatch(setPageAll(value))
+        // if(searchState.query.trim() !== ""){
+        //     dispatch(setPageSearch(value))
+        // }
+        // else{
+        //     dispatch(setPageAll(value))
+        // }
+        dispatch(setPageAll(value))
         // dispatch(setPageSearch(value))
     }
 
-    const totalPages = searchState.query ? searchState.pages : productsState.pages;
-    const currentPage = searchState.query ? searchState.currentPage : productsState.currentPage;
-    const productsToShow = searchState.query? searchState.products : productsState.products
+    // const totalPages = searchState.query ? searchState.pages : productsState.pages;
+    const totalPages = productsState.pages
+    // const currentPage = searchState.query ? searchState.currentPage : productsState.currentPage;
+    const currentPage = productsState.currentPage
+    // const productsToShow = searchState.query? searchState.products : productsState.products
+    const productsToShow = productsState.products
     // const productsToShow = searchState.query && searchState.products? searchState.products : productsState.products
 
     useEffect(() => {
-        if(searchState.query.trim() !== ""){
-            dispatch(searchProducts(searchState.query));
-        }
-        else{
-            dispatch(fetchProducts());
-        }
+        // if(searchState.query.trim() !== ""){
+        //     dispatch(searchProducts(searchState.query));
+        // }
+        // else{
+        //     dispatch(fetchProducts());
+        // }
+        dispatch(fetchProducts());
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
     }, [currentPage]);
 
@@ -67,7 +71,8 @@ const Products = () => {
                         </Alert>
                     </Snackbar>
                     {
-                        productsState.isLoading || searchState.isLoading? (
+                        // productsState.isLoading || searchState?.isLoading ? (
+                        productsState.isLoading ? (
                             Array.from(Array(24)).map((_, index) => (
                                 <Grid key={index} size={{ sm: 4, md: 4, lg: 3 }}>
                                     <ProductItem loading={true} />
@@ -87,7 +92,7 @@ const Products = () => {
                         (
                             <Box sx={{mx: "auto", mb: 5}}>
                                 <Typography>
-                                    Oops! There are no products named - {searchState.query}
+                                    Oops! no search results for - {searchState.query}
                                 </Typography>
                             </Box>
                         )

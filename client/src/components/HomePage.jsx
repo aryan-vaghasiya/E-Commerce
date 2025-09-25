@@ -107,7 +107,7 @@ const HorizontalScroller = ({ children, ariaLabel }) => {
 // ---- Reusable Carousel Section ----
 const ProductCarousel = ({ title, subtitle, products }) => {
   return (
-    <Box sx={{ my: { xs: 4, md: 6 } }}>
+    <Box sx={{ my: { xs: 4, md: 6 }  }}>
       <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight={700}>
@@ -130,8 +130,9 @@ const ProductCarousel = ({ title, subtitle, products }) => {
             key={product.id}
             sx={{
               minWidth: { xs: 220, sm: 240, md: 260 },
+              mt: 1,
               flexShrink: 0,
-              scrollSnapAlign: "start",
+              scrollSnapAlign: "center",
               // transition: "transform 0.2s ease, box-shadow 0.2s ease",
               // "&:hover": { transform: "translateY(-4px)", boxShadow: 6 },
             }}
@@ -149,7 +150,7 @@ const ProductCarousel = ({ title, subtitle, products }) => {
 const HomePage = () => {
   const productsState = useSelector((state) => state.productReducer);
   const userState = useSelector((state) => state.userReducer);
-  const searchState = useSelector((state) => state.searchReducer);
+  // const searchState = useSelector((state) => state.searchReducer);
   const snackbarState = useSelector((state) => state.snackbarReducer);
   const [trendingProducts, setTrendingProducts] = useState([])
   const [recentProducts, setRecentProducts] = useState([])
@@ -198,30 +199,36 @@ const HomePage = () => {
   };
 
   const handlePage = (event, value) => {
-    if (searchState.query.trim() !== "") {
-      dispatch(setPageSearch(value));
-    } else {
-      dispatch(setPageAll(value));
-    }
+    // if (searchState.query.trim() !== "") {
+    //   dispatch(setPageSearch(value));
+    // } else {
+    //   dispatch(setPageAll(value));
+    // }
+    dispatch(setPageAll(value));
   };
 
-  const totalPages = searchState.query ? searchState.pages : productsState.pages;
-  const currentPage = searchState.query ? searchState.currentPage : productsState.currentPage;
-  const productsToShow = searchState.query ? searchState.products : productsState.products;
+  // const totalPages = searchState.query ? searchState.pages : productsState.pages;
+  const totalPages = productsState.pages;
+  // const currentPage = searchState.query ? searchState.currentPage : productsState.currentPage;
+  const currentPage = productsState.currentPage;
+  // const productsToShow = searchState.query ? searchState.products : productsState.products;
+  const productsToShow = productsState.products;
 
   useEffect(() => {
-    if (searchState.query.trim() !== "") {
-      console.log("I ran");
-      dispatch(searchProducts(searchState.query));
-    }
-    else {
-      console.log("I ran 2");
-      dispatch(fetchProducts());
-    }
+    // if (searchState.query.trim() !== "") {
+    //   console.log("I ran");
+    //   dispatch(searchProducts(searchState.query));
+    // }
+    // else {
+    //   console.log("I ran 2");
+    //   dispatch(fetchProducts());
+    // }
+    dispatch(fetchProducts());
     getTrendingProducts()
     getRecentlyOrderedProducts()
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  }, [currentPage, dispatch, searchState.query]);
+  // }, [currentPage, dispatch, searchState.query]);
+  }, [currentPage, dispatch]);
 
   // Slicing to create "sections" without changing data logic
   // const trendingProducts = productsToShow?.slice(0, 10) || [];
@@ -428,7 +435,8 @@ const HomePage = () => {
         </Typography>
 
         <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
-          {(productsState.isLoading || searchState.isLoading) &&
+          {/* {(productsState.isLoading || searchState.isLoading) && */}
+          {productsState.isLoading &&
             Array.from({ length: 12 }).map((_, index) => (
               <Grid key={index} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                 <ProductItem loading={true} />
@@ -436,17 +444,17 @@ const HomePage = () => {
             ))}
 
           {!productsState.isLoading &&
-            !searchState.isLoading &&
+            // !searchState.isLoading &&
             (productsToShow?.length ? (
               productsToShow.map((product) => (
                 <Grid key={product.id} size={{xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4}}>
                   <Box
-                    // sx={{
-                    //   mb: "auto",
-                    //   height: "100%",
-                    //   transition: "transform .15s ease, box-shadow .15s ease",
-                    //   "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
-                    // }}
+                    sx={{
+                      // mb: "auto",
+                      height: "100%",
+                      // transition: "transform .15s ease, box-shadow .15s ease",
+                      // "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
+                    }}
                   >
                     <ProductItem product={product} loading={false} />
                   </Box>
@@ -550,3 +558,176 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+
+
+
+
+// src/pages/HomePage.js
+
+// import React, { useState, useEffect, useMemo } from 'react';
+// import {
+//     Container, Grid, Typography, Box, Paper, Button,
+//     FormControl, InputLabel, Select, MenuItem, Alert, CircularProgress
+// } from '@mui/material';
+// import { ArrowForward, Storefront } from '@mui/icons-material';
+// import ProductItem from '../components/ProductItem';
+// import dummyProducts from '../utils/dummyProducts'; // We'll create this file next
+
+// function HomePage() {
+//     const [products, setProducts] = useState([]);
+//     const [loading, setLoading] = useState(true);
+//     const [error, setError] = useState(null);
+//     const [sortBy, setSortBy] = useState('rating'); // Default sort
+
+//     // Simulate API fetch on component mount
+//     useEffect(() => {
+//         const fetchProducts = () => {
+//             try {
+//                 // Simulate network delay
+//                 setTimeout(() => {
+//                     setProducts(dummyProducts);
+//                     setLoading(false);
+//                 }, 1500);
+//             } catch (err) {
+//                 setError('Failed to fetch products. Please try again.');
+//                 setLoading(false);
+//             }
+//         };
+
+//         fetchProducts();
+//     }, []);
+
+//     const handleSortChange = (event) => {
+//         setSortBy(event.target.value);
+//     };
+
+//     // useMemo will re-sort products only when products or sortBy changes
+//     const sortedProducts = useMemo(() => {
+//         const sorted = [...products];
+//         switch (sortBy) {
+//             case 'price_asc':
+//                 return sorted.sort((a, b) => a.price - b.price);
+//             case 'price_desc':
+//                 return sorted.sort((a, b) => b.price - a.price);
+//             case 'rating':
+//             default:
+//                 return sorted.sort((a, b) => b.rating - a.rating);
+//         }
+//     }, [products, sortBy]);
+
+//     const featuredProducts = useMemo(() => sortedProducts.slice(0, 8), [sortedProducts]);
+//     const topRatedProducts = useMemo(() => sortedProducts.filter(p => p.rating > 4.5).slice(0, 4), [sortedProducts]);
+
+//     if (error) {
+//         return (
+//             <Container sx={{ py: 4, textAlign: 'center' }}>
+//                 <Alert severity="error" action={
+//                     <Button color="inherit" size="small" onClick={() => window.location.reload()}>
+//                         Retry
+//                     </Button>
+//                 }>{error}</Alert>
+//             </Container>
+//         );
+//     }
+
+//     return (
+//         <Box>
+//             {/* 1. Hero Section */}
+//             <Paper sx={{
+//                 position: 'relative',
+//                 color: '#fff',
+//                 mb: 4,
+//                 backgroundSize: 'cover',
+//                 backgroundRepeat: 'no-repeat',
+//                 backgroundPosition: 'center',
+//                 backgroundImage: `url(https://source.unsplash.com/random/1600x900?ecommerce,shopping)`,
+//             }}>
+//                 <Box sx={{
+//                     position: 'absolute',
+//                     top: 0,
+//                     bottom: 0,
+//                     right: 0,
+//                     left: 0,
+//                     backgroundColor: 'rgba(0,0,0,.4)',
+//                 }} />
+//                 <Grid container>
+//                     <Grid size={{md:6}}>
+//                         <Box sx={{ position: 'relative', p: { xs: 3, md: 6 }, pr: { md: 0 } }}>
+//                             <Typography component="h1" variant="h3" color="inherit" gutterBottom>
+//                                 Discover Your Next Favorite Thing
+//                             </Typography>
+//                             <Typography variant="h5" color="inherit" paragraph>
+//                                 Explore thousands of products from top brands, all in one place.
+//                             </Typography>
+//                             <Button variant="contained" size="large" endIcon={<ArrowForward />}>
+//                                 Shop Now
+//                             </Button>
+//                         </Box>
+//                     </Grid>
+//                 </Grid>
+//             </Paper>
+
+//             {/* Main Content Area */}
+//             <Container sx={{ py: 4 }}>
+//                 {/* 2. Top Rated Section */}
+//                 {loading ? null : (
+//                     <Box mb={6}>
+//                         <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+//                             ⭐ Top Rated Products
+//                         </Typography>
+//                         <Grid container spacing={3}>
+//                             {topRatedProducts.map(product => (
+//                                 <Grid key={product.id} size={{xs: 12, sm: 6, md: 3}}>
+//                                     <ProductItem product={product} loading={false} />
+//                                 </Grid>
+//                             ))}
+//                         </Grid>
+//                     </Box>
+//                 )}
+
+
+//                 {/* 3. Featured Products Section */}
+//                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+//                     <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+//                         Featured Products
+//                     </Typography>
+//                     <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
+//                         <InputLabel>Sort By</InputLabel>
+//                         <Select value={sortBy} onChange={handleSortChange} label="Sort By">
+//                             <MenuItem value="rating">Best Rating</MenuItem>
+//                             <MenuItem value="price_asc">Price: Low to High</MenuItem>
+//                             <MenuItem value="price_desc">Price: High to Low</MenuItem>
+//                         </Select>
+//                     </FormControl>
+//                 </Box>
+
+//                 {loading ? (
+//                     <Grid container spacing={3}>
+//                         {Array.from(new Array(8)).map((_, index) => (
+//                             <Grid key={index} size={{xs: 12, sm: 6, md: 3}}>
+//                                 <ProductItem loading={true} />
+//                             </Grid>
+//                         ))}
+//                     </Grid>
+//                 ) : (
+//                     <Grid container spacing={3}>
+//                         {featuredProducts.map(product => (
+//                             <Grid key={product.id} size={{xs: 12, sm: 6, md: 3}}>
+//                                 <ProductItem product={product} loading={false} />
+//                             </Grid>
+//                         ))}
+//                     </Grid>
+//                 )}
+
+//                 <Box textAlign="center" mt={5}>
+//                     <Button variant="outlined" size="large" endIcon={<Storefront />}>
+//                         View All Products
+//                     </Button>
+//                 </Box>
+//             </Container>
+//         </Box>
+//     );
+// }
+
+// export default HomePage;

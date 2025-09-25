@@ -13,27 +13,37 @@ import { searchProducts, setPageSearch } from "../redux/search/searchActions";
 
 
 function ProductsSearched() {
-    // const snackbarState = useSelector((state) => state.snackbarReducer)
-    // const searchReducer = useSelector((state) => state.searchReducer)
-    // const dispatch = useDispatch();
+    const snackbarState = useSelector((state) => state.snackbarReducer)
+    const searchReducer = useSelector((state) => state.searchReducer)
+    const dispatch = useDispatch();
 
-    // const filtered = searchReducer.products
+    const filtered = searchReducer.products || []
 
-    // const handlePage = (event, value) => {
-    //     dispatch(setPageSearch(value))
-    // }
+    const handlePage = (event, value) => {
+        dispatch(setPageSearch(value))
+    }
 
-    // useEffect(() => {
-    //     dispatch(searchProducts(searchReducer.query));
-    //     window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
-    // }, [searchReducer.currentPage]);
+    useEffect(() => {
+        dispatch(searchProducts(searchReducer.query));
+        window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
+    }, [searchReducer.currentPage]);
+
+    if(!searchReducer.query){
+        return(
+            <Box sx={{ pt: 6, px: 8, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+                <Box textAlign={"center"}>
+                    <Typography>Nothing to show here</Typography>
+                </Box>
+            </Box>
+        )
+    }
 
     return (
-        <Box sx={{ pt: 6, px: 8, bgcolor: "#EEEEEE", minHeight: "100vh" }}>
-            <Box textAlign={"center"}>
+        <Box sx={{ pt: 6, px: 8, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
+            {/* <Box textAlign={"center"}>
                 <Typography>Nothing to show here</Typography>
-            </Box>
-            {/* <Grid
+            </Box> */}
+            <Grid
                 container
                 spacing={{ xs: 2, md: 3 }}
                 columns={{ xs: 4, sm: 8, md: 12 }}
@@ -52,7 +62,8 @@ function ProductsSearched() {
                     </Alert>
                 </Snackbar>
                 {
-                    searchReducer.query && filtered.length > 0 ?
+                    // searchReducer.query && filtered?.length > 0 ?
+                    filtered?.length > 0 ?
                     (
                         filtered.map((product) => (
                             <Grid key={product.id} size={{ sm: 4, md: 4, lg: 3 }}>
@@ -61,7 +72,8 @@ function ProductsSearched() {
                         ))
                     )
                     :
-                    searchReducer.query && filtered.length === 0 ?
+                    // searchReducer.query && filtered?.length === 0 ?
+                    filtered?.length === 0 ?
                     (
                         <Box sx={{mx: "auto", mb: 5}}>
                             <Typography>
@@ -75,13 +87,13 @@ function ProductsSearched() {
                     </Box>
                 }
             </Grid>
-            {searchReducer.query && filtered.length > 0?
-            <Box sx={{display: "flex", justifyContent: "center", pb: 2}}>
-                <Pagination count={searchReducer.pages} page={searchReducer.currentPage} onChange={handlePage} color="primary"/>
-            </Box>
-            :
-            null
-            } */}
+            {filtered?.length > 0?
+                <Box sx={{display: "flex", justifyContent: "center", py: 2}}>
+                    <Pagination count={searchReducer.pages} page={searchReducer.currentPage} onChange={handlePage} color="primary"/>
+                </Box>
+                :
+                null
+            }
         </Box>
     )
 }
