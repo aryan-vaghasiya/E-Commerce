@@ -207,24 +207,6 @@ const OrderFilterModal = ({ open, onClose, onApplyFilters, currentFilters = {} }
                         py: { xs: 2, sm: 3 }
                     }}>
                         <Stack spacing={3}>
-                            {/* <Box>
-                                <Typography variant="subtitle2" color="text.secondary" sx={{mb: 1}}>
-                                    Search Order
-                                </Typography>
-                                <TextField label="Order ID" type='text' sx={{ width: "100%", mr: 1 }} {...register("orderId", {
-                                    pattern: {
-                                        value: /^[0-9]{0,}$/,
-                                        message: "Invalid Order ID"
-                                    },
-                                })}
-                                    fullWidth
-                                    placeholder='Enter Order ID...'
-                                    size={isMobile ? 'small' : 'medium'}
-                                    error={!!errors.orderId}
-                                    helperText={errors.orderId ? errors.orderId.message : ""}
-                                />
-                            </Box> */}
-
                             <Box>
                                 {/* <Typography variant="subtitle2" color="text.secondary" sx={{mb: 1}}>
                                     Date Range

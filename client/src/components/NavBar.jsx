@@ -106,9 +106,10 @@ import { InputAdornment } from "@mui/material"
 function NavBar() {
     const noOfItems = useSelector(state=> state.cartReducer.noOfItems)
     const userState = useSelector(state => state.userReducer)
+    const searchReducer = useSelector(state => state.searchReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
-    const [input, setInput] = useState("")
+    const [input, setInput] = useState(searchReducer?.query || "")
     const [anchorEl, setAnchorEl] = useState(null);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
@@ -170,14 +171,13 @@ function NavBar() {
     const handleSearchSubmit = (e) => {
         e.preventDefault()
         if (input.trim().length > 0) {
-            console.log("I ran");
             dispatch(setSearchQuery(input.trim()))
             dispatch(searchProducts(input.trim()))
             navigate("/products/search")
         }
         if (input.trim().length === 0){
-            console.log("I ran 2");
-            dispatch(setSearchQuery(input.trim()))
+            return
+            // dispatch(setSearchQuery(input.trim()))
         }
     }
 
@@ -266,7 +266,7 @@ function NavBar() {
                                 px: 2, 
                                 borderRadius: "30px", 
                                 minWidth: { sm: "200px", md: "250px", lg: "300px" }, 
-                                alignItems: "center" 
+                                alignItems: "center"
                             }}>
                                 {/* <SearchIcon color="primary" sx={{ mr: 1 }} />
                                 <TextField 
@@ -278,8 +278,9 @@ function NavBar() {
                                     onKeyDown={handleEnter}
                                     value={input}
                                 /> */}
-                                <form onSubmit={handleSearchSubmit}>
+                                <form onSubmit={handleSearchSubmit} style={{width: "100%"}}>
                                     <TextField
+                                        // defaultValue={searchReducer.query}
                                         variant="standard"
                                         placeholder="Search products..."
                                         fullWidth
@@ -292,7 +293,14 @@ function NavBar() {
                                                 startAdornment: 
                                                 <InputAdornment position="start">
                                                     <SearchIcon />
-                                                </InputAdornment> 
+                                                </InputAdornment>,
+                                                endAdornment:
+                                                    input?
+                                                    <IconButton size="small" sx={{p: 0}} onClick={() => setInput("")}>
+                                                        <CloseIcon />
+                                                    </IconButton>
+                                                    :
+                                                    null
                                                 } 
                                             }}
                                     />

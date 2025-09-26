@@ -23,10 +23,15 @@ exports.searchProduct = async (req, res) => {
     const query = req.query.query;
     const userId = req.user?.id || null
 
+    // const {page, limit, query} = req.query
+
+    console.log(req.query);
+    const queryParams = {...req.query, query, page, limit, offset}
+
     // console.log(page, limit, offset, query);
 
     try{
-        const searchedProducts = await productService.getSearchedProducts(page, limit, offset, query, userId);
+        const searchedProducts = await productService.getSearchedProducts(queryParams, userId);
         res.status(200).json(searchedProducts);
     }
     catch (err){

@@ -23,14 +23,17 @@ export const setPageSearch = (page) => {
     }
 }
 
-export const searchProducts = (query) => {
+export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
     return (dispatch, getState) => {
-        const currentPage = getState().searchReducer.currentPage
+        // const page = getState().searchReducer.currentPage
+        console.log(page);
+        const params = new URLSearchParams({page, limit, query, ...filters})
         const token = getState().userReducer.token
         dispatch(searchRequest())
         setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:3000/products/search?query=${query}&page=${currentPage}&limit=24`, {
+                // const res = await fetch(`http://localhost:3000/products/search?query=${query}&page=${page}&limit=24`, {
+                const res = await fetch(`http://localhost:3000/products/search?${params.toString()}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

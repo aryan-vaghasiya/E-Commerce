@@ -25,7 +25,90 @@ exports.getAllProducts = async(page, limit, offset, userId) => {
     return productsRes
 }
 
-exports.getSearchedProducts = async (page, limit, offset, query, userId) => {
+exports.getSearchedProducts = async (queryParams, userId) => {
+
+    const {
+        query,
+        page,
+        limit,
+        offset,
+        priceRange
+    } = queryParams
+
+    console.log(priceRange);
+
+    if(query.trim().length < 1){
+        return {}
+    }
+
+    const whereClause = ` WHERE  (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%'))`
+    const params = [query, query]
+
+    if(priceRange){
+        const rangeArr = priceRange.split(",")
+        console.log(rangeArr);
+
+        whereClause += ` AND `
+    }
+
+//     SELECT
+//     *
+// FROM (
+//     -- Start of Inner Query: Gather all product data and calculate dynamic fields
+//     SELECT 
+//         p.id,
+//         p.title,
+//         p.description,
+//         p.rating,
+//         p.brand,
+//         p.thumbnail,
+//         p.status,
+//         c.category,
+//         pp.mrp, 
+//         i.stock,
+        
+//         -- Calculate the final price, considering special offers
+//         CASE 
+//             WHEN pd.offer_price IS NOT NULL THEN pd.offer_price
+//             ELSE pp.price
+//         END AS final_price,
+        
+//         -- Determine if the product is wishlisted for the given user
+//         CASE 
+//             WHEN wi.product_id IS NOT NULL THEN TRUE 
+//             ELSE FALSE 
+//         END AS wishlisted
+
+//     FROM 
+//         products p
+//     JOIN 
+//         product_inventory i ON p.id = i.product_id
+//     JOIN 
+//         categories c ON c.id = p.category_id
+//     JOIN 
+//         product_pricing pp ON p.id = pp.product_id 
+//         AND NOW() BETWEEN pp.start_time AND pp.end_time -- Get current base pricing
+//     LEFT JOIN 
+//         product_discounts pd ON p.id = pd.product_id 
+//         AND pd.is_active = 1 
+//         AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW()) -- Get current promotional discounts
+//     LEFT JOIN 
+//         wishlist_items wi ON p.id = wi.product_id 
+//         AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') -- User ID for wishlist check
+    
+//     WHERE
+//         p.status = 'active'
+//     -- End of Inner Query
+// ) AS FilterableProducts
+// WHERE
+//     -- Apply all filters to the results of the inner query
+//     (title LIKE ? OR description LIKE ?) -- Text query
+//     AND (final_price BETWEEN ? AND ?)      -- Price range filter
+//     -- AND (brand IN (?))                  -- Example: Brand filter
+//     -- AND (rating >= ?)                    -- Example: Rating filter
+// ORDER BY 
+//     rating DESC -- Or final_price ASC, etc.
+// LIMIT ? OFFSET ?; -- Apply pagination at the very end
 
     const products = await runQuery(`SELECT id FROM products WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) LIMIT ? OFFSET ?`, [query, query, limit, offset])
     const productIds = products.map(item => item.id)
