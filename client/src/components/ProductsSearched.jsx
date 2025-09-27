@@ -193,7 +193,7 @@ function ProductsSearched() {
         if(currentPage === value) return
         console.log(value);
         dispatch(setPageSearch(value));
-        dispatch(searchProducts(query, value));
+        dispatch(searchProducts(query, value, 15, activeFilters));
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     };
 
@@ -258,7 +258,14 @@ function ProductsSearched() {
                                     ))}
                                 </Grid>
                                 <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                                    <Pagination count={pages} page={currentPage} onChange={handlePage} color="primary" />
+                                    <Pagination 
+                                        count={pages} 
+                                        page={currentPage} 
+                                        onChange={handlePage} 
+                                        color="primary" 
+                                        showFirstButton
+                                        showLastButton
+                                    />
                                 </Box>
                             </>
                         ) : (

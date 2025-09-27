@@ -44,7 +44,7 @@ export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
                     return
                 }
                 const data = await res.json();
-                // console.log(data);
+                console.log(data);
                 dispatch(setSearchedProducts(data));
             } 
             catch (err) {

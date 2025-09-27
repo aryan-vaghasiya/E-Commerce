@@ -2,7 +2,11 @@ import React from 'react';
 import {
     Box, Typography, Slider, FormGroup, FormControlLabel,
     Checkbox, Rating, Divider,
-    Button
+    Button,
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    Radio
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 
@@ -22,9 +26,10 @@ function FilterSidebar({activeFilters, applyFilters}) {
     const displayMax = 1000;
     const sliderUpperBound = 1010;
 
-    const { register, handleSubmit, control, reset, watch, resetField, formState: {errors} } = useForm({
+    const { register, handleSubmit, control, setValue, reset, watch, resetField, formState: {errors} } = useForm({
         defaultValues: {
-            priceRange: [10, 500]
+            priceRange: [10, 500],
+            rating: null
         }
     })
 
@@ -33,6 +38,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
         { value: 0, label: '$0' },
         { value: displayMax, label: `$${displayMax}+` }
     ];
+    const ratingOptions = [4, 3];
 
     const formatValueLabel = (value) => {
         if (value > displayMax) {
@@ -48,7 +54,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
             ...formData,
             priceRange: [
                 minPrice,
-                maxPrice >= displayMax ? null : maxPrice
+                maxPrice > displayMax ? null : maxPrice
             ]
         }
         applyFilters(filtersToSend)
@@ -97,11 +103,16 @@ function FilterSidebar({activeFilters, applyFilters}) {
                     </FormGroup>
                 </FilterSection>
 
-                <FilterSection title="Customer Rating">
+                {/* <FilterSection title="Customer Rating">
                     <Box>
                         <FormControlLabel
                             control={<Checkbox />}
-                            label={<Rating name="read-only" value={4} readOnly />}
+                            label={
+                                <Box sx={{display: "flex", gap: 1, alignItems:"center"}}>
+                                    <Rating name="read-only" value={4} readOnly size='medium'/> 
+                                    <Typography variant='body2'> & Up</Typography>
+                                </Box>
+                            }
                         />
                         <FormControlLabel
                             control={<Checkbox />}
@@ -113,12 +124,55 @@ function FilterSidebar({activeFilters, applyFilters}) {
                             }
                         />
                     </Box>
+                </FilterSection> */}
+
+                <FilterSection>
+                    <FormControl component="fieldset" sx={{width: "100%"}}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="h6" gutterBottom>Customer Rating</Typography>
+                            {/* <FormLabel component="legend" sx={{ typography: 'h6' }}>Customer Rating</FormLabel> */}
+                            <Button size="small" variant='outlined' onClick={() => setValue("rating", null)}>Clear</Button>
+                        </Box>
+                        
+                        <Controller
+                            name="rating"
+                            control={control}
+                            render={({ field }) => (
+                                <RadioGroup {...field} aria-labelledby="rating-filter-group-label">
+                                    {ratingOptions.map((ratingValue) => (
+                                        <FormControlLabel
+                                            key={ratingValue}
+                                            value={ratingValue}
+                                            control={<Radio />}
+                                            label={
+                                                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                                                    <Rating name="read-only" value={ratingValue} readOnly />
+                                                    <Typography variant='body2'>& Up</Typography>
+                                                </Box>
+                                            }
+                                        />
+                                    ))}
+                                </RadioGroup>
+                            )}
+                        />
+                    </FormControl>
                 </FilterSection>
 
                 <FilterSection title="Availability">
-                    <FormGroup>
+                    {/* <FormGroup>
                         <FormControlLabel control={<Checkbox defaultChecked />} label="In Stock" />
-                    </FormGroup>
+                    </FormGroup> */}
+                    <Controller
+                        name="inStock"
+                        control={control}
+                        defaultValue={false}
+                        render={({ field }) => (
+                            <FormControlLabel
+                                control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                                label="In Stock"
+                            />
+                        )}
+                    />
                 </FilterSection>
             </form>
         </Box>

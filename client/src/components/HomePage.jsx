@@ -9,7 +9,7 @@ import { hideSnack } from "../redux/snackbar/snackbarActions";
 import Alert from "@mui/material/Alert";
 import Pagination from "@mui/material/Pagination";
 import Typography from "@mui/material/Typography";
-import { searchProducts, setPageSearch } from "../redux/search/searchActions";
+import { searchProducts, setPageSearch, setSearchQuery } from "../redux/search/searchActions";
 import {
   Button,
   Container,
@@ -223,6 +223,7 @@ const HomePage = () => {
     //   console.log("I ran 2");
     //   dispatch(fetchProducts());
     // }
+    dispatch(setSearchQuery(""))
     dispatch(fetchProducts());
     getTrendingProducts()
     getRecentlyOrderedProducts()

@@ -30,6 +30,7 @@ import { useTheme } from '@mui/material/styles'
 import '@fontsource-variable/playfair-display';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { InputAdornment } from "@mui/material"
+import { useForm } from "react-hook-form"
 
     const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
         <Drawer
@@ -112,6 +113,17 @@ function NavBar() {
     const [input, setInput] = useState(searchReducer?.query || "")
     const [anchorEl, setAnchorEl] = useState(null);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+    const { register, handleSubmit, watch, setValue, setFocus } = useForm({
+        defaultValues:{
+            searchQuery: searchReducer.query || ""
+        }
+    })
+    const searchQueryValue = watch("searchQuery");
+
+    const handleClearSearch = () => {
+        setValue("searchQuery", "");
+        setFocus("searchQuery");
+    };
 
     const getNavClass = (isActive) => ({
         mr: 2,
@@ -169,15 +181,18 @@ function NavBar() {
     }
 
     const handleSearchSubmit = (e) => {
-        e.preventDefault()
+        console.log(e);
+        const input = e.searchQuery
+        // e.preventDefault()
+        if(input.trim() === searchReducer.query) return
+        if (input.trim().length === 0){
+            return
+            // dispatch(setSearchQuery(input.trim()))
+        }
         if (input.trim().length > 0) {
             dispatch(setSearchQuery(input.trim()))
             dispatch(searchProducts(input.trim()))
             navigate("/products/search")
-        }
-        if (input.trim().length === 0){
-            return
-            // dispatch(setSearchQuery(input.trim()))
         }
     }
 
@@ -278,15 +293,16 @@ function NavBar() {
                                     onKeyDown={handleEnter}
                                     value={input}
                                 /> */}
-                                <form onSubmit={handleSearchSubmit} style={{width: "100%"}}>
+                                <form onSubmit={handleSubmit(handleSearchSubmit)} style={{width: "100%"}}>
                                     <TextField
                                         // defaultValue={searchReducer.query}
                                         variant="standard"
                                         placeholder="Search products..."
                                         fullWidth
                                         size="small"
-                                        value={input}
-                                        onChange={handleChange}
+                                        // value={input}
+                                        // onChange={handleChange}
+                                        {...register("searchQuery")}
                                         slotProps={{ 
                                             input: { 
                                                 disableUnderline: true, 
@@ -295,13 +311,13 @@ function NavBar() {
                                                     <SearchIcon />
                                                 </InputAdornment>,
                                                 endAdornment:
-                                                    input?
-                                                    <IconButton size="small" sx={{p: 0}} onClick={() => setInput("")}>
+                                                    searchQueryValue?
+                                                    <IconButton size="small" sx={{p: 0}} onClick={handleClearSearch}>
                                                         <CloseIcon />
                                                     </IconButton>
                                                     :
                                                     null
-                                                } 
+                                                }
                                             }}
                                     />
                                 </form>
