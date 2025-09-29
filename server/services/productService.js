@@ -25,8 +25,130 @@ exports.getAllProducts = async(page, limit, offset, userId) => {
     return productsRes
 }
 
-exports.getSearchedProducts = async (queryParams, userId) => {
+// exports.getSearchedProducts = async (queryParams, userId) => {
 
+//     const {
+//         query,
+//         page,
+//         limit,
+//         offset,
+//         priceRange,
+//         inStock,
+//         rating
+//     } = queryParams
+
+//     console.log(priceRange);
+
+//     if(query.trim().length < 1){
+//         return {}
+//     }
+
+//     let whereClause = ` WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) `
+//     const params = [userId, query, query]
+
+//     if(priceRange){
+//         const rangeArr = priceRange.split(",")
+//         console.log(rangeArr);
+//         const from = rangeArr[0]
+//         const to = rangeArr[1]
+
+//         whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `
+//         params.push(from, to, to)
+//     }
+
+//     if(inStock === 'true'){
+//         whereClause += ` AND stock > ?`
+//         params.push(0)
+//     }
+
+//     if(rating){
+//         whereClause += ` AND rating >= ?`
+//         params.push(rating)
+//     }
+
+
+//     const finalQuery = 
+//         `SELECT
+//             *,
+//             COUNT(*) OVER() AS total_filtered
+//         FROM (
+//             SELECT 
+//                 p.id,
+//                 p.title,
+//                 p.description,
+//                 p.rating,
+//                 p.brand,
+//                 p.thumbnail,
+//                 p.status,
+//                 c.category,
+//                 pp.mrp, 
+//                 i.stock,
+                
+//                 CASE 
+//                     WHEN pd.offer_price IS NOT NULL 
+//                         THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+//                     ELSE NULL
+//                 END AS offer_discount,
+//                 CASE 
+//                     WHEN pd.offer_price IS NOT NULL 
+//                         THEN pd.offer_price
+//                     ELSE pp.price
+//                 END AS price,
+                
+//                 CASE 
+//                     WHEN wi.product_id IS NOT NULL THEN TRUE 
+//                     ELSE FALSE 
+//                 END AS wishlisted
+
+//             FROM 
+//                 products p
+//             JOIN 
+//                 product_inventory i ON p.id = i.product_id
+//             JOIN 
+//                 categories c ON c.id = p.category_id
+//             JOIN 
+//                 product_pricing pp ON p.id = pp.product_id 
+//                 AND NOW() BETWEEN pp.start_time AND pp.end_time
+//             LEFT JOIN 
+//                 product_discounts pd ON p.id = pd.product_id 
+//                 AND pd.is_active = 1 
+//                 AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
+//             LEFT JOIN 
+//                 wishlist_items wi ON p.id = wi.product_id 
+//                 AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
+            
+//             WHERE
+//                 p.status = 'active'
+//         ) AS FilterableProducts
+
+//         ${whereClause}
+
+//         LIMIT ? OFFSET ?`
+
+//     params.push(limit, offset)
+
+//     const results = await runQuery(finalQuery, params)
+
+//     if(results.length === 0){
+//         return {}
+//     }
+
+//     const total = results[0].total_filtered;
+
+//     if(!total){
+//         throw new Error ("Could not count total searched products")
+//     }
+
+//     const productsRes = {
+//         products : results,
+//         currentPage : page,
+//         pages: Math.ceil (total / limit),
+//         total
+//     }
+//     return productsRes
+// }
+
+exports.getSearchedProducts = async (queryParams, userId) => {
     const {
         query,
         page,
@@ -34,64 +156,68 @@ exports.getSearchedProducts = async (queryParams, userId) => {
         offset,
         priceRange,
         inStock,
-        rating
-    } = queryParams
+        rating,
+        sortBy // Added for flexible sorting
+    } = queryParams;
 
-    console.log(priceRange);
-
-    if(query.trim().length < 1){
-        return {}
+    if (!query || query.trim().length < 1) {
+        return { products: [], totalCount: 0, pages: 0, currentPage: 1 };
     }
 
-    let whereClause = ` WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) `
-    const params = [userId, query, query]
+    const booleanQuery = query
+        .split(/\s+/)
+        .map(word => `+${word}*`)
+        .join(" ");
 
-    if(priceRange){
-        const rangeArr = priceRange.split(",")
-        console.log(rangeArr);
-        const from = rangeArr[0]
-        const to = rangeArr[1]
+    // const params = [booleanQuery, userId, booleanQuery];
+    const params = [query, userId, query];
+    
+    // 2. Dynamically build the WHERE clause for the OUTER query
+    let whereClause = '';
 
-        whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `
-        params.push(from, to, to)
+    if (priceRange) {
+        const [from, to] = priceRange.split(",");
+        whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `;
+        params.push(from, to, to);
     }
 
-    if(inStock === 'true'){
-        whereClause += ` AND stock > ?`
-        params.push(0)
+    if (inStock === 'true') {
+        whereClause += ` AND stock > 0`;
     }
 
-    if(rating){
-        whereClause += ` AND rating >= ?`
-        params.push(rating)
+    if (rating) {
+        whereClause += ` AND rating >= ?`;
+        params.push(rating);
     }
 
+    // 3. Dynamically build the ORDER BY clause
+    let orderByClause = 'ORDER BY relevance_score DESC'; // Default sort
+    switch (sortBy) {
+        case 'price_asc':
+            orderByClause = 'ORDER BY price ASC';
+            break;
+        case 'price_desc':
+            orderByClause = 'ORDER BY price DESC';
+            break;
+        case 'rating':
+            orderByClause = 'ORDER BY rating DESC';
+            break;
+    }
 
-    const finalQuery = 
-        `SELECT
+    // 4. Construct the final query string
+    const finalQuery = `
+        SELECT
             *,
             COUNT(*) OVER() AS total_filtered
         FROM (
             SELECT 
-                p.id,
-                p.title,
-                p.description,
-                p.rating,
-                p.brand,
-                p.thumbnail,
-                p.status,
-                c.category,
-                pp.mrp, 
-                i.stock,
+                p.id, p.title, p.description, p.rating, p.brand, p.thumbnail, p.status,
+                c.category, pp.mrp, i.stock,
                 
+                MATCH(p.title, p.description) AGAINST(? IN NATURAL LANGUAGE MODE) AS relevance_score,
+
                 CASE 
-                    WHEN pd.offer_price IS NOT NULL 
-                        THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                    ELSE NULL
-                END AS offer_discount,
-                CASE 
-                    WHEN pd.offer_price IS NOT NULL 
-                        THEN pd.offer_price
+                    WHEN pd.offer_price IS NOT NULL THEN pd.offer_price
                     ELSE pp.price
                 END AS price,
                 
@@ -99,66 +225,43 @@ exports.getSearchedProducts = async (queryParams, userId) => {
                     WHEN wi.product_id IS NOT NULL THEN TRUE 
                     ELSE FALSE 
                 END AS wishlisted
-
             FROM 
                 products p
-            JOIN 
-                product_inventory i ON p.id = i.product_id
-            JOIN 
-                categories c ON c.id = p.category_id
-            JOIN 
-                product_pricing pp ON p.id = pp.product_id 
-                AND NOW() BETWEEN pp.start_time AND pp.end_time
-            LEFT JOIN 
-                product_discounts pd ON p.id = pd.product_id 
-                AND pd.is_active = 1 
-                AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
-            LEFT JOIN 
-                wishlist_items wi ON p.id = wi.product_id 
-                AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
-            
+                JOIN product_inventory i ON p.id = i.product_id
+                JOIN categories c ON c.id = p.category_id
+                JOIN product_pricing pp ON p.id = pp.product_id AND NOW() BETWEEN pp.start_time AND pp.end_time
+                LEFT JOIN product_discounts pd ON p.id = pd.product_id AND pd.is_active = 1 AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
+                LEFT JOIN wishlist_items wi ON p.id = wi.product_id AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
             WHERE
                 p.status = 'active'
+                AND MATCH(p.title, p.description) AGAINST(? IN NATURAL LANGUAGE MODE)
         ) AS FilterableProducts
+        WHERE 1=1 ${whereClause}
+        ${orderByClause}
+        LIMIT ? OFFSET ?
+    `;
 
-        ${whereClause}
+    // Add pagination params at the end
+    params.push(limit, offset);
 
-        LIMIT ? OFFSET ?`
+    const results = await runQuery(finalQuery, params);
 
-    // const products = await runQuery(`SELECT id FROM products WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) LIMIT ? OFFSET ?`, [query, query, limit, offset])
-    // const productIds = products.map(item => item.id)
-
-    // if(productIds.length === 0){
-    //     return {}
-    // }
-
-    // const results = await this.getProductsByIdsHelper(productIds, userId)
-
-    params.push(limit, offset)
-
-    const results = await runQuery(finalQuery, params)
-
-    if(results.length === 0){
-        return {}
+    // The rest of your processing logic remains the same
+    if (results.length === 0) {
+        return { products: [], totalCount: 0, pages: 0, currentPage: 1 };
     }
-    // console.log(results);
-
-    // const [{total}] = await runQuery("SELECT COUNT(*) as total FROM products WHERE title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')", [query, query])
 
     const total = results[0].total_filtered;
 
-    if(!total){
-        throw new Error ("Could not count total searched products")
-    }
+    const products = results.map(({ total_filtered, ...productData }) => productData);
 
-    const productsRes = {
-        products : results,
-        currentPage : page,
-        pages: Math.ceil (total / limit),
-        total
-    }
-    return productsRes
-}
+    return {
+        products: products,
+        currentPage: page,
+        pages: Math.ceil(total / limit),
+        totalCount: total
+    };
+};
 
 exports.getTrendingProducts = async (limit, userId) => {
     const oneWeekAgo = dayjs().startOf('day').subtract(7, "day").format("YYYY-MM-DD hh:mm:ss")

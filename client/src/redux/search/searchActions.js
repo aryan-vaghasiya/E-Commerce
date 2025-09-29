@@ -27,7 +27,9 @@ export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
     return (dispatch, getState) => {
         // const page = getState().searchReducer.currentPage
         console.log(page);
-        const params = new URLSearchParams({page, limit, query, ...filters})
+
+        const newQuery = getState().searchReducer
+        const params = new URLSearchParams({query: newQuery.query, page, limit, ...filters})
         const token = getState().userReducer.token
         dispatch(searchRequest())
         setTimeout(async () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Box, Typography, Slider, FormGroup, FormControlLabel,
     Checkbox, Rating, Divider,
@@ -9,8 +9,8 @@ import {
     Radio
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
+import { useSelector } from 'react-redux';
 
-// A simple component to create styled sections in the sidebar
 const FilterSection = ({ title, children }) => (
     <Box sx={{ py: 2 }}>
         <Typography variant="h6" gutterBottom>{title}</Typography>
@@ -20,18 +20,17 @@ const FilterSection = ({ title, children }) => (
 );
 
 function FilterSidebar({activeFilters, applyFilters}) {
-    // In a real app, this state would be managed by Redux or component state
-    // const [priceRange, setPriceRange] = React.useState([20, 80]);
-
     const displayMax = 1000;
     const sliderUpperBound = 1010;
 
+    const { products, currentPage, pages, query } = useSelector((state) => state.searchReducer);
     const { register, handleSubmit, control, setValue, reset, watch, resetField, formState: {errors} } = useForm({
         defaultValues: {
-            priceRange: [10, 500],
+            priceRange: [0, 1010],
             rating: null
         }
     })
+    const watchAllFields = watch()
 
     const priceRange = watch("priceRange")
     const marks = [
@@ -43,6 +42,9 @@ function FilterSidebar({activeFilters, applyFilters}) {
     const formatValueLabel = (value) => {
         if (value > displayMax) {
             return `$${displayMax}+`;
+        }
+        if(value < 1){
+            return `Min.`
         }
         return `$${value}`;
     };
@@ -60,17 +62,58 @@ function FilterSidebar({activeFilters, applyFilters}) {
         applyFilters(filtersToSend)
     }
 
+    useEffect(() => {
+        reset()
+    }, [query])
+
+    // useEffect(() => {
+    //     const subscription = watch((data, { type }) => {
+    //         if (type === 'change') {
+    //             setTimeout(() => {
+    //                 handleSubmit(applySearchFilters)();
+    //             }, 1000);
+    //         }
+    //     });
+
+    //     return () => {
+    //         subscription.unsubscribe();
+    //     };
+    // }, []);
+
+    useEffect(() => {
+        let timeoutId;
+        const subscription = watch((data, { type }) => {
+            if (type === 'change') {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                
+                timeoutId = setTimeout(() => {
+                    handleSubmit(applySearchFilters)();
+                }, 1000);
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+    }, []);
+
     return (
-        <Box sx={{p: 2}}>
+        <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>
             <form onSubmit={handleSubmit(applySearchFilters)}>
                 <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", py: 1}}>
                     <Typography variant="h5">Filters</Typography>
-                    <Button variant='contained' size='small' type='submit'>Apply</Button>
+                    {/* <Button variant='contained' size='small' type='submit'>Apply</Button> */}
                 </Box>
                 <Divider />
 
                 <FilterSection title="Price Range">
                     <Box sx={{p: 1}}>
+                        <Button variant='outlined' size='small' onClick={() => resetField("priceRange")}>Reset</Button>
                         <Controller
                             name="priceRange"
                             control={control}
@@ -89,7 +132,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
                         />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2">${priceRange[0]}</Typography>
+                        <Typography variant="body2">{formatValueLabel(priceRange[0])}</Typography>
                         {/* <Typography variant="body2">${priceRange[1]}</Typography> */}
                         <Typography variant="body2">{formatValueLabel(priceRange[1])}</Typography>
                     </Box>
@@ -102,29 +145,6 @@ function FilterSidebar({activeFilters, applyFilters}) {
                         <FormControlLabel control={<Checkbox />} label="Glamour Beauty" />
                     </FormGroup>
                 </FilterSection>
-
-                {/* <FilterSection title="Customer Rating">
-                    <Box>
-                        <FormControlLabel
-                            control={<Checkbox />}
-                            label={
-                                <Box sx={{display: "flex", gap: 1, alignItems:"center"}}>
-                                    <Rating name="read-only" value={4} readOnly size='medium'/> 
-                                    <Typography variant='body2'> & Up</Typography>
-                                </Box>
-                            }
-                        />
-                        <FormControlLabel
-                            control={<Checkbox />}
-                            label={
-                                <Box sx={{display: "flex", gap: 1, alignItems:"center"}}>
-                                    <Rating name="read-only" value={3} readOnly size='medium'/> 
-                                    <Typography variant='body2'> & Up</Typography>
-                                </Box>
-                            }
-                        />
-                    </Box>
-                </FilterSection> */}
 
                 <FilterSection>
                     <FormControl component="fieldset" sx={{width: "100%"}}>

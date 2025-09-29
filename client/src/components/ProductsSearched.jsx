@@ -213,7 +213,6 @@ function ProductsSearched() {
         }
         console.log(params);
         console.log(Object.fromEntries(params));
-
         dispatch(searchProducts(query, 1, 15, Object.fromEntries(params)))
     }
 
@@ -235,7 +234,7 @@ function ProductsSearched() {
                     </Button>
                 </Box>
 
-                <Grid container spacing={3}>
+                <Grid container spacing={1}>
                     {/* Desktop Sidebar */}
                     <Grid size={{md: 3}}
                         sx={{
@@ -252,7 +251,7 @@ function ProductsSearched() {
                             <>
                                 <Grid container spacing={{ xs: 2, md: 3 }} >
                                     {products.map((product) => (
-                                        <Grid key={product.id} size={{xs: 12, sm: 6, lg: 4}}>
+                                        <Grid key={product.id} size={{xs: 12, sm: 6, lg: 4, xl: 3}}>
                                             <ProductItem product={product} loading={false} />
                                         </Grid>
                                     ))}

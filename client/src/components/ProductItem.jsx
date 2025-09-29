@@ -194,6 +194,8 @@ function ProductItem({ product, loading }) {
         <Card sx={{
             height: "100%",
             width:"100%",
+            // maxWidth: 400,
+            // mx: "auto",
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
