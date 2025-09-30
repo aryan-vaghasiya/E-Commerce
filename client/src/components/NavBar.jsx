@@ -184,7 +184,9 @@ function NavBar() {
         console.log(e);
         const input = e.searchQuery
         // e.preventDefault()
-        if(input.trim() === searchReducer.query) return
+        if(input.trim() === searchReducer.query) {
+            return navigate("/products/search")
+        }
         if (input.trim().length === 0){
             return
             // dispatch(setSearchQuery(input.trim()))

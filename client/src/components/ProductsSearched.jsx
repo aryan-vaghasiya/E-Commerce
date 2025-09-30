@@ -166,7 +166,8 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-    Container, Box, Grid, Typography, Button, Drawer, Toolbar, Pagination, Alert, Snackbar
+    Container, Box, Grid, Typography, Button, Drawer, Toolbar, Pagination, Alert, Snackbar,
+    CircularProgress
 } from "@mui/material";
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ProductItem from "./ProductItem";
@@ -174,14 +175,13 @@ import FilterSidebar from "./FilterSidebar"; // Import the new component
 import { searchProducts, setPageSearch } from "../redux/search/searchActions";
 import { hideSnack } from "../redux/snackbar/snackbarActions";
 
-const drawerWidth = "auto"; // Define a width for the sidebar
+const drawerWidth = "auto";
 
 function ProductsSearched() {
     const dispatch = useDispatch();
     const snackbarState = useSelector((state) => state.snackbarReducer);
-    const { products, currentPage, pages, query } = useSelector((state) => state.searchReducer);
+    const { products, currentPage, pages, query, isLoading } = useSelector((state) => state.searchReducer);
     
-    // State to manage the mobile drawer's visibility
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activeFilters, setActiveFilters] = useState({})
 
@@ -198,6 +198,7 @@ function ProductsSearched() {
     };
 
     useEffect(() => {
+        console.log("I ran");
         dispatch(searchProducts(query, currentPage));
         // window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         // }, [currentPage]);
@@ -216,11 +217,16 @@ function ProductsSearched() {
         dispatch(searchProducts(query, 1, 15, Object.fromEntries(params)))
     }
 
+    // if(isLoading){
+    //     return(
+    //         <Box sx={{mx: "auto", width: "100%", height: "100%"}}>
+    //             <CircularProgress />
+    //         </Box>
+    //     )
+    // }
+
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            {/* This Toolbar acts as a spacer to push content below your global fixed navbar */}
-            {/* <Toolbar /> */}
-
             <Box sx={{}}>
                 {/* Mobile Filter Button */}
                 <Box sx={{pt: 2, px: 2, display: { xs: "flex", md: 'none', }, justifyContent: "flex-end" }}>
@@ -247,7 +253,15 @@ function ProductsSearched() {
 
                     {/* Product Grid */}
                     <Grid size={{xs: 12, md: 9}} sx={{p: 2}}>
-                        {products?.length > 0 ? (
+                        {
+                        isLoading ?
+                        (
+                            <Box sx={{ textAlign: 'center', mt: 5 }}>
+                                <CircularProgress />
+                            </Box>
+                        )
+                        :
+                        !isLoading && products?.length > 0 ? (
                             <>
                                 <Grid container spacing={{ xs: 2, md: 3 }} >
                                     {products.map((product) => (
@@ -267,7 +281,9 @@ function ProductsSearched() {
                                     />
                                 </Box>
                             </>
-                        ) : (
+                        ) 
+                        :
+                        (
                             <Box sx={{ textAlign: 'center', mt: 5 }}>
                                 <Typography>
                                     Oops! There are no products named - {query}

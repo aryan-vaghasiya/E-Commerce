@@ -11,9 +11,17 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 
-const FilterSection = ({ title, children }) => (
+const FilterSection = ({ title, children, actionName, actionFunction }) => (
     <Box sx={{ py: 2 }}>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6" gutterBottom>{title}</Typography>
+            {/* <FormLabel component="legend" sx={{ typography: 'h6' }}>Customer Rating</FormLabel> */}
+            {actionFunction ?
+                <Button variant='outlined' size='small' onClick={actionFunction}>{actionName}</Button>
+                :
+                null
+            }
+        </Box>
         {children}
         <Divider sx={{ mt: 2 }} />
     </Box>
@@ -111,9 +119,12 @@ function FilterSidebar({activeFilters, applyFilters}) {
                 </Box>
                 <Divider />
 
-                <FilterSection title="Price Range">
+                <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}>
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="h6" gutterBottom>Price Range</Typography>
+                            <Button variant='outlined' size='small' onClick={() => resetField("priceRange")}>Reset</Button>
+                        </Box> */}
                     <Box sx={{p: 1}}>
-                        <Button variant='outlined' size='small' onClick={() => resetField("priceRange")}>Reset</Button>
                         <Controller
                             name="priceRange"
                             control={control}
@@ -146,13 +157,12 @@ function FilterSidebar({activeFilters, applyFilters}) {
                     </FormGroup>
                 </FilterSection>
 
-                <FilterSection>
+                <FilterSection title="Customer Rating" actionName="Reset" actionFunction={() => setValue("rating", null)}>
                     <FormControl component="fieldset" sx={{width: "100%"}}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="h6" gutterBottom>Customer Rating</Typography>
-                            {/* <FormLabel component="legend" sx={{ typography: 'h6' }}>Customer Rating</FormLabel> */}
                             <Button size="small" variant='outlined' onClick={() => setValue("rating", null)}>Clear</Button>
-                        </Box>
+                        </Box> */}
                         
                         <Controller
                             name="rating"

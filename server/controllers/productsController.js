@@ -25,7 +25,7 @@ exports.searchProduct = async (req, res) => {
 
     // const {page, limit, query} = req.query
 
-    console.log(req.query);
+    // console.log(req.query);
     const queryParams = {...req.query, query, page, limit, offset}
 
     // console.log(page, limit, offset, query);
