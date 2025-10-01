@@ -184,6 +184,7 @@ function ProductsSearched() {
     
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activeFilters, setActiveFilters] = useState({})
+    const [brands, setBrands] = useState([])
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);

@@ -1,7 +1,7 @@
 const runQuery = require("../db");
 const dayjs = require("dayjs");
 const client = require('../elastic-client');
-const { createProductIndex, indexBulkProducts } = require('../elastic-index-helpers');
+const { createProductIndex, indexBulkProducts, searchProductsElastic, bulkUpdateThumbnails } = require('../elastic-index-helpers');
 
 exports.getAllProducts = async(page, limit, offset, userId) => {
     const products = await runQuery(`SELECT id FROM products ORDER BY id ASC LIMIT ? OFFSET ?`, [limit, offset])
@@ -130,16 +130,19 @@ exports.getSearchedProducts = async (queryParams, userId) => {
 
     params.push(limit, offset)
 
-    const results = await runQuery(finalQuery, params)
+    // const results = await runQuery(finalQuery, params)
+    const {total, products, brands} = await searchProductsElastic(client, query, limit, offset, queryParams)
+    const results = normalizeProducts(products)
 
     if(results.length === 0){
         return {}
     }
 
+    // await bulkUpdateThumbnails(client, results)
     // await createProductIndex(client);
     // await indexBulkProducts(client, results);
 
-    const total = results[0].total_filtered;
+    // const total = results[0].total_filtered;
 
     if(!total){
         throw new Error ("Could not count total searched products")
@@ -149,7 +152,8 @@ exports.getSearchedProducts = async (queryParams, userId) => {
         products : results,
         currentPage : page,
         pages: Math.ceil (total / limit),
-        total
+        total,
+        brands
     }
     return productsRes
 }
@@ -368,4 +372,34 @@ exports.getProductsByIdsHelper = async (productIds, userId = null) => {
     `, ["active", userId, "my_wishlist", productIds, productIds]);
 
     return products
+}
+
+
+function normalizeProducts(products) {
+    if (!Array.isArray(products)) {
+        throw new Error('Input must be an array');
+    }
+    
+    return products.map(product => {
+        const { _id, _source, _score : score } = product;
+        
+        const normalized = {
+            // score: score,
+            id: parseInt(_id),
+            title: _source.title,
+            description: _source.description,
+            rating: _source.rating,
+            brand: _source.brand,
+            thumbnail: _source.thumbnail,
+            status: _source.status,
+            category: _source.category,
+            mrp: _source.mrp,
+            stock: _source.stock,
+            offer_discount: _source.offer_discount,
+            price: _source.price,
+            wishlisted: _source.wishlisted ? 1 : 0,
+        };
+        
+        return normalized;
+    });
 }

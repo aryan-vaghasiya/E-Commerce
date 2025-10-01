@@ -1,137 +1,3 @@
-// import { useDispatch, useSelector } from 'react-redux'
-// import { addToCart } from '../redux/cart/cartActions'
-// import { Link } from 'react-router'
-// import Button from '@mui/material/Button'
-// import Card from '@mui/material/Card'
-// import CardContent from '@mui/material/CardContent'
-// import CardMedia from '@mui/material/CardMedia'
-// import CardActions from '@mui/material/CardActions'
-// import CardActionArea from '@mui/material/CardActionArea'
-// import Typography from '@mui/material/Typography'
-// import StarIcon from '@mui/icons-material/Star';
-// import Box from '@mui/material/Box'
-// import { showSnack } from '../redux/snackbar/snackbarActions'
-// import Skeleton from '@mui/material/Skeleton'
-// import FavoriteIcon from '@mui/icons-material/Favorite';
-// import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-// import { addWishlistDb, removeWishlistDb } from '../redux/wishlist/wishlistActions'
-// import { getImageUrl } from '../utils/imageUrl'
-
-// function ProductItem({product, loading}) {
-//     const dispatch = useDispatch()
-//     const userState = useSelector(state => state.userReducer)
-
-//     const handleAddToCart = () => {
-//         dispatch(addToCart(product))
-//     }
-
-//     const handleWishlist = () => {
-//         if(userState.userName){
-//             if(!product.wishlisted){
-//                 dispatch(addWishlistDb(product))
-//             }
-//             else{
-//                 dispatch(removeWishlistDb(product))
-//             }
-//         }
-//         else{
-//             dispatch(showSnack({message: "Please Login to Add to Wishlist", severity: "warning"}))
-//         }
-//     }
-
-//     return (
-//         <Box>
-//             {loading?
-//                 <Card sx={{height: "100%", minWidth: "200px"}}>
-//                     <CardContent>
-//                         <Skeleton variant='rounded' height={300} animation="wave"></Skeleton>
-//                         <Skeleton variant='text' sx={{fontSize: 16, mt: 0.5}} animation="wave"></Skeleton>
-//                         <Skeleton variant='text' sx={{fontSize: 14, width: "50%"}} animation="wave"></Skeleton>
-//                         <Skeleton variant='text' sx={{fontSize: 14, width: "25%"}} animation="wave"></Skeleton>
-//                         <Skeleton variant='text' sx={{fontSize: 15, width: "25%"}} animation="wave"></Skeleton>
-//                         <Box sx={{display: "flex"}}>
-//                             <Skeleton variant='rounded' height={37} sx={{mt: 2, mb: 1.5,mr: 1, width: "75%"}} animation="wave"></Skeleton>
-//                             <Skeleton variant='rounded' height={37} sx={{mt: 2, mb: 1.5, width: "25%"}} animation="wave"></Skeleton>
-//                         </Box>
-//                     </CardContent>
-//                 </Card>
-
-//                 :
-
-//                 <Card 
-//                     sx={{
-//                         transition: "transform .15s ease, box-shadow .15s ease",
-//                         "&:hover": { transform: "translateY(-3px)", boxShadow: 4 },
-//                     }}
-//                 >
-//                     <CardContent>
-//                         <Link to={`/products/${product.id}`}>
-//                             <CardActionArea>
-//                                 <CardMedia
-//                                     component="img"
-//                                     image={getImageUrl(product.thumbnail)}
-//                                     alt="Product Image"
-//                                     sx={{ maxHeight: 300, objectFit: "contain"}}
-//                                 />
-//                                 <Typography level="h3" noWrap sx={{width: "99%"}}>{product.title}</Typography>
-//                                 {product.brand ?
-//                                     <Typography sx={{fontSize: 13}}>Brand: {product.brand}</Typography>
-//                                     :
-//                                     <Typography sx={{fontSize: 13}}>Brand: Generic</Typography>
-//                                 }
-//                                 <Box sx={{display: "inline-flex", alignItems: "center"}}>
-//                                     <StarIcon sx={{color: "#FF8C00", fontSize: 20}}></StarIcon>
-//                                     <Typography sx={{fontSize: 14, pt: 0.3, pr: 0.2}}>
-//                                         {(product.rating).toFixed(1)}
-//                                     </Typography>
-//                                 </Box>
-//                                 <Box sx={{display: "flex", alignItems: "center"}}>
-//                                 <Typography sx={{fontSize: 16}}>${(product.price).toFixed(2)}</Typography>
-//                                 {product.offer_discount?
-//                                     <Typography 
-//                                         sx={{bgcolor: '#1976D2', color: "white", borderRadius: 1, px: 1, ml: 1, fontSize: 13,}}
-//                                     >
-//                                         Limited time deal
-//                                     </Typography>
-//                                     :
-//                                     null
-//                                 }
-//                                 </Box>
-//                             </CardActionArea>
-//                         </Link>
-//                         <CardActions sx={{px: 0}}>
-//                             {product.stock > 0 || product.status !== "active"?
-//                                 <Button disabled={false} variant='outlined' sx={{width: "75%", mt: 1}}
-//                                     onClick={handleAddToCart}
-//                                 >
-//                                     Add to Cart
-//                                 </Button>
-//                                 :
-//                                 <Button disabled={true} color='error' variant='outlined' sx={{width: "75%", mt: 1}}
-//                                     onClick={handleAddToCart}
-//                                 >
-//                                     Out of Stock
-//                                 </Button>
-//                             }
-//                             <Button variant='outlined' sx={{mt: 1, width: "25%"}} onClick={handleWishlist}>
-//                                 {product.wishlisted ?
-//                                     <FavoriteIcon></FavoriteIcon>
-//                                     :
-//                                     <FavoriteBorderIcon></FavoriteBorderIcon>
-//                                 }
-//                             </Button>
-//                         </CardActions>
-//                     </CardContent>
-//                 </Card>
-//             }
-//         </Box>
-//     )
-// }
-
-// export default ProductItem
-
-
-
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router';
 import {
@@ -152,6 +18,51 @@ const calculateDiscount = (mrp, price) => {
 function ProductItem({ product, loading }) {
     const dispatch = useDispatch();
     const { userName } = useSelector(state => state.userReducer);
+
+    // // Normalize API response shape:
+    // // Accepts either legacy { id, title, ... } or new { _id, _source: { ... } }
+    // const normalizedProduct = (() => {
+    //     if (!product) return null;
+
+    //     const isApiShape = typeof product._id !== 'undefined' && product._source;
+    //     if (isApiShape) {
+    //         const src = product._source || {};
+    //         return {
+    //             id: product._id, // string per API
+    //             title: src.title ?? '',
+    //             description: src.description ?? '',
+    //             rating: typeof src.rating === 'number' ? src.rating : 0,
+    //             brand: src.brand ?? '',
+    //             status: src.status ?? '',
+    //             category: src.category ?? '',
+    //             mrp: typeof src.mrp === 'number' ? src.mrp : undefined,
+    //             stock: typeof src.stock === 'number' ? src.stock : 0,
+    //             offer_discount: src.offer_discount ?? null,
+    //             price: typeof src.price === 'number' ? src.price : 0,
+    //             wishlisted: Boolean(src.wishlisted),
+    //             // Fallbacks for fields used by UI but not present in API
+    //             thumbnail: src.thumbnail ?? '', // might be absent; getImageUrl should handle empty
+    //         };
+    //     }
+
+    //     // fallback to legacy shape unchanged
+    //     return {
+    //         id: product.id,
+    //         title: product.title,
+    //         description: product.description,
+    //         rating: typeof product.rating === 'number' ? product.rating : 0,
+    //         brand: product.brand,
+    //         status: product.status,
+    //         category: product.category,
+    //         mrp: product.mrp,
+    //         stock: product.stock,
+    //         offer_discount: product.offer_discount,
+    //         price: product.price,
+    //         wishlisted: Boolean(product.wishlisted),
+    //         thumbnail: product.thumbnail ?? '',
+    //     };
+    // })();
+
 
     if (loading) {
         return (
@@ -221,18 +132,11 @@ function ProductItem({ product, loading }) {
                 />
                 <CardContent sx={{ flexGrow: 1, pb: 0, width: '100%' }}>
                     <Typography variant="body2" color="text.secondary" noWrap>{product.brand}</Typography>
-                    {/* <Tooltip title={product.title} placement="top" noWrap> */}
                         <Typography gutterBottom noWrap variant="h6" component="h2" sx={{
-                            // overflow: 'hidden',
-                            // textOverflow: 'ellipsis',
-                            // display: '-webkit-box',
-                            // WebkitLineClamp: 2,
-                            // WebkitBoxOrient: 'vertical',
                             minHeight: '2rem'
                         }}>
                             {product.title}
                         </Typography>
-                    {/* </Tooltip> */}
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Rating name="read-only" value={product.rating} precision={0.1} readOnly size="small" />
                         <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>({product.rating.toFixed(1)})</Typography>

@@ -97,3 +97,149 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
         console.error('❌ Failed to perform bulk indexing:', error);
     }
 }
+
+exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 0, filters = {}) => {
+
+    // console.log(filters);
+    const filterClauses = [];
+
+    if (filters.priceRange) {
+        const rangeArr = filters.priceRange.split(",");
+        const from = rangeArr[0];
+        const to = rangeArr[1];
+
+        if(from && to){
+            filterClauses.push({
+                range: {
+                    price: {
+                        gte: from,
+                        lte: to
+                    }
+                }
+            });
+        }
+        else{
+            filterClauses.push({
+                range: {
+                    price: {
+                        gte: from,
+                    }
+                }
+            });
+        }
+    }
+
+    if (filters.rating !== "null") {
+        filterClauses.push({
+            range: {
+                rating: {
+                    gt: filters.rating
+                }
+            }
+        });
+    }
+
+    if (filters.inStock === 'true') {
+        filterClauses.push({
+            range: {
+                stock: {
+                    gt: 0
+                }
+            }
+        });
+    }
+
+    const response = await client.search({
+        index: 'products-search',
+        body: {
+            size: limit,
+            from: offset,
+            query: {
+                bool: {
+                    should: [
+                        {
+                            multi_match: {
+                                query: searchTerm,
+                                fields: ["title^5", "brand^3", "category^2", "description^1"],
+                                type: "best_fields"
+                            }
+                        }
+                    ],
+                    filter: filterClauses,
+                    minimum_should_match: searchTerm ? 1 : 0
+                }
+            },
+            "aggs": {
+                "brands": {
+                    "terms": {
+                        "field": "brand.keyword",
+                        "size": 100
+                    }
+                }
+            }
+        }
+    });
+
+    // console.log(response.aggregations.brands.buckets);
+
+    return {
+        products: response.hits.hits, 
+        total: response.hits.total.value,
+        brands: response.aggregations.brands.buckets
+    };
+}
+
+exports.bulkUpdateThumbnails = async (client, products) => {
+    if (!products || products.length === 0) {
+        console.log("Product array is empty. Nothing to update.");
+        return { successful: 0, failed: 0 };
+    }
+
+    console.log(`Preparing to update ${products.length} products...`);
+
+    // The bulk API requires an array of action/document pairs.
+    // We use flatMap to create this structure efficiently.
+    const operations = products.flatMap(product => ([
+        // Action: specifies the 'update' operation, the index, and the document ID
+        { update: { _index: 'products-search', _id: product.id } },
+        // Document: contains the partial document with the fields to update
+        { doc: { thumbnail: product.thumbnail } }
+    ]));
+
+    try {
+        const bulkResponse = await client.bulk({
+            refresh: true, // Makes the changes immediately searchable
+            body: operations
+        });
+
+        // The bulk response contains an 'errors' flag and an 'items' array
+        if (bulkResponse.errors) {
+            const erroredDocuments = [];
+            // Collect all the failed operations
+            bulkResponse.items.forEach((action, i) => {
+                const operation = Object.keys(action)[0];
+                if (action[operation].error) {
+                    erroredDocuments.push({
+                        status: action[operation].status,
+                        error: action[operation].error,
+                        operation: operations[i * 2],
+                        document: operations[i * 2 + 1]
+                    });
+                }
+            });
+            console.error('ERROR: Some documents failed to update.', erroredDocuments);
+        }
+        
+        const successfulUpdates = bulkResponse.items.filter(item => item.update && !item.update.error).length;
+        console.log(`Successfully updated ${successfulUpdates} products.`);
+
+        return {
+            successful: successfulUpdates,
+            failed: products.length - successfulUpdates
+        };
+
+    } catch (err) {
+        console.error('Failed to execute bulk update:', err);
+        return { successful: 0, failed: products.length };
+    }
+};

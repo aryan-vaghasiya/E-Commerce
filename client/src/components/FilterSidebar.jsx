@@ -31,11 +31,12 @@ function FilterSidebar({activeFilters, applyFilters}) {
     const displayMax = 1000;
     const sliderUpperBound = 1010;
 
-    const { products, currentPage, pages, query } = useSelector((state) => state.searchReducer);
+    const { products, currentPage, pages, query, brands } = useSelector((state) => state.searchReducer);
     const { register, handleSubmit, control, setValue, reset, watch, resetField, formState: {errors} } = useForm({
         defaultValues: {
             priceRange: [0, 1010],
-            rating: null
+            rating: null,
+            brands: []
         }
     })
     const watchAllFields = watch()
@@ -150,11 +151,49 @@ function FilterSidebar({activeFilters, applyFilters}) {
                 </FilterSection>
 
                 <FilterSection title="Brand">
-                    <FormGroup>
-                        <FormControlLabel control={<Checkbox />} label="Apple" />
-                        <FormControlLabel control={<Checkbox />} label="Sony" />
-                        <FormControlLabel control={<Checkbox />} label="Glamour Beauty" />
-                    </FormGroup>
+                    {/* <FormGroup>
+                        {brands?.map(brand => (
+                            <FormControlLabel control={<Checkbox />} label={`${brand.key} (${brand.doc_count})`} />
+                        ))
+                        }
+                    </FormGroup> */}
+
+                    <Controller
+                        name="brands"
+                        control={control}
+                        render={({ field }) => {
+                            const { value, onChange } = field;
+
+                            const handleCheck = (checked, brandKey) => {
+                                if (checked) {
+                                // add brand if not already present
+                                    onChange([...value, brandKey]);
+                                } else {
+                                // remove brand
+                                    onChange(value.filter((v) => v !== brandKey));
+                                }
+                            };
+
+                            return (
+                                <FormGroup>
+                                    {brands?.map((brand) => (
+                                        <FormControlLabel
+                                            key={brand.key}
+                                            control={
+                                                <Checkbox
+                                                    checked={value.includes(brand.key)}
+                                                    onChange={(e) =>
+                                                        handleCheck(e.target.checked, brand.key)
+                                                    }
+                                                />
+                                            }
+                                            label={`${brand.key} (${brand.doc_count})`}
+                                        />
+                                    ))}
+                                </FormGroup>
+                            );
+                        }}
+                    />
                 </FilterSection>
 
                 <FilterSection title="Customer Rating" actionName="Reset" actionFunction={() => setValue("rating", null)}>

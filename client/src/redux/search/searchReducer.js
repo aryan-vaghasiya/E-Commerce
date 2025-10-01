@@ -3,6 +3,7 @@ import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_
 const initialState = {
     query: "",
     products : [],
+    brands: [],
     isLoading : false,
     // error : "",
     total: 0,
@@ -26,6 +27,7 @@ export const searchReducer = (state = initialState, action) => {
             return {
                 ...state,
                 products : action.payload.products,
+                brands : action.payload.brands,
                 total: action.payload.total,
                 pages: action.payload.pages,
                 currentPage: action.payload.currentPage,
