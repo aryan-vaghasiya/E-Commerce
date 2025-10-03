@@ -845,7 +845,7 @@ function HorizontalProductCard({ product, loading }) {
                             size="small"
                             sx={{
                                 bgcolor: 'error.main',
-                                color: 'error.dark',
+                                // color: 'error.dark',
                                 fontSize: '0.7rem',
                                 color: "white",
                                 height: 20,

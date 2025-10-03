@@ -96,22 +96,12 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                 clearTimeout(timeoutId);
             }
         };
-    }, []);
+    }, [watch, sort]);
 
     return (
         <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>
             <form onSubmit={handleSubmit(applySearchFilters)}>
-                {/* <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", py: 1}}>
-                    <Typography variant="h5">Filters</Typography>
-                    <Button variant='contained' size='small' type='submit'>Apply</Button>
-                </Box>
-                <Divider /> */}
-
                 <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}>
-                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="h6" gutterBottom>Price Range</Typography>
-                            <Button variant='outlined' size='small' onClick={() => resetField("priceRange")}>Reset</Button>
-                        </Box> */}
                     <Box sx={{p: 1}}>
                         <Controller
                             name="priceRange"
@@ -138,13 +128,6 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                 </FilterSection>
 
                 <FilterSection title="Brand" actionName="Clear" actionFunction={() => resetField("brands")}>
-                    {/* <FormGroup>
-                        {brands?.map(brand => (
-                            <FormControlLabel control={<Checkbox />} label={`${brand.key} (${brand.doc_count})`} />
-                        ))
-                        }
-                    </FormGroup> */}
-
                     <Controller
                         name="brands"
                         control={control}
@@ -185,11 +168,6 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
 
                 <FilterSection title="Customer Rating" actionName="Clear" actionFunction={() => setValue("rating", null)}>
                     <FormControl component="fieldset" sx={{width: "100%"}}>
-                        {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="h6" gutterBottom>Customer Rating</Typography>
-                            <Button size="small" variant='outlined' onClick={() => setValue("rating", null)}>Clear</Button>
-                        </Box> */}
-                        
                         <Controller
                             name="rating"
                             control={control}
@@ -215,9 +193,6 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                 </FilterSection>
 
                 <FilterSection title="Availability">
-                    {/* <FormGroup>
-                        <FormControlLabel control={<Checkbox defaultChecked />} label="In Stock" />
-                    </FormGroup> */}
                     <Controller
                         name="inStock"
                         control={control}

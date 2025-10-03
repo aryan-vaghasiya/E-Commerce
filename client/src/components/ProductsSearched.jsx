@@ -42,7 +42,7 @@ function ProductsSearched() {
         if(currentPage === value) return
         console.log(value);
         dispatch(setPageSearch(value));
-        dispatch(searchProducts(query, value, 15, activeFilters));
+        dispatch(searchProducts(query, value, 15, {...activeFilters, sort: sortBy}));
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     };
 
@@ -79,60 +79,47 @@ function ProductsSearched() {
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh" }}>
             <Box sx={{}}>
-                {/* <Box sx={{pt: 2, px: 2, display: { xs: "flex", md: 'none', }, justifyContent: "flex-end" }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<FilterListIcon />}
-                        onClick={handleDrawerToggle}
-                        // fullWidth
-                    >
-                        Filters
-                    </Button>
-                </Box> */}
-
-                {/* <Box> */}
-                    <Paper sx={{borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
-                        <Box>
-                            {
-                                !isMobile?
-                                <Typography>Showing {((currentPage - 1)*15) +1} - {Math.min(currentPage*15, total)} of {total} results for "{query}"</Typography>
-                                :
-                                null
-                            }
-                        </Box>
-                        <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
-                        <FormControl>
-                            <InputLabel id="sort_by">Sort by</InputLabel>
-                            <Select
-                                size="small"
-                                value={sortBy}
-                                labelId="sort_by"
-                                label="Sort by"
-                                onChange={(e) => {                                    
-                                    setSortBy(e.target.value)
-                                    handleApplyFilters(activeFilters, e.target.value)
-                                }}
-                            >
-                                <MenuItem value="_score,desc">Relevance</MenuItem>
-                                <MenuItem value="price,asc">Price - Low to High</MenuItem>
-                                <MenuItem value="price,desc">Price - High to Low</MenuItem>
-                                <MenuItem value="rating,desc">Highest Rated</MenuItem>
-                            </Select>
-                        </FormControl>
-                        {isMobile?
-                            <Button
-                                variant="contained"
-                                startIcon={<FilterListIcon />}
-                                onClick={handleDrawerToggle}
-                            >
-                                Filters
-                            </Button>
+                <Paper sx={{borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
+                    <Box>
+                        {
+                            !isMobile?
+                            <Typography>Showing {((currentPage - 1)*15) +1} - {Math.min(currentPage*15, total)} of {total} results for "{query}"</Typography>
                             :
                             null
                         }
-                        </Box>
-                    </Paper>
-                {/* </Box> */}
+                    </Box>
+                    <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
+                    <FormControl>
+                        <InputLabel id="sort_by">Sort by</InputLabel>
+                        <Select
+                            size="small"
+                            value={sortBy}
+                            labelId="sort_by"
+                            label="Sort by"
+                            onChange={(e) => {                                    
+                                setSortBy(e.target.value)
+                                handleApplyFilters(activeFilters, e.target.value)
+                            }}
+                        >
+                            <MenuItem value="_score,desc">Relevance</MenuItem>
+                            <MenuItem value="price,asc">Price - Low to High</MenuItem>
+                            <MenuItem value="price,desc">Price - High to Low</MenuItem>
+                            <MenuItem value="rating,desc">Highest Rated</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {isMobile?
+                        <Button
+                            variant="contained"
+                            startIcon={<FilterListIcon />}
+                            onClick={handleDrawerToggle}
+                        >
+                            Filters
+                        </Button>
+                        :
+                        null
+                    }
+                    </Box>
+                </Paper>
                 <Grid container spacing={1}>
                     {/* Desktop Sidebar */}
                     <Grid size={{md: 3}}
@@ -208,9 +195,16 @@ function ProductsSearched() {
                 <FilterSidebar />
             </Drawer>
 
-            {/* Your Snackbar can remain here */}
-            <Snackbar open={snackbarState.show} /* ...props... */ >
-                <Alert /* ...props... */ >{snackbarState.message}</Alert>
+            <Snackbar
+                open={snackbarState.show}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={1000}
+                onClose={() => dispatch(hideSnack())}
+                sx={{ "&.MuiSnackbar-root": { top: "70px" } }}
+            >
+                <Alert onClose={() => dispatch(hideSnack())} severity={snackbarState.severity} variant="filled">
+                    {snackbarState.message}
+                </Alert>
             </Snackbar>
         </Box>
     );
