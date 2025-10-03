@@ -100,8 +100,10 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
 
 exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 0, filters = {}) => {
 
+    const mainFilterClauses = [];
+    const postFilterClauses = [];
+    const sortClause = [];
     // console.log(filters);
-    const filterClauses = [];
 
     if (filters.priceRange) {
         const rangeArr = filters.priceRange.split(",");
@@ -109,7 +111,7 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
         const to = rangeArr[1];
 
         if(from && to){
-            filterClauses.push({
+            mainFilterClauses.push({
                 range: {
                     price: {
                         gte: from,
@@ -119,7 +121,7 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
             });
         }
         else{
-            filterClauses.push({
+            mainFilterClauses.push({
                 range: {
                     price: {
                         gte: from,
@@ -130,7 +132,7 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
     }
 
     if (filters.rating !== "null") {
-        filterClauses.push({
+        mainFilterClauses.push({
             range: {
                 rating: {
                     gt: filters.rating
@@ -140,13 +142,35 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
     }
 
     if (filters.inStock === 'true') {
-        filterClauses.push({
+        mainFilterClauses.push({
             range: {
                 stock: {
                     gt: 0
                 }
             }
         });
+    }
+
+    if(filters.brands?.length > 0){
+        const brandsArr = filters.brands.split(",")
+        // console.log(brandsArr);
+        postFilterClauses.push({
+            terms:{
+                "brand.keyword": brandsArr,
+            }
+        })
+    }
+
+    if(filters.sort){
+        const [sortby, orderby] = filters.sort.split(",")
+        // console.log(sortby);
+        // console.log(orderby);
+
+        sortClause.push({
+            [sortby]: {
+                order: orderby
+            }
+        })
     }
 
     const response = await client.search({
@@ -165,16 +189,27 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
                             }
                         }
                     ],
-                    filter: filterClauses,
+                    filter: mainFilterClauses,
                     minimum_should_match: searchTerm ? 1 : 0
                 }
             },
+            sort: sortClause,
+            // sort: [{
+            //     "_score": {
+            //         order: "desc"
+            //     }
+            // }],
             "aggs": {
                 "brands": {
                     "terms": {
                         "field": "brand.keyword",
                         "size": 100
                     }
+                }
+            },
+            post_filter: {
+                bool: {
+                    filter: postFilterClauses // Filters only the hits
                 }
             }
         }

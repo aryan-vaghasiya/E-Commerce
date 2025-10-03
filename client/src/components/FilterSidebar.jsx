@@ -12,8 +12,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 
 const FilterSection = ({ title, children, actionName, actionFunction }) => (
-    <Box sx={{ py: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Box sx={{ pb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             <Typography variant="h6" gutterBottom>{title}</Typography>
             {/* <FormLabel component="legend" sx={{ typography: 'h6' }}>Customer Rating</FormLabel> */}
             {actionFunction ?
@@ -27,7 +27,7 @@ const FilterSection = ({ title, children, actionName, actionFunction }) => (
     </Box>
 );
 
-function FilterSidebar({activeFilters, applyFilters}) {
+function FilterSidebar({activeFilters, applyFilters, sort}) {
     const displayMax = 1000;
     const sliderUpperBound = 1010;
 
@@ -40,6 +40,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
         }
     })
     const watchAllFields = watch()
+    const hasChanges = JSON.stringify(watchAllFields) !== JSON.stringify(activeFilters);
 
     const priceRange = watch("priceRange")
     const marks = [
@@ -59,7 +60,6 @@ function FilterSidebar({activeFilters, applyFilters}) {
     };
 
     const applySearchFilters = (formData) => {
-        // console.log(formData);
         const [minPrice, maxPrice] = formData.priceRange;
         const filtersToSend = {
             ...formData,
@@ -68,26 +68,13 @@ function FilterSidebar({activeFilters, applyFilters}) {
                 maxPrice > displayMax ? null : maxPrice
             ]
         }
-        applyFilters(filtersToSend)
+        // applyFilters(filtersToSend)
+        applyFilters(filtersToSend, sort)
     }
 
     useEffect(() => {
         reset()
     }, [query])
-
-    // useEffect(() => {
-    //     const subscription = watch((data, { type }) => {
-    //         if (type === 'change') {
-    //             setTimeout(() => {
-    //                 handleSubmit(applySearchFilters)();
-    //             }, 1000);
-    //         }
-    //     });
-
-    //     return () => {
-    //         subscription.unsubscribe();
-    //     };
-    // }, []);
 
     useEffect(() => {
         let timeoutId;
@@ -114,11 +101,11 @@ function FilterSidebar({activeFilters, applyFilters}) {
     return (
         <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>
             <form onSubmit={handleSubmit(applySearchFilters)}>
-                <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", py: 1}}>
+                {/* <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", py: 1}}>
                     <Typography variant="h5">Filters</Typography>
-                    {/* <Button variant='contained' size='small' type='submit'>Apply</Button> */}
+                    <Button variant='contained' size='small' type='submit'>Apply</Button>
                 </Box>
-                <Divider />
+                <Divider /> */}
 
                 <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}>
                         {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -150,7 +137,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
                     </Box>
                 </FilterSection>
 
-                <FilterSection title="Brand">
+                <FilterSection title="Brand" actionName="Clear" actionFunction={() => resetField("brands")}>
                     {/* <FormGroup>
                         {brands?.map(brand => (
                             <FormControlLabel control={<Checkbox />} label={`${brand.key} (${brand.doc_count})`} />
@@ -196,7 +183,7 @@ function FilterSidebar({activeFilters, applyFilters}) {
                     />
                 </FilterSection>
 
-                <FilterSection title="Customer Rating" actionName="Reset" actionFunction={() => setValue("rating", null)}>
+                <FilterSection title="Customer Rating" actionName="Clear" actionFunction={() => setValue("rating", null)}>
                     <FormControl component="fieldset" sx={{width: "100%"}}>
                         {/* <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="h6" gutterBottom>Customer Rating</Typography>

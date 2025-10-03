@@ -19,51 +19,6 @@ function ProductItem({ product, loading }) {
     const dispatch = useDispatch();
     const { userName } = useSelector(state => state.userReducer);
 
-    // // Normalize API response shape:
-    // // Accepts either legacy { id, title, ... } or new { _id, _source: { ... } }
-    // const normalizedProduct = (() => {
-    //     if (!product) return null;
-
-    //     const isApiShape = typeof product._id !== 'undefined' && product._source;
-    //     if (isApiShape) {
-    //         const src = product._source || {};
-    //         return {
-    //             id: product._id, // string per API
-    //             title: src.title ?? '',
-    //             description: src.description ?? '',
-    //             rating: typeof src.rating === 'number' ? src.rating : 0,
-    //             brand: src.brand ?? '',
-    //             status: src.status ?? '',
-    //             category: src.category ?? '',
-    //             mrp: typeof src.mrp === 'number' ? src.mrp : undefined,
-    //             stock: typeof src.stock === 'number' ? src.stock : 0,
-    //             offer_discount: src.offer_discount ?? null,
-    //             price: typeof src.price === 'number' ? src.price : 0,
-    //             wishlisted: Boolean(src.wishlisted),
-    //             // Fallbacks for fields used by UI but not present in API
-    //             thumbnail: src.thumbnail ?? '', // might be absent; getImageUrl should handle empty
-    //         };
-    //     }
-
-    //     // fallback to legacy shape unchanged
-    //     return {
-    //         id: product.id,
-    //         title: product.title,
-    //         description: product.description,
-    //         rating: typeof product.rating === 'number' ? product.rating : 0,
-    //         brand: product.brand,
-    //         status: product.status,
-    //         category: product.category,
-    //         mrp: product.mrp,
-    //         stock: product.stock,
-    //         offer_discount: product.offer_discount,
-    //         price: product.price,
-    //         wishlisted: Boolean(product.wishlisted),
-    //         thumbnail: product.thumbnail ?? '',
-    //     };
-    // })();
-
-
     if (loading) {
         return (
             <Card sx={{ height: "100%", width:"100%", display: 'flex', flexDirection: 'column', minWidth: 0 }}>

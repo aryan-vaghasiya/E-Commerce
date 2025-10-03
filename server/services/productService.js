@@ -41,94 +41,94 @@ exports.getSearchedProducts = async (queryParams, userId) => {
 
     // console.log(priceRange);
 
-    if(query.trim().length < 1){
-        return {}
-    }
+    // if(query.trim().length < 1){
+    //     return {}
+    // }
 
-    let whereClause = ` WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) `
-    const params = [userId, query, query]
+    // let whereClause = ` WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) `
+    // const params = [userId, query, query]
 
-    if(priceRange){
-        const rangeArr = priceRange.split(",")
-        // console.log(rangeArr);
-        const from = rangeArr[0]
-        const to = rangeArr[1]
+    // if(priceRange){
+    //     const rangeArr = priceRange.split(",")
+    //     // console.log(rangeArr);
+    //     const from = rangeArr[0]
+    //     const to = rangeArr[1]
 
-        whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `
-        params.push(from, to, to)
-    }
+    //     whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `
+    //     params.push(from, to, to)
+    // }
 
-    if(inStock === 'true'){
-        whereClause += ` AND stock > ?`
-        params.push(0)
-    }
+    // if(inStock === 'true'){
+    //     whereClause += ` AND stock > ?`
+    //     params.push(0)
+    // }
 
-    if(rating){
-        whereClause += ` AND rating >= ?`
-        params.push(rating)
-    }
+    // if(rating){
+    //     whereClause += ` AND rating >= ?`
+    //     params.push(rating)
+    // }
 
 
-    const finalQuery = 
-        `SELECT
-            *,
-            COUNT(*) OVER() AS total_filtered
-        FROM (
-            SELECT 
-                p.id,
-                p.title,
-                p.description,
-                p.rating,
-                p.brand,
-                p.thumbnail,
-                p.status,
-                c.category,
-                pp.mrp, 
-                i.stock,
+    // const finalQuery = 
+    //     `SELECT
+    //         *,
+    //         COUNT(*) OVER() AS total_filtered
+    //     FROM (
+    //         SELECT 
+    //             p.id,
+    //             p.title,
+    //             p.description,
+    //             p.rating,
+    //             p.brand,
+    //             p.thumbnail,
+    //             p.status,
+    //             c.category,
+    //             pp.mrp, 
+    //             i.stock,
                 
-                CASE 
-                    WHEN pd.offer_price IS NOT NULL 
-                        THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                    ELSE NULL
-                END AS offer_discount,
-                CASE 
-                    WHEN pd.offer_price IS NOT NULL 
-                        THEN pd.offer_price
-                    ELSE pp.price
-                END AS price,
+    //             CASE 
+    //                 WHEN pd.offer_price IS NOT NULL 
+    //                     THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+    //                 ELSE NULL
+    //             END AS offer_discount,
+    //             CASE 
+    //                 WHEN pd.offer_price IS NOT NULL 
+    //                     THEN pd.offer_price
+    //                 ELSE pp.price
+    //             END AS price,
                 
-                CASE 
-                    WHEN wi.product_id IS NOT NULL THEN TRUE 
-                    ELSE FALSE 
-                END AS wishlisted
+    //             CASE 
+    //                 WHEN wi.product_id IS NOT NULL THEN TRUE 
+    //                 ELSE FALSE 
+    //             END AS wishlisted
 
-            FROM 
-                products p
-            JOIN 
-                product_inventory i ON p.id = i.product_id
-            JOIN 
-                categories c ON c.id = p.category_id
-            JOIN 
-                product_pricing pp ON p.id = pp.product_id 
-                AND NOW() BETWEEN pp.start_time AND pp.end_time
-            LEFT JOIN 
-                product_discounts pd ON p.id = pd.product_id 
-                AND pd.is_active = 1 
-                AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
-            LEFT JOIN 
-                wishlist_items wi ON p.id = wi.product_id 
-                AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
+    //         FROM 
+    //             products p
+    //         JOIN 
+    //             product_inventory i ON p.id = i.product_id
+    //         JOIN 
+    //             categories c ON c.id = p.category_id
+    //         JOIN 
+    //             product_pricing pp ON p.id = pp.product_id 
+    //             AND NOW() BETWEEN pp.start_time AND pp.end_time
+    //         LEFT JOIN 
+    //             product_discounts pd ON p.id = pd.product_id 
+    //             AND pd.is_active = 1 
+    //             AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
+    //         LEFT JOIN 
+    //             wishlist_items wi ON p.id = wi.product_id 
+    //             AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
             
-            WHERE
-                1 = 1
-                -- p.status = 'active'
-        ) AS FilterableProducts
+    //         WHERE
+    //             1 = 1
+    //             -- p.status = 'active'
+    //     ) AS FilterableProducts
 
-        ${whereClause}
+    //     ${whereClause}
 
-        -- LIMIT ? OFFSET ?`
+    //     -- LIMIT ? OFFSET ?`
 
-    params.push(limit, offset)
+    // params.push(limit, offset)
 
     // const results = await runQuery(finalQuery, params)
     const {total, products, brands} = await searchProductsElastic(client, query, limit, offset, queryParams)
@@ -277,8 +277,17 @@ exports.getSearchedProducts = async (queryParams, userId) => {
 exports.getTrendingProducts = async (limit, userId) => {
     const oneWeekAgo = dayjs().startOf('day').subtract(7, "day").format("YYYY-MM-DD hh:mm:ss")
 
-    const oneWeekOrders = await runQuery(`SELECT id FROM orders WHERE order_date BETWEEN ? AND NOW() ORDER BY order_date DESC`, [oneWeekAgo])
-    const orderIds = oneWeekOrders.map(order => order.id)
+    const query = `SELECT id FROM orders WHERE order_date BETWEEN ? AND NOW() ORDER BY order_date DESC`
+
+    let orderIds = []
+    const oneWeekOrders = await runQuery(query, [oneWeekAgo])
+    orderIds = oneWeekOrders.map(order => order.id)
+
+    if(oneWeekOrders.length < 1){
+        const oneMonthAgo = dayjs().startOf('day').subtract(1, "month").format("YYYY-MM-DD hh:mm:ss")
+        const oneMonthOrders = await runQuery(query, [oneMonthAgo])
+        orderIds = oneMonthOrders.map(order => order.id)
+    }
 
     const products = await runQuery(`SELECT product_id, COUNT(product_id) AS count FROM order_item WHERE order_id IN (?) GROUP BY product_id ORDER BY count DESC LIMIT ?`, [orderIds, limit])
     const productIds = products.map(prod => prod.product_id)
