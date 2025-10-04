@@ -23,13 +23,15 @@ export const setPageSearch = (page) => {
     }
 }
 
-export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
+// export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
+export const searchProducts = (paramsObj = {}, query, page = 1, limit = 15) => {
     return (dispatch, getState) => {
         // const page = getState().searchReducer.currentPage
-        console.log(page);
+        console.log(paramsObj);
 
-        const newQuery = getState().searchReducer
-        const params = new URLSearchParams({query: newQuery.query, page, limit, ...filters})
+        const newQuery = getState().searchReducer.query
+        const params = new URLSearchParams({...paramsObj, query: newQuery, page, limit})
+
         const token = getState().userReducer.token
         dispatch(searchRequest())
         setTimeout(async () => {

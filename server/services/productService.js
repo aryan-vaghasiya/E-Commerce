@@ -131,7 +131,7 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     // params.push(limit, offset)
 
     // const results = await runQuery(finalQuery, params)
-    const {total, products, brands} = await searchProductsElastic(client, query, limit, offset, queryParams)
+    const {total, products, brands} = await searchProductsElastic(client, queryParams)
     const results = normalizeProducts(products)
 
     if(results.length === 0){

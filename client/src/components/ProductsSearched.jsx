@@ -13,24 +13,32 @@ import {
 } from "@mui/material";
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ProductItem from "./ProductItem";
-import FilterSidebar from "./FilterSidebar"; // Import the new component
+import FilterSidebar from "./FilterSidebar";
 import { searchProducts, setPageSearch } from "../redux/search/searchActions";
 import { hideSnack } from "../redux/snackbar/snackbarActions";
 import { Controller } from "react-hook-form";
 import { Stack, useMediaQuery } from "@mui/system";
 import HorizontalProductCard from "./HorizontalProductCard";
+import { useSearchParams } from "react-router";
 
 const drawerWidth = "auto";
 
 function ProductsSearched() {
     const dispatch = useDispatch();
     const snackbarState = useSelector((state) => state.snackbarReducer);
+
+    const [searchParams, setSearchParams] = useSearchParams()
+
     const { products, currentPage, pages, query, isLoading, total } = useSelector((state) => state.searchReducer);
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [activeFilters, setActiveFilters] = useState({})
+    const [activeFilters, setActiveFilters] = useState({
+        // query,
+        priceRange: "0,",
+        sort: "_score,desc"
+    })
     const [brands, setBrands] = useState([])
     const [sortBy, setSortBy] = useState("_score,desc")
 
@@ -42,39 +50,34 @@ function ProductsSearched() {
         if(currentPage === value) return
         console.log(value);
         dispatch(setPageSearch(value));
-        dispatch(searchProducts(query, value, 15, {...activeFilters, sort: sortBy}));
+        // dispatch(searchProducts(query, value, 15, {...activeFilters, sort: sortBy}));
+        dispatch(searchProducts({...activeFilters, sort: sortBy}, query, value));
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     };
 
     useEffect(() => {
-        console.log("I ran");
-        dispatch(searchProducts(query, currentPage));
-        // window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-        // }, [currentPage]);
+        const params = new URLSearchParams(activeFilters);
+        setSearchParams(params)
+        dispatch(searchProducts(activeFilters, query, currentPage));
+        // dispatch(searchProducts(query, currentPage));
     }, []);
 
     const handleApplyFilters = (filters, sort = sortBy) => {
-        console.log(sortBy);
+        // console.log(sortBy);
         
-        setActiveFilters(filters)
-        console.log(filters);
+        setActiveFilters({query, ...filters, sort})
         
         const params = new URLSearchParams();
+        params.set("query", query)
         for (const [key, value] of Object.entries({...filters, sort})) {
             params.set(key, value)
         }
         // console.log(params);
+        setSearchParams(params)
         console.log(Object.fromEntries(params));
-        dispatch(searchProducts(query, 1, 15, Object.fromEntries(params)))
+        dispatch(searchProducts({...filters, sort}, query))
+        // dispatch(searchProducts(query, 1, 15, Object.fromEntries(params)))
     }
-
-    // if(isLoading){
-    //     return(
-    //         <Box sx={{mx: "auto", width: "100%", height: "100%"}}>
-    //             <CircularProgress />
-    //         </Box>
-    //     )
-    // }
 
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh" }}>
@@ -133,15 +136,12 @@ function ProductsSearched() {
 
                     {/* Product Grid */}
                     <Grid size={{xs: 12, md: 9}} sx={{p: 2}}>
-                        {
-                        isLoading ?
-                        (
+                        {isLoading ?
                             <Box sx={{ textAlign: 'center', mt: 5 }}>
                                 <CircularProgress />
                             </Box>
-                        )
                         :
-                        !isLoading && products?.length > 0 ? (
+                        !isLoading && products?.length > 0 ?
                             <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%"}}>
                                 {/* <Grid container spacing={{ xs: 2, md: 3 }} >
                                     {products.map((product) => (
@@ -168,15 +168,13 @@ function ProductsSearched() {
                                     />
                                 </Box>
                             </Box>
-                        ) 
                         :
-                        (
                             <Box sx={{ textAlign: 'center', mt: 5 }}>
                                 <Typography>
                                     Oops! There are no products named - {query}
                                 </Typography>
                             </Box>
-                        )}
+                        }
                     </Grid>
                 </Grid>
             </Box>
@@ -186,7 +184,7 @@ function ProductsSearched() {
                 variant="temporary"
                 open={mobileOpen}
                 onClose={handleDrawerToggle}
-                ModalProps={{ keepMounted: true }} // Better open performance on mobile.
+                ModalProps={{ keepMounted: true }}
                 sx={{
                     display: { xs: 'block', md: 'none' },
                     '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },

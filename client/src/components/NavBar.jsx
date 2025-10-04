@@ -169,31 +169,33 @@ function NavBar() {
         setInput(e.target.value)
     }
 
-    const handleEnter = (e) => {
-        if (e.key === "Enter" && input.trim().length > 0) {
-            dispatch(setSearchQuery(e.target.value))
-            dispatch(searchProducts(e.target.value))
-            // navigate("/products")
-        }
-        if (e.key === "Enter" && input.trim().length === 0){
-            dispatch(setSearchQuery(e.target.value))
-        }
-    }
+    // const handleEnter = (e) => {
+    //     if (e.key === "Enter" && input.trim().length > 0) {
+    //         dispatch(setSearchQuery(e.target.value))
+    //         dispatch(searchProducts(e.target.value))
+    //         // navigate("/products")
+    //     }
+    //     if (e.key === "Enter" && input.trim().length === 0){
+    //         dispatch(setSearchQuery(e.target.value))
+    //     }
+    // }
 
     const handleSearchSubmit = (e) => {
-        console.log(e);
+        // console.log(e);
         const input = e.searchQuery
         // e.preventDefault()
-        if(input.trim() === searchReducer.query) {
+        if(input.trim() && input.trim() === searchReducer.query) {
             return navigate("/products/search")
         }
-        if (input.trim().length === 0){
-            return
+        // if (input.trim().length === 0){
+        if (!input?.trim()){
+            return console.log("falsy");
+            
             // dispatch(setSearchQuery(input.trim()))
         }
         if (input.trim().length > 0) {
             dispatch(setSearchQuery(input.trim()))
-            dispatch(searchProducts(input.trim()))
+            dispatch(searchProducts({}, input.trim()))
             navigate("/products/search")
         }
     }

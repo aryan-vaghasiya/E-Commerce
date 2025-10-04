@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router';
 
 const FilterSection = ({ title, children, actionName, actionFunction }) => (
     <Box sx={{ pb: 2 }}>
@@ -39,6 +40,9 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
             brands: []
         }
     })
+
+    const [searchParams, setSearchParams] = useSearchParams()
+
     const watchAllFields = watch()
     const hasChanges = JSON.stringify(watchAllFields) !== JSON.stringify(activeFilters);
 
@@ -60,15 +64,22 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
     };
 
     const applySearchFilters = (formData) => {
-        const [minPrice, maxPrice] = formData.priceRange;
-        const filtersToSend = {
-            ...formData,
-            priceRange: [
-                minPrice,
-                maxPrice > displayMax ? null : maxPrice
-            ]
-        }
-        // applyFilters(filtersToSend)
+        // console.log(formData);
+        let filtersToSend = {}
+
+        Object.entries(formData).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                if (value.length > 0 && key !== "priceRange") filtersToSend[key] = value;
+                if(key === "priceRange"){
+                    filtersToSend[key] = [value[0], value[1] > displayMax ? null : value[1]]
+                }
+            } 
+            else if (value) {
+                filtersToSend[key] = value;
+            }
+        })
+
+        console.log(filtersToSend)
         applyFilters(filtersToSend, sort)
     }
 
@@ -97,6 +108,26 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
             }
         };
     }, [watch, sort]);
+
+    // useEffect(() => {
+    //     const timer = setTimeout(() => {
+    //         handleSubmit((data) => {
+    //             // Update query params instead of calling API directly
+    //             // console.log(data);
+    //             Object.entries(data).forEach(([key, value]) => {
+    //                 if (!value || (Array.isArray(value) && value.length === 0)) {
+    //                     searchParams.delete(key);
+    //                 } 
+    //                 else {
+    //                     searchParams.set(key, Array.isArray(value) ? value.join(",") : value);
+    //                 }
+    //             });
+    //             setSearchParams(searchParams);
+    //         })();
+    //     }, 500);
+
+    //     return () => clearTimeout(timer);
+    // }, [watchAllFields, handleSubmit, setSearchParams, searchParams]);
 
     return (
         <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>

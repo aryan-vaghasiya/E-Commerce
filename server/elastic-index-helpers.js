@@ -98,12 +98,15 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
     }
 }
 
-exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 0, filters = {}) => {
+exports.searchProductsElastic = async (client, filters = {}) => {
+
+    // console.log(filters);
+    const {query: searchTerm, limit, offset} = filters
 
     const mainFilterClauses = [];
     const postFilterClauses = [];
     const sortClause = [];
-    // console.log(filters);
+    
 
     if (filters.priceRange) {
         const rangeArr = filters.priceRange.split(",");
@@ -131,7 +134,9 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
         }
     }
 
-    if (filters.rating !== "null") {
+    if (filters.rating) {
+        console.log("rating filter");
+        
         mainFilterClauses.push({
             range: {
                 rating: {
@@ -141,7 +146,8 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
         });
     }
 
-    if (filters.inStock === 'true') {
+    if (filters.inStock) {
+        console.log("stock filter");
         mainFilterClauses.push({
             range: {
                 stock: {
@@ -209,7 +215,7 @@ exports.searchProductsElastic = async (client, searchTerm, limit = 15, offset = 
             },
             post_filter: {
                 bool: {
-                    filter: postFilterClauses // Filters only the hits
+                    filter: postFilterClauses
                 }
             }
         }
