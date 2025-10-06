@@ -24,13 +24,16 @@ export const setPageSearch = (page) => {
 }
 
 // export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
-export const searchProducts = (paramsObj = {}, query, page = 1, limit = 15) => {
+
+// export const searchProducts = (paramsObj = {}, query, page = 1, limit = 15) => {
+export const searchProducts = (filters, page = 1, limit = 15) => {
     return (dispatch, getState) => {
         // const page = getState().searchReducer.currentPage
-        console.log(paramsObj);
+        // console.log(paramsObj);
 
         const newQuery = getState().searchReducer.query
-        const params = new URLSearchParams({...paramsObj, query: newQuery, page, limit})
+        // const params = new URLSearchParams({...paramsObj, query: newQuery, page, limit})
+        const params = new URLSearchParams({...filters, page, limit})
 
         const token = getState().userReducer.token
         dispatch(searchRequest())
@@ -57,3 +60,22 @@ export const searchProducts = (paramsObj = {}, query, page = 1, limit = 15) => {
         }, 1000)
     };
 };
+
+// export const searchProducts = (filters) => {
+//     return async (dispatch, getState) => {
+//         const params = new URLSearchParams(filters)
+//         const token = getState().userReducer.token
+        
+//         dispatch(searchRequest())
+        
+//         try {
+//             const res = await fetch(`/products/search?${params}`, {
+//                 headers: { Authorization: `Bearer ${token}` }
+//             })
+//             const data = await res.json()
+//         dispatch(setSearchedProducts(data)) // Only products, not filters
+//         } catch (err) {
+//             console.error("Search fetch failed:", err.message);
+//         }
+//     }
+// }

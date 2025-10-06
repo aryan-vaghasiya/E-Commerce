@@ -102,6 +102,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
 
     // console.log(filters);
     const {query: searchTerm, limit, offset} = filters
+    // console.log(searchTerm);
 
     const mainFilterClauses = [];
     const postFilterClauses = [];
@@ -112,8 +113,11 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         const rangeArr = filters.priceRange.split(",");
         const from = rangeArr[0];
         const to = rangeArr[1];
+        // console.log(from);
+        // console.log(to);
 
         if(from && to){
+            // console.log("both")
             mainFilterClauses.push({
                 range: {
                     price: {
@@ -124,6 +128,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
             });
         }
         else{
+            // console.log("single")
             mainFilterClauses.push({
                 range: {
                     price: {
@@ -135,7 +140,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     }
 
     if (filters.rating) {
-        console.log("rating filter");
+        // console.log("rating filter");
         
         mainFilterClauses.push({
             range: {
@@ -147,7 +152,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     }
 
     if (filters.inStock) {
-        console.log("stock filter");
+        // console.log("stock filter");
         mainFilterClauses.push({
             range: {
                 stock: {

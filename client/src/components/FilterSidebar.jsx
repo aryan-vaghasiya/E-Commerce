@@ -16,7 +16,6 @@ const FilterSection = ({ title, children, actionName, actionFunction }) => (
     <Box sx={{ pb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             <Typography variant="h6" gutterBottom>{title}</Typography>
-            {/* <FormLabel component="legend" sx={{ typography: 'h6' }}>Customer Rating</FormLabel> */}
             {actionFunction ?
                 <Button variant='outlined' size='small' onClick={actionFunction}>{actionName}</Button>
                 :
@@ -31,17 +30,30 @@ const FilterSection = ({ title, children, actionName, actionFunction }) => (
 function FilterSidebar({activeFilters, applyFilters, sort}) {
     const displayMax = 1000;
     const sliderUpperBound = 1010;
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    function parseURLToFilters(searchParams) {
+        return {
+            query: searchParams.get('query') || '',
+            // page: Number(searchParams.get('page')) || 1,
+            priceRange: searchParams.get('priceRange')?.split(',').map(num => num === "" ? 1010 : parseInt(num)) || [0, 1010],
+            brands: searchParams.get('brands')?.split(',') || [],
+            rating: searchParams.get('rating') || null,
+            inStock: searchParams.get('inStock') === 'true',
+            // sort: searchParams.get('sort') || '_score,desc'
+        }
+    }
+    const filters = parseURLToFilters(searchParams)
 
     const { products, currentPage, pages, query, brands } = useSelector((state) => state.searchReducer);
     const { register, handleSubmit, control, setValue, reset, watch, resetField, formState: {errors} } = useForm({
-        defaultValues: {
-            priceRange: [0, 1010],
-            rating: null,
-            brands: []
-        }
+        // defaultValues: {
+        //     priceRange: [0, 1010],
+        //     rating: null,
+        //     brands: []
+        // }
+        values: filters
     })
-
-    const [searchParams, setSearchParams] = useSearchParams()
 
     const watchAllFields = watch()
     const hasChanges = JSON.stringify(watchAllFields) !== JSON.stringify(activeFilters);
@@ -79,6 +91,7 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
             }
         })
 
+        // setSearchParams(filtersToSend)
         console.log(filtersToSend)
         applyFilters(filtersToSend, sort)
     }
@@ -132,7 +145,8 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
     return (
         <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>
             <form onSubmit={handleSubmit(applySearchFilters)}>
-                <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}>
+                {/* <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}> */}
+                <FilterSection title="Price Range" actionName="Reset" actionFunction={() => setValue("priceRange", [0, 1010])}>
                     <Box sx={{p: 1}}>
                         <Controller
                             name="priceRange"
@@ -158,7 +172,8 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                     </Box>
                 </FilterSection>
 
-                <FilterSection title="Brand" actionName="Clear" actionFunction={() => resetField("brands")}>
+                {/* <FilterSection title="Brand" actionName="Clear" actionFunction={() => resetField("brands")}> */}
+                <FilterSection title="Brand" actionName="Clear" actionFunction={() => setValue("brands", [])}>
                     <Controller
                         name="brands"
                         control={control}

@@ -29,7 +29,10 @@ function ProductsSearched() {
 
     const [searchParams, setSearchParams] = useSearchParams()
 
-    const { products, currentPage, pages, query, isLoading, total } = useSelector((state) => state.searchReducer);
+    const { products, currentPage, pages, isLoading, total } = useSelector((state) => state.searchReducer);
+
+    const query = searchParams.get('query') || ''
+
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     
@@ -40,27 +43,91 @@ function ProductsSearched() {
         sort: "_score,desc"
     })
     const [brands, setBrands] = useState([])
-    const [sortBy, setSortBy] = useState("_score,desc")
+    // const [sortBy, setSortBy] = useState("_score,desc")
+    const [sortBy, setSortBy] = useState(searchParams.get("sort") || "_score,desc")
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
+    // Parse URL → Form values
+    function parseURLToFilters(searchParams) {
+        return {
+            query: searchParams.get('query') || '',
+            page: Number(searchParams.get('page')) || 1,
+            priceRange: searchParams.get('priceRange')?.split(',').map(Number) || [0, 1010],
+            brands: searchParams.get('brands')?.split(',') || [],
+            rating: searchParams.get('rating') || null,
+            inStock: searchParams.get('inStock') === 'true',
+            sort: searchParams.get('sort') || '_score,desc'
+        }
+
+        // console.log(Object.fromEntries(searchParams));
+        
+        // let filtersToSend = {}
+        // Object.fromEntries(searchParams).forEach(([key, value]) => {
+        //     if (Array.isArray(value)) {
+        //         if (value.length > 0 && key !== "priceRange") filtersToSend[key] = value;
+        //         if(key === "priceRange"){
+        //             filtersToSend[key] = [value[0], value[1] > displayMax ? null : value[1]]
+        //         }
+        //     } 
+        //     else if (value) {
+        //         filtersToSend[key] = value;
+        //     }
+        // })
+
+        // return filtersToSend
+
+    }
+
+    // Serialize Form values → URL
+    function serializeFiltersToURL(filters) {
+        const params = new URLSearchParams()
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value && value.length > 0) {
+            params.set(key, Array.isArray(value) ? value.join(',') : value)
+            }
+        })
+        return params
+    }
+
+
     const handlePage = (event, value) => {
-        if(currentPage === value) return
-        console.log(value);
-        dispatch(setPageSearch(value));
-        // dispatch(searchProducts(query, value, 15, {...activeFilters, sort: sortBy}));
-        dispatch(searchProducts({...activeFilters, sort: sortBy}, query, value));
+        // if(currentPage === value) return
+        // console.log(value);
+        // dispatch(setPageSearch(value));
+        // // dispatch(searchProducts(query, value, 15, {...activeFilters, sort: sortBy}));
+        // dispatch(searchProducts({...activeFilters, sort: sortBy}, query, value));
+        
+        const filters = Object.fromEntries(searchParams)
+        
+        dispatch(searchProducts(filters, value))
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     };
 
+    // useEffect(() => {
+    //     const params = new URLSearchParams(activeFilters);
+    //     setSearchParams(params)
+    //     dispatch(searchProducts(activeFilters, query, currentPage));
+    //     // dispatch(searchProducts(query, currentPage));
+    // }, []);
+
     useEffect(() => {
-        const params = new URLSearchParams(activeFilters);
-        setSearchParams(params)
-        dispatch(searchProducts(activeFilters, query, currentPage));
-        // dispatch(searchProducts(query, currentPage));
-    }, []);
+        // const filters = parseURLToFilters(searchParams)
+        const filters = Object.fromEntries(searchParams)
+
+        console.log(searchParams.toString());
+        console.log(filters);
+        // If URL is empty, set defaults
+        if (!searchParams.toString()) {
+            setSearchParams({ query: '', sort: '_score,desc' })
+            return
+        }
+        
+        // Fetch based on URL
+        dispatch(searchProducts(filters))
+    }, [searchParams]) // Only dependency
 
     const handleApplyFilters = (filters, sort = sortBy) => {
         // console.log(sortBy);
@@ -72,10 +139,11 @@ function ProductsSearched() {
         for (const [key, value] of Object.entries({...filters, sort})) {
             params.set(key, value)
         }
+        params.set("sort", sort)
         // console.log(params);
         setSearchParams(params)
         console.log(Object.fromEntries(params));
-        dispatch(searchProducts({...filters, sort}, query))
+        // dispatch(searchProducts({...filters, sort}, query))
         // dispatch(searchProducts(query, 1, 15, Object.fromEntries(params)))
     }
 
