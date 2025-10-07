@@ -23,23 +23,16 @@ export const setPageSearch = (page) => {
     }
 }
 
-// export const searchProducts = (query, page = 1, limit = 15, filters = {}) => {
 
-// export const searchProducts = (paramsObj = {}, query, page = 1, limit = 15) => {
 export const searchProducts = (filters, page = 1, limit = 15) => {
-    return (dispatch, getState) => {
-        // const page = getState().searchReducer.currentPage
-        // console.log(paramsObj);
+    return async (dispatch, getState) => {
 
-        const newQuery = getState().searchReducer.query
-        // const params = new URLSearchParams({...paramsObj, query: newQuery, page, limit})
         const params = new URLSearchParams({...filters, page, limit})
 
         const token = getState().userReducer.token
         dispatch(searchRequest())
-        setTimeout(async () => {
+        // setTimeout(async () => {
             try {
-                // const res = await fetch(`http://localhost:3000/products/search?query=${query}&page=${page}&limit=24`, {
                 const res = await fetch(`http://localhost:3000/products/search?${params.toString()}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -57,25 +50,6 @@ export const searchProducts = (filters, page = 1, limit = 15) => {
             catch (err) {
                 console.error("Search fetch failed:", err.message);
             }
-        }, 1000)
+        // }, 1000)
     };
 };
-
-// export const searchProducts = (filters) => {
-//     return async (dispatch, getState) => {
-//         const params = new URLSearchParams(filters)
-//         const token = getState().userReducer.token
-        
-//         dispatch(searchRequest())
-        
-//         try {
-//             const res = await fetch(`/products/search?${params}`, {
-//                 headers: { Authorization: `Bearer ${token}` }
-//             })
-//             const data = await res.json()
-//         dispatch(setSearchedProducts(data)) // Only products, not filters
-//         } catch (err) {
-//             console.error("Search fetch failed:", err.message);
-//         }
-//     }
-// }

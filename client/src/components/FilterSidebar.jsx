@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Box, Typography, Slider, FormGroup, FormControlLabel,
     Checkbox, Rating, Divider,
     Button,
     FormControl,
-    FormLabel,
     RadioGroup,
     Radio
 } from '@mui/material';
@@ -12,11 +11,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router';
 
-const FilterSection = ({ title, children, actionName, actionFunction }) => (
+const FilterSection = ({ title, children, actionName, actionFunction, isDirty }) => (
     <Box sx={{ pb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-            <Typography variant="h6" gutterBottom>{title}</Typography>
-            {actionFunction ?
+            <Typography variant="h6" fontSize={16} gutterBottom>{title}</Typography>
+            {actionFunction && isDirty?
                 <Button variant='outlined' size='small' onClick={actionFunction}>{actionName}</Button>
                 :
                 null
@@ -27,42 +26,74 @@ const FilterSection = ({ title, children, actionName, actionFunction }) => (
     </Box>
 );
 
-function FilterSidebar({activeFilters, applyFilters, sort}) {
+function FilterSidebar({ applyFilters }) {
     const displayMax = 1000;
     const sliderUpperBound = 1010;
     const [searchParams, setSearchParams] = useSearchParams()
+    const [showClearAll, setShowClearAll] = useState(false)
 
     function parseURLToFilters(searchParams) {
         return {
             query: searchParams.get('query') || '',
-            // page: Number(searchParams.get('page')) || 1,
             priceRange: searchParams.get('priceRange')?.split(',').map(num => num === "" ? 1010 : parseInt(num)) || [0, 1010],
             brands: searchParams.get('brands')?.split(',') || [],
             rating: searchParams.get('rating') || null,
             inStock: searchParams.get('inStock') === 'true',
-            // sort: searchParams.get('sort') || '_score,desc'
         }
     }
+
     const filters = parseURLToFilters(searchParams)
 
-    const { products, currentPage, pages, query, brands } = useSelector((state) => state.searchReducer);
-    const { register, handleSubmit, control, setValue, reset, watch, resetField, formState: {errors} } = useForm({
+    const { brands } = useSelector((state) => state.searchReducer);
+
+    const { register, handleSubmit, control, getValues, setValue, reset, watch, resetField, getFieldState, formState: {errors, dirtyFields, isDirty} } = useForm({
         // defaultValues: {
         //     priceRange: [0, 1010],
+        //     brands: [],
         //     rating: null,
-        //     brands: []
-        // }
+        //     inStock: false
+        // },
         values: filters
     })
 
+    const defaultFilters = {
+        priceRange: [0, 1010],
+        brands: [],
+        rating: null,
+        inStock: false,
+    };
+
+    const isFieldChanged = (current, def) => {
+        if (Array.isArray(current) && Array.isArray(def)) {
+            return current.join() !== def.join();
+        }
+        return current !== def;
+    };
+
+    const isFormChanged = (formData, defaultValues) => {
+        return Object.keys(defaultValues).some((key) => {
+            const current = formData[key];
+            const original = defaultValues[key];
+
+            if (Array.isArray(current) && Array.isArray(original)) {
+                if (current.length !== original.length) return true;
+                return current.some((v, i) => v !== original[i]);
+            }
+
+            if (key === 'priceRange') {
+                const [min1, max1] = current || [];
+                const [min2, max2] = original || [];
+                return min1 !== min2 || max1 !== max2;
+            }
+
+            return current !== original;
+        });
+    };
+
     const watchAllFields = watch()
-    const hasChanges = JSON.stringify(watchAllFields) !== JSON.stringify(activeFilters);
 
     const priceRange = watch("priceRange")
-    const marks = [
-        { value: 0, label: '$0' },
-        { value: displayMax, label: `$${displayMax}+` }
-    ];
+
     const ratingOptions = [4, 3];
 
     const formatValueLabel = (value) => {
@@ -76,7 +107,6 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
     };
 
     const applySearchFilters = (formData) => {
-        // console.log(formData);
         let filtersToSend = {}
 
         Object.entries(formData).forEach(([key, value]) => {
@@ -91,14 +121,9 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
             }
         })
 
-        // setSearchParams(filtersToSend)
-        console.log(filtersToSend)
-        applyFilters(filtersToSend, sort)
+        const currentSort = new URLSearchParams(window.location.search).get("sort") || "_score,desc";
+        applyFilters(filtersToSend, currentSort)
     }
-
-    useEffect(() => {
-        reset()
-    }, [query])
 
     useEffect(() => {
         let timeoutId;
@@ -120,33 +145,39 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                 clearTimeout(timeoutId);
             }
         };
-    }, [watch, sort]);
+    }, [watch]);
 
-    // useEffect(() => {
-    //     const timer = setTimeout(() => {
-    //         handleSubmit((data) => {
-    //             // Update query params instead of calling API directly
-    //             // console.log(data);
-    //             Object.entries(data).forEach(([key, value]) => {
-    //                 if (!value || (Array.isArray(value) && value.length === 0)) {
-    //                     searchParams.delete(key);
-    //                 } 
-    //                 else {
-    //                     searchParams.set(key, Array.isArray(value) ? value.join(",") : value);
-    //                 }
-    //             });
-    //             setSearchParams(searchParams);
-    //         })();
-    //     }, 500);
-
-    //     return () => clearTimeout(timer);
-    // }, [watchAllFields, handleSubmit, setSearchParams, searchParams]);
+    useEffect(() => {
+        const changed = isFormChanged(watchAllFields, defaultFilters);
+        setShowClearAll(changed);
+    }, [watchAllFields]);
 
     return (
         <Box sx={{p: 2, maxWidth: 350, ml: "auto"}}>
+            <Box sx={{mb: 1.5}}>
+                <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5}}>
+                    <Typography variant="h6">Filters</Typography>
+                    {showClearAll &&
+                        <Button variant='contained' size='small' onClick={() => {
+                                reset(defaultFilters)
+                                handleSubmit(applySearchFilters)()
+                            }}>
+                            Clear All
+                        </Button>
+                    }
+                </Box>
+                <Divider orientation="horizontal" variant="fullWidth" sx={{ mt: 1 }}/>
+            </Box>
             <form onSubmit={handleSubmit(applySearchFilters)}>
-                {/* <FilterSection title="Price Range" actionName="Reset" actionFunction={() => resetField("priceRange")}> */}
-                <FilterSection title="Price Range" actionName="Reset" actionFunction={() => setValue("priceRange", [0, 1010])}>
+                <FilterSection 
+                    title="Price Range" 
+                    actionName="Reset" 
+                    actionFunction={() => {
+                        setValue("priceRange", [0, 1010])
+                        handleSubmit(applySearchFilters)()
+                    }} 
+                    isDirty={isFieldChanged(watch("priceRange"), defaultFilters.priceRange)}
+                >
                     <Box sx={{p: 1}}>
                         <Controller
                             name="priceRange"
@@ -158,37 +189,31 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                                     valueLabelFormat={formatValueLabel}
                                     step={10}
                                     min={0}
-                                    // max={1000}
                                     max={sliderUpperBound}
-                                    // marks={marks}
                                 />
                             )}
                         />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="body2">{formatValueLabel(priceRange[0])}</Typography>
-                        {/* <Typography variant="body2">${priceRange[1]}</Typography> */}
                         <Typography variant="body2">{formatValueLabel(priceRange[1])}</Typography>
                     </Box>
                 </FilterSection>
 
-                {/* <FilterSection title="Brand" actionName="Clear" actionFunction={() => resetField("brands")}> */}
-                <FilterSection title="Brand" actionName="Clear" actionFunction={() => setValue("brands", [])}>
+                <FilterSection 
+                    title="Brand" 
+                    actionName="Clear" 
+                    actionFunction={() => {
+                        setValue("brands", [])
+                        handleSubmit(applySearchFilters)()
+                    }} 
+                    isDirty={isFieldChanged(watch("brands"), defaultFilters.brands)}
+                > 
                     <Controller
                         name="brands"
                         control={control}
                         render={({ field }) => {
                             const { value, onChange } = field;
-
-                            const handleCheck = (checked, brandKey) => {
-                                if (checked) {
-                                // add brand if not already present
-                                    onChange([...value, brandKey]);
-                                } else {
-                                // remove brand
-                                    onChange(value.filter((v) => v !== brandKey));
-                                }
-                            };
 
                             return (
                                 <FormGroup>
@@ -199,7 +224,10 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                                                 <Checkbox
                                                     checked={value.includes(brand.key)}
                                                     onChange={(e) =>
-                                                        handleCheck(e.target.checked, brand.key)
+                                                        // handleCheck(e.target.checked, brand.key)
+                                                        e.target.checked
+                                                            ? onChange([...value, brand.key])
+                                                            : onChange(value.filter((v) => v !== brand.key))
                                                     }
                                                 />
                                             }
@@ -212,7 +240,15 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                     />
                 </FilterSection>
 
-                <FilterSection title="Customer Rating" actionName="Clear" actionFunction={() => setValue("rating", null)}>
+                <FilterSection 
+                    title="Customer Rating" 
+                    actionName="Clear" 
+                    actionFunction={() => {
+                        setValue("rating", null)
+                        handleSubmit(applySearchFilters)()
+                    }} 
+                    isDirty={isFieldChanged(watch("rating"), defaultFilters.rating)}
+                >
                     <FormControl component="fieldset" sx={{width: "100%"}}>
                         <Controller
                             name="rating"
@@ -238,7 +274,15 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                     </FormControl>
                 </FilterSection>
 
-                <FilterSection title="Availability">
+                <FilterSection 
+                    title="Availability" 
+                    actionName="Clear" 
+                    actionFunction={() => {
+                        setValue("inStock", null)
+                        handleSubmit(applySearchFilters)()
+                    }} 
+                    isDirty={isFieldChanged(watch("inStock"), defaultFilters.inStock)}
+                >
                     <Controller
                         name="inStock"
                         control={control}
@@ -246,7 +290,7 @@ function FilterSidebar({activeFilters, applyFilters, sort}) {
                         render={({ field }) => (
                             <FormControlLabel
                                 control={<Checkbox checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />}
-                                label="In Stock"
+                                label="Exclude Out Of Stock"
                             />
                         )}
                     />

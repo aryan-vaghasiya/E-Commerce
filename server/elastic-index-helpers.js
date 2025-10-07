@@ -214,6 +214,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                 "brands": {
                     "terms": {
                         "field": "brand.keyword",
+                        "order": {"_key": "asc"},
                         "size": 100
                     }
                 }

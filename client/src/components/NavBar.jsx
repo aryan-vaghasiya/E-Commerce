@@ -120,8 +120,6 @@ function NavBar() {
     })
     const searchQueryValue = watch("searchQuery");
     const [searchParams, setSearchParams] = useSearchParams()
-    // console.log(searchParams);
-    // console.log(searchParams.toString());
 
     const handleClearSearch = () => {
         setValue("searchQuery", "");
@@ -165,42 +163,15 @@ function NavBar() {
     }
 
     const handleSearchSubmit = (data) => {
-        // const query = data.searchQuery.trim()
-        // if(query && query === searchReducer.query) {
-        //     return navigate("/products/search")
-        // }
-        // if (!query){
-        //     return console.log("falsy");
-        // }
-        // if (query.length > 0) {
-        //     dispatch(setSearchQuery(query))
-        //     dispatch(searchProducts({}, query))
-        //     navigate("/products/search")
-        // }
-
         const query = data.searchQuery.trim()
         if (!query) return
+        const appliedQuery = searchParams.get("query")?.trim()
+        if (query === appliedQuery) return
         
-        // Update URL directly - this triggers ProductsSearched useEffect
         const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc"})
-        // setSearchParams({
-        //     query, 
-        //     page: 1,
-        //     sort: '_score,desc' 
-        // })
-        
+
         navigate(`/products/search?${params.toString()}`)
     }
-
-    // useEffect(() => {
-    //     const timeOut = setTimeout(() => {
-    //         dispatch(setSearchQuery(input))
-    //         if (input.trim() === "") return;
-    //         dispatch(searchProducts(input))
-    //     }, 1000)
-
-    //     return () => clearInterval(timeOut)
-    // }, [input])
 
     useEffect(() => {
         setValue("searchQuery", searchParams.get("query"))
