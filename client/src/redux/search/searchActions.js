@@ -27,7 +27,8 @@ export const setPageSearch = (page) => {
 export const searchProducts = (filters, page = 1, limit = 15) => {
     return async (dispatch, getState) => {
 
-        const params = new URLSearchParams({...filters, page, limit})
+        console.log("I ran");
+        const params = new URLSearchParams({...filters, limit})
 
         const token = getState().userReducer.token
         dispatch(searchRequest())

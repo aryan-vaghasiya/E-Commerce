@@ -46,7 +46,7 @@ function FilterSidebar({ applyFilters }) {
 
     const { brands } = useSelector((state) => state.searchReducer);
 
-    const { register, handleSubmit, control, getValues, setValue, reset, watch, resetField, getFieldState, formState: {errors, dirtyFields, isDirty} } = useForm({
+    const { register, handleSubmit, control, trigger, getValues, setValue, reset, watch, resetField, getFieldState, formState: {errors, dirtyFields, isDirty} } = useForm({
         // defaultValues: {
         //     priceRange: [0, 1010],
         //     brands: [],
@@ -106,6 +106,21 @@ function FilterSidebar({ applyFilters }) {
         return `$${value}`;
     };
 
+    const handleResetSubsection = (name, value = null) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete(name);
+        if(value){
+            newParams.set(name, value)
+        }
+        setSearchParams(newParams);
+    }
+
+    const handleClearAll = () => {
+        const query = searchParams.get('query');
+        const sort = searchParams.get('sort') || '_score,desc';
+        setSearchParams({query, priceRange: "0,", sort, page: 1,});
+    };
+
     const applySearchFilters = (formData) => {
         let filtersToSend = {}
 
@@ -145,7 +160,8 @@ function FilterSidebar({ applyFilters }) {
                 clearTimeout(timeoutId);
             }
         };
-    }, [watch]);
+    }, [watch, handleSubmit]);
+    // }, [watch]);
 
     useEffect(() => {
         const changed = isFormChanged(watchAllFields, defaultFilters);
@@ -160,7 +176,8 @@ function FilterSidebar({ applyFilters }) {
                     {showClearAll &&
                         <Button variant='contained' size='small' onClick={() => {
                                 reset(defaultFilters)
-                                handleSubmit(applySearchFilters)()
+                                handleClearAll()
+                                // handleSubmit(applySearchFilters)()
                             }}>
                             Clear All
                         </Button>
@@ -170,11 +187,12 @@ function FilterSidebar({ applyFilters }) {
             </Box>
             <form onSubmit={handleSubmit(applySearchFilters)}>
                 <FilterSection 
-                    title="Price Range" 
-                    actionName="Reset" 
+                    title="Price Range"
+                    actionName="Reset"
                     actionFunction={() => {
                         setValue("priceRange", [0, 1010])
-                        handleSubmit(applySearchFilters)()
+                        handleResetSubsection("priceRange", [0,""])
+                        // handleSubmit(applySearchFilters)()
                     }} 
                     isDirty={isFieldChanged(watch("priceRange"), defaultFilters.priceRange)}
                 >
@@ -201,11 +219,12 @@ function FilterSidebar({ applyFilters }) {
                 </FilterSection>
 
                 <FilterSection 
-                    title="Brand" 
+                    title="Brands" 
                     actionName="Clear" 
                     actionFunction={() => {
                         setValue("brands", [])
-                        handleSubmit(applySearchFilters)()
+                        handleResetSubsection("brands")
+                        // handleSubmit(applySearchFilters)()
                     }} 
                     isDirty={isFieldChanged(watch("brands"), defaultFilters.brands)}
                 > 
@@ -245,7 +264,8 @@ function FilterSidebar({ applyFilters }) {
                     actionName="Clear" 
                     actionFunction={() => {
                         setValue("rating", null)
-                        handleSubmit(applySearchFilters)()
+                        handleResetSubsection("rating")
+                        // handleSubmit(applySearchFilters)()
                     }} 
                     isDirty={isFieldChanged(watch("rating"), defaultFilters.rating)}
                 >
@@ -279,7 +299,8 @@ function FilterSidebar({ applyFilters }) {
                     actionName="Clear" 
                     actionFunction={() => {
                         setValue("inStock", null)
-                        handleSubmit(applySearchFilters)()
+                        handleResetSubsection("inStock")
+                        // handleSubmit(applySearchFilters)()
                     }} 
                     isDirty={isFieldChanged(watch("inStock"), defaultFilters.inStock)}
                 >

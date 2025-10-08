@@ -165,10 +165,11 @@ function NavBar() {
     const handleSearchSubmit = (data) => {
         const query = data.searchQuery.trim()
         if (!query) return
+
         const appliedQuery = searchParams.get("query")?.trim()
         if (query === appliedQuery) return
         
-        const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc"})
+        const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc", page: 1,})
 
         navigate(`/products/search?${params.toString()}`)
     }
@@ -231,25 +232,12 @@ function NavBar() {
                                 minWidth: { sm: "200px", md: "250px", lg: "300px" }, 
                                 alignItems: "center"
                             }}>
-                                {/* <SearchIcon color="primary" sx={{ mr: 1 }} />
-                                <TextField 
-                                    variant="standard" 
-                                    placeholder="Search products..." 
-                                    fullWidth
-                                    slotProps={{ input: { disableUnderline: true } }} 
-                                    onChange={handleChange}
-                                    onKeyDown={handleEnter}
-                                    value={input}
-                                /> */}
                                 <form onSubmit={handleSubmit(handleSearchSubmit)} style={{width: "100%"}}>
                                     <TextField
-                                        // defaultValue={searchReducer.query}
                                         variant="standard"
                                         placeholder="Search products..."
                                         fullWidth
                                         size="small"
-                                        // value={searchParams.get("query") || ""}
-                                        // onChange={handleChange}
                                         {...register("searchQuery")}
                                         slotProps={{ 
                                             input: { 

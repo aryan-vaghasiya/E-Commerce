@@ -195,6 +195,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                         {
                             multi_match: {
                                 query: searchTerm,
+                                "fuzziness": "AUTO",
                                 fields: ["title^5", "brand^3", "category^2", "description^1"],
                                 type: "best_fields"
                             }
