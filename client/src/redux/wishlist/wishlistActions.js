@@ -1,4 +1,5 @@
 import { addProductToWishlist, removeProductFromWishlist } from "../products/productActions";
+import { addToWishlistSearch, removeFromWishlistSearch } from "../search/searchActions";
 import { showSnack } from "../snackbar/snackbarActions";
 import { ADD_TO_WISHLIST, REMOVE_FROM_WISHLIST, GET_FULL_WISHLIST, SET_FULL_WISHLIST } from "./wishlistTypes"; 
 
@@ -46,6 +47,7 @@ export const addWishlistDb = (product) => {
             return false
         }
         dispatch(addProductToWishlist(product))
+        dispatch(addToWishlistSearch(product))
         // dispatch(addToWishlist(product))
         dispatch(showSnack({message: "Item added to Wishlist", severity: "success"}))
         return true
@@ -75,6 +77,7 @@ export const removeWishlistDb = (product) => {
             return false
         }
         dispatch(removeProductFromWishlist(product))
+        dispatch(removeFromWishlistSearch(product))
         // dispatch(removeFromWishlist(product))
         dispatch(showSnack({message: "Item removed from Wishlist", severity: "success"}))
         return true

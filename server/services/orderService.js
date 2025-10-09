@@ -3,6 +3,7 @@ const runQuery = require("../db");
 const { sendMail } = require("../mailer/sendMail");
 const walletService = require("./walletService")
 const adminServices = require("./adminServices")
+const client = require('../elastic-client');
 
 exports.addOrder = async(userId, order, coupon) => {
     const checkCart = await runQuery(`SELECT 
@@ -58,7 +59,21 @@ exports.addOrder = async(userId, order, coupon) => {
         const updateStock = await runQuery(
             `UPDATE product_inventory SET stock = stock - ? WHERE product_id = ?`, [item.quantity, item.product_id]
         )
-        
+
+        await client.update({
+            index: "products-search",
+            id: item.product_id.toString(),
+            body: {
+                script: {
+                    source: "ctx._source.stock -= params.decrement",
+                    lang: "painless",
+                    params: {
+                        decrement: item.quantity
+                    }
+                }
+            }
+        })
+
         if(updateStock.affectedRows === 0){
             throw new Error(`Could not Update Quantity for Product ID: ${item.product_id}`)
         }

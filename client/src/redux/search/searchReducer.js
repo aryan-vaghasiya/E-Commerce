@@ -1,4 +1,4 @@
-import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_PRODUCTS_REQUEST } from "./searchTypes";
+import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_PRODUCTS_REQUEST, ADD_TO_WISHLIST_SEARCH, REMOVE_FROM_WISHLIST_SEARCH } from "./searchTypes";
 
 const initialState = {
     query: "",
@@ -38,6 +38,24 @@ export const searchReducer = (state = initialState, action) => {
                 ...state,
                 currentPage: action.payload
             }
+        case ADD_TO_WISHLIST_SEARCH: 
+                return{
+                    ...state,
+                    products: state.products.map(product => 
+                        product.id === action.payload.id 
+                            ? {...product, wishlisted: 1} 
+                            : product
+                    )
+                }
+        case REMOVE_FROM_WISHLIST_SEARCH: 
+                return{
+                    ...state,
+                    products: state.products.map(product =>
+                        product.id === action.payload.id 
+                            ? {...product, wishlisted: 0} 
+                            : product
+                    )
+                }
         default:
             return state;
     }

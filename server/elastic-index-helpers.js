@@ -195,9 +195,9 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                         {
                             multi_match: {
                                 query: searchTerm,
-                                "fuzziness": "AUTO",
                                 fields: ["title^5", "brand^3", "category^2", "description^1"],
-                                type: "best_fields"
+                                type: "best_fields",
+                                "fuzziness": "AUTO",
                             }
                         }
                     ],
@@ -206,11 +206,6 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                 }
             },
             sort: sortClause,
-            // sort: [{
-            //     "_score": {
-            //         order: "desc"
-            //     }
-            // }],
             "aggs": {
                 "brands": {
                     "terms": {
@@ -218,7 +213,13 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                         "order": {"_key": "asc"},
                         "size": 100
                     }
-                }
+                },
+                // "ids":{
+                //     "terms":{
+                //         "field": "id.keyword",
+                //         "size": 100
+                //     }
+                // }
             },
             post_filter: {
                 bool: {
@@ -228,6 +229,8 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         }
     });
 
+    // console.log(response.aggregations);
+    // console.log(response.hits.hits);
     // console.log(response.aggregations.brands.buckets);
 
     return {

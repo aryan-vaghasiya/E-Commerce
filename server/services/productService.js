@@ -131,8 +131,43 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     // params.push(limit, offset)
 
     // const results = await runQuery(finalQuery, params)
+
+
     const {total, products, brands} = await searchProductsElastic(client, queryParams)
-    const results = normalizeProducts(products)
+    // const results = normalizeProducts(products)
+
+    if(!userId){
+        const results = products.map(item => item._source)
+        if(results.length === 0){
+            return {}
+        }
+
+        const productsRes = {
+            products : results,
+            currentPage : page,
+            pages: Math.ceil (total / limit),
+            total,
+            brands
+        }
+        return productsRes
+    }
+
+    const ids = products.map(item => item._source.id)
+
+    const [{id: wishlist_id}] = await runQuery(`
+        SELECT id FROM wishlists WHERE user_id = ? AND name = ?`
+        , [userId, "my_wishlist"]);
+    const wishlisted = await runQuery(`
+        SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (?)`
+        , [wishlist_id, ids]);
+    const wishlistedSet = new Set(wishlisted.map(r => r.product_id));
+
+    const results = products.map((hit) => ({
+        ...hit._source,
+        wishlisted: wishlistedSet.has(parseInt(hit._source.id)),
+    }));
+    
+    // const results = products.map(item => item._source)
 
     if(results.length === 0){
         return {}

@@ -1,4 +1,4 @@
-import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_PRODUCTS_REQUEST } from "./searchTypes";
+import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_PRODUCTS_REQUEST, ADD_TO_WISHLIST_SEARCH, REMOVE_FROM_WISHLIST_SEARCH } from "./searchTypes";
 
 export const searchRequest = () => {
     return{
@@ -20,6 +20,20 @@ export const setPageSearch = (page) => {
     return{
         type: SET_CURRENT_PAGE_SEARCH,
         payload: page
+    }
+}
+
+export const addToWishlistSearch = (item) => {
+    return{
+        type: ADD_TO_WISHLIST_SEARCH,
+        payload: item
+    }
+}
+
+export const removeFromWishlistSearch = (item) => {
+    return{
+        type: REMOVE_FROM_WISHLIST_SEARCH,
+        payload: item
     }
 }
 
