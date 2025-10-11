@@ -100,9 +100,7 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
 
 exports.searchProductsElastic = async (client, filters = {}) => {
 
-    // console.log(filters);
     const {query: searchTerm, limit, offset} = filters
-    // console.log(searchTerm);
 
     const mainFilterClauses = [];
     const postFilterClauses = [];
@@ -113,11 +111,8 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         const rangeArr = filters.priceRange.split(",");
         const from = rangeArr[0];
         const to = rangeArr[1];
-        // console.log(from);
-        // console.log(to);
 
         if(from && to){
-            // console.log("both")
             mainFilterClauses.push({
                 range: {
                     price: {
@@ -128,7 +123,6 @@ exports.searchProductsElastic = async (client, filters = {}) => {
             });
         }
         else{
-            // console.log("single")
             mainFilterClauses.push({
                 range: {
                     price: {
@@ -140,8 +134,6 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     }
 
     if (filters.rating) {
-        // console.log("rating filter");
-        
         mainFilterClauses.push({
             range: {
                 rating: {
@@ -152,7 +144,6 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     }
 
     if (filters.inStock) {
-        // console.log("stock filter");
         mainFilterClauses.push({
             range: {
                 stock: {
@@ -174,8 +165,6 @@ exports.searchProductsElastic = async (client, filters = {}) => {
 
     if(filters.sort){
         const [sortby, orderby] = filters.sort.split(",")
-        // console.log(sortby);
-        // console.log(orderby);
 
         sortClause.push({
             [sortby]: {
@@ -197,7 +186,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                                 query: searchTerm,
                                 fields: ["title^5", "brand^3", "category^2", "description^1"],
                                 type: "best_fields",
-                                "fuzziness": "AUTO",
+                                // "fuzziness": "AUTO",
                             }
                         }
                     ],
@@ -210,7 +199,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                 "brands": {
                     "terms": {
                         "field": "brand.keyword",
-                        "order": {"_key": "asc"},
+                        // "order": {"_key": "asc"},
                         "size": 100
                     }
                 },

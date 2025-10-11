@@ -21,7 +21,7 @@ import { adminProductsReducer } from "./adminProducts/adminProductsReducer"
 const persistConfig = {
     key: 'root',
     storage,
-    blacklist: ["snackbarReducer"]
+    blacklist: ["snackbarReducer", "searchReducer"]
     // whitelist: ["userReducer", "detailsReducer"]
 }
 

@@ -167,7 +167,7 @@ function NavBar() {
         if (!query) return
 
         const appliedQuery = searchParams.get("query")?.trim()
-        if (query === appliedQuery) return
+        // if (query === appliedQuery) return
         
         const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc", page: 1,})
 

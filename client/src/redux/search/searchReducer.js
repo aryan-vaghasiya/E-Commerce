@@ -4,7 +4,7 @@ const initialState = {
     query: "",
     products : [],
     brands: [],
-    isLoading : false,
+    isLoading : true,
     // error : "",
     total: 0,
     pages: 1,

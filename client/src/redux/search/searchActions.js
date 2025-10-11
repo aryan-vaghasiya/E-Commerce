@@ -46,8 +46,9 @@ export const searchProducts = (filters, page = 1, limit = 15) => {
 
         const token = getState().userReducer.token
         dispatch(searchRequest())
-        // setTimeout(async () => {
+        setTimeout(async () => {
             try {
+                // dispatch(searchRequest())
                 const res = await fetch(`http://localhost:3000/products/search?${params.toString()}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -65,6 +66,6 @@ export const searchProducts = (filters, page = 1, limit = 15) => {
             catch (err) {
                 console.error("Search fetch failed:", err.message);
             }
-        // }, 1000)
+        }, 300)
     };
 };

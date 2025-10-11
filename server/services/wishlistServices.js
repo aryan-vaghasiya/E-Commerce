@@ -90,7 +90,7 @@ exports.getWishlistService = async(userId, name = "my_wishlist") => {
                                         AND (pd.end_time IS NULL OR pd.end_time > NOW())
                                     WHERE ws.user_id = ? 
                                         AND ws.name = ?
-                                    ORDER BY wi.id`, [1, userId, name]);
+                                    ORDER BY wi.added_at DESC`, [1, userId, name]);
 
     if(getItems.length <= 0){
         console.error("No wishlist items Exist");
