@@ -18,6 +18,7 @@ import { hideSnack } from "../redux/snackbar/snackbarActions";
 import { Stack, useMediaQuery } from "@mui/system";
 import HorizontalProductCard from "./HorizontalProductCard";
 import { useNavigate, useSearchParams } from "react-router";
+import AppliedFilters from "./AppliedFilters";
 
 function ProductsSearched() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -78,20 +79,20 @@ function ProductsSearched() {
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh", position: "relative" }}>
             {
-            isLoading?
-                <Box
-                    sx={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: "#EEEEEE"
-                    }}
-                >
-                    <CircularProgress />
-                </Box>
-            : 
+            // isLoading?
+            //     <Box
+            //         sx={{
+            //             position: "absolute",
+            //             inset: 0,
+            //             display: "flex",
+            //             alignItems: "center",
+            //             justifyContent: "center",
+            //             bgcolor: "#EEEEEE"
+            //         }}
+            //     >
+            //         <CircularProgress />
+            //     </Box>
+            // : 
             !isLoading && (products?.length < 1 || !products) ?
                 <Box
                     sx={{
@@ -169,28 +170,33 @@ function ProductsSearched() {
 
                         <Grid size={{xs: 12, md: 9}} sx={{p: 2}}>
                             {
-                            // isLoading?
-                            //     <Box sx={{textAlign: "center", mt: 5}}>
-                            //         <CircularProgress />
-                            //     </Box>
-                            // : 
+                            isLoading?
+                                <Box sx={{textAlign: "center", mt: 5}}>
+                                    <CircularProgress />
+                                </Box>
+                            :
                             !isLoading && products?.length > 0 ?
-                                <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%"}}>
-                                    <Stack spacing={{ xs: 2, md: 2.5 }}>
-                                        {products.map((product) => (
-                                            <HorizontalProductCard key={product.id} product={product} loading={false} />
-                                        ))}
-                                    </Stack>
+                                <Box sx={{height: "100%"}}>
+                                    <Box sx={{overflowX: "auto", pb: 2}}>
+                                        <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
+                                    </Box>
+                                    <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%"}}>
+                                        <Stack spacing={{ xs: 2, md: 2.5 }}>
+                                            {products.map((product) => (
+                                                <HorizontalProductCard key={product.id} product={product} loading={false} />
+                                            ))}
+                                        </Stack>
 
-                                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                                        <Pagination 
-                                            count={pages} 
-                                            page={currentPage} 
-                                            onChange={handlePage} 
-                                            color="primary" 
-                                            showFirstButton
-                                            showLastButton
-                                        />
+                                        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                                            <Pagination 
+                                                count={pages} 
+                                                page={currentPage} 
+                                                onChange={handlePage} 
+                                                color="primary" 
+                                                showFirstButton
+                                                showLastButton
+                                            />
+                                        </Box>
                                     </Box>
                                 </Box>
                             :
