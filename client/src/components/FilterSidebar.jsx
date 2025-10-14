@@ -581,6 +581,7 @@ function FilterSidebar({ applyFilters }) {
     const { brands, isLoading } = useSelector((state) => state.searchReducer);
     const [showClearAll, setShowClearAll] = useState(false);
     const [showAllBrands, setShowAllBrands] = useState(false);
+
     const filters = parseURLToFilters(searchParams);
 
     const priceRangeTimeoutRef = useRef(null);

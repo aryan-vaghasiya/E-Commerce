@@ -8,9 +8,12 @@ import {
     FormControl,
     InputLabel,
     MenuItem,
-    useTheme
+    useTheme,
+    IconButton,
+    Divider
 } from "@mui/material";
 import FilterListIcon from '@mui/icons-material/FilterList';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import ProductItem from "./ProductItem";
 import FilterSidebar from "./FilterSidebar";
 import { searchProducts } from "../redux/search/searchActions";
@@ -19,6 +22,7 @@ import { Stack, useMediaQuery } from "@mui/system";
 import HorizontalProductCard from "./HorizontalProductCard";
 import { useNavigate, useSearchParams } from "react-router";
 import AppliedFilters from "./AppliedFilters";
+import HorizontalProductCardSkeleton from "./HorizontalProductCardSkeleton";
 
 function ProductsSearched() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -110,19 +114,17 @@ function ProductsSearched() {
                 </Box>
             :
                 <Box sx={{height: "100%", width: "100%"}}>
-                    <Paper sx={{borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
+                    <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
                         <Box>
-                            {!isMobile?
+                            {!isMobile &&
                                 <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total} results for "{query}"</Typography>
-                            :
-                                null
                             }
                         </Box>
                         <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
                             <FormControl>
                                 <InputLabel id="sort_by">Sort by</InputLabel>
                                 <Select
-                                    sx={{minWidth: 183}}
+                                    sx={{minWidth: {xs: 165,md: 183}, fontSize: {xs: 14, md: 16}}}
                                     size="small"
                                     value={searchParams.get("sort") || "_score,desc"}
                                     labelId="sort_by"
@@ -144,16 +146,15 @@ function ProductsSearched() {
                                     <MenuItem value="rating,desc">Highest Rated</MenuItem>
                                 </Select>
                             </FormControl>
-                            {isMobile?
-                                <Button
-                                    variant="contained"
-                                    startIcon={<FilterListIcon />}
+                            {isMobile &&
+                                <IconButton 
+                                    size="small" 
+                                    color="primary" 
+                                    sx={{border: "1px solid, rgba(25, 118, 210, 0.5)", borderRadius: 1, m: 0}}
                                     onClick={handleDrawerToggle}
                                 >
-                                    Filters
-                                </Button>
-                                :
-                                null
+                                    <FilterAltIcon />
+                                </IconButton>
                             }
                         </Box>
                     </Paper>
@@ -169,22 +170,30 @@ function ProductsSearched() {
                         </Grid>
 
                         <Grid size={{xs: 12, md: 9}} sx={{p: 2}}>
-                            {
+                            {/* {
                             isLoading?
                                 <Box sx={{textAlign: "center", mt: 5}}>
                                     <CircularProgress />
                                 </Box>
                             :
-                            !isLoading && products?.length > 0 ?
+                            !isLoading && products?.length > 0 ? */}
                                 <Box sx={{height: "100%"}}>
-                                    <Box sx={{overflowX: "auto", pb: 2}}>
+                                    <Box sx={{overflowX: "auto"}}>
                                         <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
                                     </Box>
                                     <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%"}}>
                                         <Stack spacing={{ xs: 2, md: 2.5 }}>
-                                            {products.map((product) => (
-                                                <HorizontalProductCard key={product.id} product={product} loading={false} />
-                                            ))}
+                                            {isLoading ?
+                                                Array.from({ length: 5 }).map((_, index) => (
+                                                    <HorizontalProductCardSkeleton key={index} />
+                                                ))
+                                            : products?.length > 0 ? 
+                                                products.map((product) => (
+                                                    <HorizontalProductCard key={product.id} product={product} loading={false} />
+                                                ))
+                                            : 
+                                                <Typography variant="h6">No results found</Typography>
+                                            }
                                         </Stack>
 
                                         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -199,9 +208,9 @@ function ProductsSearched() {
                                         </Box>
                                     </Box>
                                 </Box>
-                            :
+                            {/* :
                                 null
-                            }
+                            } */}
                         </Grid>
                     </Grid>
                 </Box>

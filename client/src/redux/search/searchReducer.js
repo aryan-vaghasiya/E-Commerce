@@ -16,6 +16,10 @@ export const searchReducer = (state = initialState, action) => {
         case SEARCH_PRODUCTS_REQUEST:
             return{
                 ...state,
+                products: [],
+                // brands: [],
+                total: 0,
+                pages: 1,
                 isLoading: true
             }
         case SET_SEARCH_QUERY:
