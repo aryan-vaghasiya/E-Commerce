@@ -113,20 +113,21 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         const to = rangeArr[1];
 
         if(from && to){
-            mainFilterClauses.push({
+            // mainFilterClauses.push({
+            postFilterClauses.push({
                 range: {
                     price: {
-                        gte: from,
-                        lte: to
+                        gte: parseFloat(from),
+                        lte: parseFloat(to)
                     }
                 }
             });
         }
-        else{
-            mainFilterClauses.push({
+        else if (from) {
+            postFilterClauses.push({
                 range: {
                     price: {
-                        gte: from,
+                        gte: parseFloat(from)
                     }
                 }
             });
@@ -203,12 +204,11 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                         "size": 100
                     }
                 },
-                // "ids":{
-                //     "terms":{
-                //         "field": "id.keyword",
-                //         "size": 100
-                //     }
-                // }
+                "price_stats": {
+                    "stats": {
+                        "field": "price"
+                    }
+                },
             },
             post_filter: {
                 bool: {
@@ -221,11 +221,16 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     // console.log(response.aggregations);
     // console.log(response.hits.hits);
     // console.log(response.aggregations.brands.buckets);
+    // console.log(response.aggregations.price_stats);
 
     return {
         products: response.hits.hits, 
         total: response.hits.total.value,
-        brands: response.aggregations.brands.buckets
+        brands: response.aggregations.brands.buckets,
+        price_stats: {
+            min: Math.floor(response.aggregations.price_stats.min || 0),
+            max: Math.ceil(response.aggregations.price_stats.max || 1000)
+        }
     };
 }
 

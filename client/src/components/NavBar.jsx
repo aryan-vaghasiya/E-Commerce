@@ -32,7 +32,90 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { InputAdornment } from "@mui/material"
 import { useForm } from "react-hook-form"
 
-    const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
+    // const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
+    //     <Drawer
+    //         anchor="left"
+    //         open={mobileDrawerOpen}
+    //         onClose={toggleMobileDrawer(false)}
+    //         sx={{
+    //             display: { xs: 'block', md: 'none' },
+    //             '& .MuiDrawer-paper': {
+    //                 maxWidth: "60%",
+    //                 bgcolor: 'background.paper',
+    //             },
+    //         }}
+    //     >
+    //         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: 1, borderColor: 'divider' }}>
+    //             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    //                 <img src={cartifyLogo} alt="logo" style={{ height: '32px' }} />
+    //             </Box>
+    //             <IconButton onClick={toggleMobileDrawer(false)}>
+    //                 <CloseIcon />
+    //             </IconButton>
+    //         </Box>
+
+    //         {/* <List sx={{ pt: 2 }}>
+    //             {navigationItems.map((item) => (
+    //                 <ListItem 
+    //                     key={item.name} 
+    //                     onClick={() => {
+    //                         navigate(item.path);
+    //                         setMobileDrawerOpen(false);
+    //                     }}
+    //                     sx={{ 
+    //                         cursor: 'pointer',
+    //                         '&:hover': {
+    //                             backgroundColor: 'action.hover'
+    //                         }
+    //                     }}
+    //                 >
+    //                     <ListItemText 
+    //                         primary={item.name} 
+    //                         slotProps={{
+    //                             primary: {
+    //                                 sx: {fontSize: "1.1rem", fontWeight: 500}
+    //                             }
+    //                         }}
+    //                     />
+    //                 </ListItem>
+    //             ))}
+    //         </List> */}
+
+    //         <Box sx={{ p: 2, mt: 'auto' }}>
+    //             <Box sx={{ 
+    //                 bgcolor: "grey.100", 
+    //                 p: 1, 
+    //                 borderRadius: 2, 
+    //                 display: "flex", 
+    //                 alignItems: "center" 
+    //             }}>
+    //                 <SearchIcon color="primary" sx={{ mr: 1 }} />
+    //                 <TextField 
+    //                     autoFocus
+    //                     variant="standard" 
+    //                     placeholder="Search products..." 
+    //                     fullWidth
+    //                     slotProps={{ input: { disableUnderline: true } }} 
+    //                     onChange={handleChange}
+    //                     value={input}
+    //                 />
+    //             </Box>
+    //         </Box>
+    //     </Drawer>
+    // );
+
+    const MobileDrawer = ({ 
+        mobileDrawerOpen,
+        setMobileDrawerOpen,
+        toggleMobileDrawer,
+        navigationItems,
+        navigate,
+        register,
+        handleSubmit,
+        searchQueryValue,
+        handleClearSearch,
+        handleSearchSubmit
+    }) => (
         <Drawer
             anchor="left"
             open={mobileDrawerOpen}
@@ -82,24 +165,43 @@ import { useForm } from "react-hook-form"
             </List> */}
 
             <Box sx={{ p: 2, mt: 'auto' }}>
-                <Box sx={{ 
-                    bgcolor: "grey.100", 
-                    p: 1, 
-                    borderRadius: 2, 
-                    display: "flex", 
-                    alignItems: "center" 
-                }}>
-                    <SearchIcon color="primary" sx={{ mr: 1 }} />
-                    <TextField 
-                        autoFocus
-                        variant="standard" 
-                        placeholder="Search products..." 
-                        fullWidth
-                        slotProps={{ input: { disableUnderline: true } }} 
-                        onChange={handleChange}
-                        value={input}
-                    />
-                </Box>
+                <form 
+                    onSubmit={handleSubmit((data) => {
+                        handleSearchSubmit(data);
+                        setMobileDrawerOpen(false);
+                    })}
+                >
+                    <Box sx={{ 
+                        bgcolor: "grey.100", 
+                        p: 1, 
+                        borderRadius: 2, 
+                        display: "flex", 
+                        alignItems: "center" 
+                    }}>
+                        <SearchIcon color="primary" sx={{ mr: 1 }} />
+                        <TextField 
+                            autoFocus
+                            variant="standard" 
+                            placeholder="Search products..." 
+                            fullWidth
+                            {...register("searchQuery")}
+                            slotProps={{ 
+                                input: { 
+                                    disableUnderline: true,
+                                    endAdornment: searchQueryValue ? (
+                                        <IconButton 
+                                            size="small" 
+                                            sx={{ p: 0 }} 
+                                            onClick={handleClearSearch}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </IconButton>
+                                    ) : null
+                                } 
+                            }} 
+                        />
+                    </Box>
+                </form>
             </Box>
         </Drawer>
     );
@@ -110,7 +212,7 @@ function NavBar() {
     const searchReducer = useSelector(state => state.searchReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
-    const [input, setInput] = useState(searchReducer?.query || "")
+    // const [input, setInput] = useState(searchReducer?.query || "")
     const [anchorEl, setAnchorEl] = useState(null);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const { register, handleSubmit, watch, setValue, setFocus } = useForm({
@@ -137,6 +239,10 @@ function NavBar() {
     }
 
     const toggleMobileDrawer = (newOpen) => () => {
+        // setMobileDrawerOpen(newOpen);
+        if (!newOpen && searchQueryValue !== searchParams.get("query")) {
+            setValue("searchQuery", searchParams.get("query") || "");
+        }
         setMobileDrawerOpen(newOpen);
     };
 
@@ -158,20 +264,26 @@ function NavBar() {
         }
     }
 
-    const handleChange = (e) => {
-        setInput(e.target.value)
-    }
+    // const handleChange = (e) => {
+    //     setInput(e.target.value)
+    // }
 
     const handleSearchSubmit = (data) => {
         const query = data.searchQuery.trim()
         if (!query) return
 
-        const appliedQuery = searchParams.get("query")?.trim()
+        // const appliedQuery = searchParams.get("query")?.trim()
         // if (query === appliedQuery) return
         
-        const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc", page: 1,})
+        // const params = new URLSearchParams({query, priceRange: "0,", sort: "_score,desc", page: 1,})
+        // navigate(`/products/search?${params.toString()}`)
 
-        navigate(`/products/search?${params.toString()}`)
+        navigate(`/products/search?${new URLSearchParams({
+            query,
+            // priceRange: "0,",
+            sort: "_score,desc",
+            page: 1
+        }).toString()}`);
     }
 
     useEffect(() => {
@@ -348,7 +460,7 @@ function NavBar() {
                 </Container>
             </AppBar>
 
-            <MobileDrawer 
+            {/* <MobileDrawer 
                 mobileDrawerOpen={mobileDrawerOpen}
                 toggleMobileDrawer={toggleMobileDrawer}
                 navigationItems={navigationItems}
@@ -356,7 +468,21 @@ function NavBar() {
                 input={input}
                 handleChange={handleChange}
                 setMobileDrawerOpen={setMobileDrawerOpen}
+            /> */}
+
+            <MobileDrawer
+                mobileDrawerOpen={mobileDrawerOpen}
+                toggleMobileDrawer={toggleMobileDrawer}
+                navigationItems={navigationItems}
+                navigate={navigate}
+                setMobileDrawerOpen={setMobileDrawerOpen}
+                register={register}
+                handleSubmit={handleSubmit}
+                searchQueryValue={searchQueryValue}
+                handleClearSearch={handleClearSearch}
+                handleSearchSubmit={handleSearchSubmit}
             />
+
         </>
     )
 }

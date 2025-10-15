@@ -133,7 +133,7 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     // const results = await runQuery(finalQuery, params)
 
 
-    const {total, products, brands} = await searchProductsElastic(client, queryParams)
+    const {total, products, brands, price_stats} = await searchProductsElastic(client, queryParams)
     // const results = normalizeProducts(products)
 
     if(products.length < 1){
@@ -148,7 +148,8 @@ exports.getSearchedProducts = async (queryParams, userId) => {
             currentPage : page,
             pages: Math.ceil (total / limit),
             total,
-            brands
+            brands,
+            priceRange: price_stats
         }
         return productsRes
     }
@@ -189,7 +190,8 @@ exports.getSearchedProducts = async (queryParams, userId) => {
         currentPage : page,
         pages: Math.ceil (total / limit),
         total,
-        brands
+        brands,
+        priceRange: price_stats
     }
     return productsRes
 }

@@ -1,90 +1,28 @@
-// import { Box, Chip, Typography } from "@mui/material";
-// import { parseURLToFilters } from "../utils/searchUtils"
-// import StarIcon from '@mui/icons-material/Star';
-
-// function AppliedFilters({searchParams, setSearchParams}) {
-
-//     const filters = parseURLToFilters(searchParams)
-//     const minPrice = filters.priceRange[0] === 0 ? "Min" : `$${(filters.priceRange[0]).toFixed(2)}`
-//     const maxPrice = filters.priceRange[1] === 1010 ? "Max" : `$${(filters.priceRange[1]).toFixed(2)}`
-
-//     const handleResetSubsection = (name, value = "") => {
-//         const newParams = new URLSearchParams(searchParams);
-
-//         if(name === "brands"){
-//             const applied = newParams.get("brands").split(",")
-//             if(applied.length > 1){
-//                 const newBrands = applied.filter(brand => brand !== value)
-//                 newParams.set("brands", newBrands)
-//             }
-//             else{
-//                 newParams.delete(name);
-//             }
-//         }
-//         else if(name === "priceRange"){
-//             newParams.set("priceRange", "0,")
-//         }
-//         else{
-//             newParams.delete(name);
-//         }
-//         // setValue(name, defaultFilters[name])
-//         newParams.set('page', '1');
-//         setSearchParams(newParams);
-//     };
-
-//     return (
-//         <Box sx={{display: "flex", gap: 0.5}}>
-//             {!(filters.priceRange[0] === 0 && filters.priceRange[1] === 1010) &&
-//                 <Chip label={`${minPrice} - ${maxPrice}`} color="primary" onDelete={() => handleResetSubsection("priceRange")} />
-//             }
-//             {filters.rating &&
-//                 <Chip
-//                     color="primary"
-//                     label={
-//                         <Box sx={{display: "flex", alignItems: "center"}}>
-//                             <Typography>
-//                                 {filters.rating}
-//                                 <StarIcon fontSize={"5"} sx={{mb: 0.4, color: "darkorange"}}/>
-//                                 {` & Up`}
-//                             </Typography>
-//                         </Box>
-//                     }
-//                     onDelete={() => {
-//                         // setValue("rating", null);
-//                         // handleResetSubsection("rating");
-//                         handleResetSubsection("rating")
-//                     }}
-//                 />
-//             }
-//             {filters.brands?.length > 0 &&
-//                 filters.brands.map(brand => <Chip key={brand} label={brand} color="primary" onDelete={() => handleResetSubsection("brands", brand)} />)
-//             }
-//             {filters.inStock &&
-//                 <Chip label="In Stock" color="primary" onDelete={() => handleResetSubsection("inStock")} />
-//             }
-//         </Box>
-//     )
-// }
-
-// export default AppliedFilters
-
-
-
-
-
 import { Box, Button, Chip, Typography } from "@mui/material";
-import { parseURLToFilters } from "../utils/searchUtils";
+import { mergeFiltersWithDefaults, parseURLToFilters } from "../utils/searchUtils";
 import StarIcon from '@mui/icons-material/Star';
 import { useRef, useState, useEffect } from 'react';
+import { useSelector } from "react-redux";
 
 function AppliedFilters({ searchParams, setSearchParams }) {
     const scrollRef = useRef(null);
     const [showLeftShadow, setShowLeftShadow] = useState(false);
     const [showRightShadow, setShowRightShadow] = useState(false);
 
-    const filters = parseURLToFilters(searchParams);
-    const minPrice = filters.priceRange[0] === 0 ? "Min" : `$${filters.priceRange[0].toFixed(2)}`;
-    const maxPrice = filters.priceRange[1] === 1010 ? "Max" : `$${filters.priceRange[1].toFixed(2)}`;
+    const { priceRange: apiPriceRange } = useSelector((state) => state.searchReducer);
+    const urlFilters = parseURLToFilters(searchParams);
+    
+    const displayMin = Math.floor(apiPriceRange?.min || 0);
+    const displayMax = Math.ceil(apiPriceRange?.max || 1000);
+
+    const filters = mergeFiltersWithDefaults(urlFilters, {
+        priceRange: { min: displayMin, max: displayMax }
+    });
+    
+    const isPriceFiltered = urlFilters.priceRange && (
+        urlFilters.priceRange[0] !== displayMin || 
+        urlFilters.priceRange[1] !== displayMax
+    );
 
     const checkScroll = () => {
         const element = scrollRef.current;
@@ -126,9 +64,9 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                 newParams.delete(name);
             }
         } 
-        else if (name === "priceRange") {
-            newParams.set("priceRange", "0,");
-        } 
+        // else if (name === "priceRange") {
+        //     newParams.set("priceRange", "0,");
+        // } 
         else {
             newParams.delete(name);
         }
@@ -138,7 +76,7 @@ function AppliedFilters({ searchParams, setSearchParams }) {
     };
 
     const hasActiveFilters = 
-        !(filters.priceRange[0] === 0 && filters.priceRange[1] === 1010) ||
+        !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
         filters.rating ||
         (filters.brands?.length > 0) ||
         filters.inStock;
@@ -154,18 +92,6 @@ function AppliedFilters({ searchParams, setSearchParams }) {
             mb: 2
             // pb: {xs: 1, md: 2}
         }}>
-            {/* <Typography
-                variant="subtitle2"
-                sx={{
-                    fontWeight: 600,
-                    color: 'text.secondary',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    pr: 0.5
-                }}
-            >
-                Filters:
-            </Typography> */}
 
             <Typography
                 variant="subtitle2"
@@ -197,7 +123,7 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                     }}
                 >
                     {[
-                        !(filters.priceRange[0] === 0 && filters.priceRange[1] === 1010),
+                        !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax),
                         !!filters.rating,
                         filters.brands?.length || 0,
                         !!filters.inStock
@@ -209,6 +135,7 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                 <Box
                     sx={{
                         position: 'absolute',
+                        // left: -2,
                         left: 0,
                         top: 0,
                         bottom: 0,
@@ -224,6 +151,7 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                 <Box
                     sx={{
                         position: 'absolute',
+                        // right: -2,
                         right: 0,
                         top: 0,
                         bottom: 0,
@@ -253,37 +181,59 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                         px: { xs: 1, sm: 0 }
                     }}
                 >
-                    {!(filters.priceRange[0] === 0 && filters.priceRange[1] === 1010) && (
-                        <Chip label={`${minPrice} - ${maxPrice}`} color="primary" size="small" onDelete={() => handleResetSubsection("priceRange")} sx={{ flexShrink: 0 }} />
+                    {/* {!(filters.priceRange[0] === 0 && filters.priceRange[1] === 1010) && ( */}
+                    {isPriceFiltered && (
+                        <Chip
+                            sx={{ flexShrink: 0 }}
+                            // label={`${minPrice} - ${maxPrice}`}
+                            label={`$${urlFilters.priceRange[0]} - $${urlFilters.priceRange[1]}`}
+                            color="primary"
+                            size="small"
+                            onDelete={() => handleResetSubsection("priceRange")}
+                        />
                     )}
 
                     {filters.rating && (
                         <Chip
+                            sx={{ flexShrink: 0 }}
                             color="primary"
                             size="small"
                             label={
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                    <Typography variant="body3">{filters.rating}
-
-                                        <StarIcon sx={{ fontSize: 15, color: "darkorange", pb: 0.2 }} />
+                                    <Typography variant="body3">
+                                        {filters.rating}
+                                            <StarIcon sx={{ fontSize: 15, color: "darkorange", pb: 0.2 }} />
                                         {` & Up`}
                                     </Typography>
                                 </Box>
                             }
                             onDelete={() => handleResetSubsection("rating")}
-                            sx={{ flexShrink: 0 }}
                         />
                     )}
 
                     {filters.brands?.length > 0 && filters.brands.map(brand => (
-                        <Chip key={brand} label={brand} color="primary" size="small" onDelete={() => handleResetSubsection("brands", brand)} sx={{ flexShrink: 0 }} />
+                        <Chip
+                            sx={{ flexShrink: 0 }}
+                            key={brand}
+                            label={brand}
+                            color="primary"
+                            size="small"
+                            onDelete={() => handleResetSubsection("brands", brand)}
+                        />
                     ))}
 
                     {filters.inStock && (
-                        <Chip label="In Stock" color="primary" size="small" onDelete={() => handleResetSubsection("inStock")} sx={{ flexShrink: 0 }} />
+                        <Chip
+                            sx={{ flexShrink: 0 }}
+                            label="In Stock"
+                            color="primary"
+                            size="small"
+                            onDelete={() => handleResetSubsection("inStock")}
+                        />
                     )}
 
                     <Chip
+                        sx={{ flexShrink: 0, borderStyle: 'dashed', fontWeight: 600 }}
                         label="Clear All"
                         variant="outlined"
                         size="small"
@@ -292,7 +242,6 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                             const sort = searchParams.get('sort') || '_score,desc';
                             setSearchParams({ query, sort, page: 1 });
                         }}
-                        sx={{ flexShrink: 0, borderStyle: 'dashed', fontWeight: 600 }}
                     />
                 </Box>
             </Box>

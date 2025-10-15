@@ -8,7 +8,11 @@ const initialState = {
     // error : "",
     total: 0,
     pages: 1,
-    currentPage: 1
+    currentPage: 1,
+    priceRange: {
+        min: 0,
+        max: 1000
+    }
 };
 
 export const searchReducer = (state = initialState, action) => {
@@ -35,6 +39,7 @@ export const searchReducer = (state = initialState, action) => {
                 total: action.payload.total,
                 pages: action.payload.pages,
                 currentPage: action.payload.currentPage,
+                priceRange: action.payload.priceRange || { min: 0, max: 1000 },
                 isLoading: false
             }
         case SET_CURRENT_PAGE_SEARCH:

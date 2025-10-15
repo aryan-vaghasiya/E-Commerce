@@ -120,7 +120,7 @@ function ProductPage() {
             {
                 product ?
                     (
-                        <Card sx={{ display: "inline-flex", width: "90%" }}>
+                        <Card sx={{ display: "inline-flex", width: "90%", flexDirection: {xs: "column", md: "row"} }}>
                             <Snackbar
                                 open={snackbarState.show}
                                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
@@ -139,7 +139,7 @@ function ProductPage() {
                                 <Card sx={{ mb: "auto", position: "relative", mt: 2, mx: 3 }}>
                                     <CardMedia
                                         component="img"
-                                        sx={{ height: 450, width: 450}}
+                                        sx={{ height: 450, width: 450, objectFit: "contain", m: "auto"}}
                                         image={getImageUrl(product.images[imgIndex])}
                                         alt="Product Image"
                                     />
@@ -171,11 +171,9 @@ function ProductPage() {
                                     </Typography>
                                 </Card>
                                 <Toolbar>
-
                                     <Button disabled={!product.stock > 0 || product.status != "active"} variant='outlined' sx={{ width: "100%", mt: 1, mr: 2 }}
                                         onClick={handleAddToCart}
                                     >Add to Cart</Button>
-                                    {/* <ButtonRed onClick={handleAddToCart}>ADD TO CART</ButtonRed> */}
                                     <Button disabled={!product.stock > 0 || product.status != "active"} variant='outlined' sx={{ width: "100%", mt: 1 }}
                                         onClick={handleBuyNow}
                                     >Buy Now</Button>

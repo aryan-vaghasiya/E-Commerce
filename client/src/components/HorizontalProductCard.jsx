@@ -19,75 +19,60 @@ function HorizontalProductCard({ product }) {
     const dispatch = useDispatch();
     const { userName } = useSelector(state => state.userReducer);
 
-    // if (loading) {
-    //     return (
-    //         <Card sx={{ 
-    //             display: 'flex', 
-    //             flexDirection: { xs: 'column', sm: 'row' },
-    //             width: '100%',
-    //             height: { xs: 'auto', sm: 200 }
-    //         }}>
-    //             <Skeleton 
-    //                 variant='rectangular' 
-    //                 sx={{ 
-    //                     width: { xs: '100%', sm: 200 },
-    //                     height: { xs: 180, sm: '100%' },
-    //                     flexShrink: 0
-    //                 }} 
-    //                 animation="wave" 
-    //             />
-    //             <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, p: 2, justifyContent: 'space-between' }}>
-    //                 <Box>
-    //                     <Skeleton variant='text' sx={{ fontSize: '0.875rem', width: '30%' }} animation="wave" />
-    //                     <Skeleton variant='text' sx={{ fontSize: '1.25rem', width: '70%' }} animation="wave" />
-    //                     <Skeleton variant='text' sx={{ width: '50%', mt: 0.5 }} animation="wave" />
-    //                 </Box>
-    //                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-    //                     <Skeleton variant='rounded' height={36} sx={{ flex: 1, maxWidth: 140 }} animation="wave" />
-    //                     <Skeleton variant='circular' width={36} height={36} animation="wave" />
-    //                 </Box>
-    //             </Box>
-    //         </Card>
-    //     );
-    // }
-
     const discountPercent = calculateDiscount(product.mrp, product.price);
 
     const handleAddToCart = () => {
+        e.preventDefault()
+        e.stopPropagation()
         dispatch(addToCart(product));
     };
 
     const handleWishlist = () => {
+        e.preventDefault()
+        e.stopPropagation()
         if (!userName) {
             dispatch(showSnack({ message: "Please Login to Add to Wishlist", severity: "warning" }));
             return;
         }
         if (product.wishlisted) {
             dispatch(removeWishlistDb(product));
-        } else {
+        } 
+        else {
             dispatch(addWishlistDb(product));
         }
+    };
+
+    const handleViewDetails = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate(`/products/${product.id}`);
     };
 
     const isOutOfStock = product.stock === 0;
 
     return (
-        <Card sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            width: '100%',
-            height: { xs: 'auto', sm: 200 },
-            transition: "all .2s ease",
-            "&:hover": { 
-                boxShadow: 4,
-                '& .view-details-btn': {
-                    opacity: 1,
-                    transform: 'translateX(0)'
-                }
-            },
-            position: 'relative',
-            overflow: 'hidden'
-        }}>
+        <Card 
+            component={Link} 
+            to={`/products/${product.id}`}
+            sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                width: '100%',
+                height: { xs: 'auto', sm: 200 },
+                transition: "all .2s ease",
+                textDecoration: 'none',
+                color: 'inherit',
+                "&:hover": {
+                    boxShadow: 4,
+                    '& .view-details-btn': {
+                        opacity: 1,
+                        transform: 'translateX(0)'
+                    }
+                },
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+        >
             {/* Discount Badge */}
             {discountPercent > 0 && (
                 <Chip
@@ -108,8 +93,8 @@ function HorizontalProductCard({ product }) {
             
             {/* Product Image */}
             <Box 
-                component={Link} 
-                to={`/products/${product.id}`}
+                // component={Link} 
+                // to={`/products/${product.id}`}
                 sx={{ 
                     width: { xs: '100%', sm: 200 },
                     height: { xs: 180, sm: '100%' },
@@ -145,11 +130,11 @@ function HorizontalProductCard({ product }) {
             }}>
                 {/* Top Section: Title, Brand, Rating */}
                 <Box 
-                    component={Link} 
-                    to={`/products/${product.id}`}
+                    // component={Link} 
+                    // to={`/products/${product.id}`}
                     sx={{ 
-                        textDecoration: 'none', 
-                        color: 'inherit',
+                        // textDecoration: 'none', 
+                        // color: 'inherit',
                         minWidth: 0,
                         mb: { xs: 1.5, sm: 0 }
                     }}
@@ -319,8 +304,8 @@ function HorizontalProductCard({ product }) {
                         {/* View Details - Hidden on Mobile, Shows on Hover on Desktop */}
                         <Tooltip title="View Details">
                             <IconButton
-                                component={Link}
-                                to={`/products/${product.id}`}
+                                // component={Link}
+                                // to={`/products/${product.id}`}
                                 size="small"
                                 className="view-details-btn"
                                 sx={{

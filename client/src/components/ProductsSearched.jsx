@@ -116,7 +116,7 @@ function ProductsSearched() {
                 <Box sx={{height: "100%", width: "100%"}}>
                     <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
                         <Box>
-                            {!isMobile &&
+                            {!isMobile && !isLoading &&
                                 <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total} results for "{query}"</Typography>
                             }
                         </Box>
@@ -160,16 +160,17 @@ function ProductsSearched() {
                     </Paper>
 
                     <Grid container spacing={1}>
-                        <Grid size={{md: 3}}
+                        <Grid size={{md: 2.5}}
                             sx={{
                                 width: "auto",
+                                // maxWidth: 300,
                                 display: { xs: 'none', md: 'block' }
                             }}
                         >
                             <FilterSidebar applyFilters={handleApplyFilters} />
                         </Grid>
 
-                        <Grid size={{xs: 12, md: 9}} sx={{p: 2}}>
+                        <Grid size={{xs: 12, md: 9.5}} sx={{p: 2}}>
                             {/* {
                             isLoading?
                                 <Box sx={{textAlign: "center", mt: 5}}>
