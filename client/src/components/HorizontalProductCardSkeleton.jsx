@@ -1,25 +1,3 @@
-// import { Box, Skeleton, Paper } from '@mui/material';
-
-// function HorizontalProductCardSkeleton() {
-//     return (
-//         <Paper sx={{ display: 'flex', p: 2, gap: 2 }}>
-//             <Skeleton variant="rectangular" width={200} height={150} />
-            
-//             <Box sx={{ flex: 1 }}>
-//                 <Skeleton variant="text" width="60%" height={30} />
-//                 <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
-//                 <Skeleton variant="text" width="80%" height={20} sx={{ mt: 1 }} />
-//                 <Skeleton variant="rectangular" width={100} height={40} sx={{ mt: 2 }} />
-//             </Box>
-//         </Paper>
-//     );
-// }
-
-// export default HorizontalProductCardSkeleton;
-
-
-
-
 import { Card, Box, Skeleton } from '@mui/material';
 
 function HorizontalProductCardSkeleton() {
@@ -32,18 +10,6 @@ function HorizontalProductCardSkeleton() {
             position: 'relative',
             overflow: 'hidden'
         }}>
-            {/* <Skeleton
-                variant="rounded"
-                width={50}
-                height={24}
-                sx={{
-                    position: 'absolute',
-                    top: 8,
-                    left: 8,
-                    zIndex: 1
-                }}
-                animation="wave"
-            /> */}
 
             <Box
                 sx={{
@@ -91,15 +57,13 @@ function HorizontalProductCardSkeleton() {
                         sx={{ mb: 0.5 }}
                     />
 
-                    {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}> */}
-                        <Skeleton
-                            variant="rectangular"
-                            width={100}
-                            height={18}
-                            animation="wave"
-                            sx={{ borderRadius: 0.5 }}
-                        />
-                    {/* </Box> */}
+                    <Skeleton
+                        variant="rectangular"
+                        width={100}
+                        height={18}
+                        animation="wave"
+                        sx={{ borderRadius: 0.5 }}
+                    />
                 </Box>
 
                 <Box sx={{
@@ -109,19 +73,20 @@ function HorizontalProductCardSkeleton() {
                     gap: 1.5,
                     flexWrap: { xs: 'wrap', sm: 'nowrap' }
                 }}>
-                    <Box sx={{ display: 'flex', alignItems: "flex-end", gap: 0.75 }}>
+                    <Box sx={{ display: 'flex', alignItems: "center", justifyContent: "space-between", gap: 0.75 }}>
                         <Skeleton
                             variant="text"
-                            width={120}
+                            width={90}
                             height={32}
                             animation="wave"
                         />
-                        {/* <Skeleton
+                        <Skeleton
+                            sx={{mt: 0.6}}
                             variant="text"
                             width={50}
                             height={24}
                             animation="wave"
-                        /> */}
+                        />
                     </Box>
 
                     <Box sx={{
@@ -131,7 +96,6 @@ function HorizontalProductCardSkeleton() {
                     }}>
                         <Skeleton
                             variant="rounded"
-                            // width={{ xs: 50, sm: 80, lg: 90, xl: 100 }}
                             width={110}
                             height={31}
                             animation="wave"
@@ -144,13 +108,13 @@ function HorizontalProductCardSkeleton() {
                             animation="wave"
                         />
 
-                        <Skeleton
+                        {/* <Skeleton
                             variant="circular"
                             width={31}
                             height={31}
                             animation="wave"
                             sx={{ display: { xs: 'none', md: 'block' } }}
-                        />
+                        /> */}
                     </Box>
                 </Box>
             </Box>

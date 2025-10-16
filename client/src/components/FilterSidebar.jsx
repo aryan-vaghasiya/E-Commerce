@@ -19,7 +19,7 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
         return (
             <Box>
             <Accordion 
-                defaultExpanded={defaultExpanded} 
+                defaultExpanded={defaultExpanded}
                 disableGutters
                 elevation={0}
                 onChange={onAccordionChange}
@@ -49,8 +49,11 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
                                 border: "1px solid",
                                 borderColor: "rgba(25, 118, 210, 0.5)",
                                 borderRadius: 1,
+                                bgcolor: "inherit",
                                 px: 1.2,
-                                py: 0.3
+                                py: 0.3,
+                                transition:"all 0.3s ease",
+                                '&:hover': { borderColor: "#1976d2", bgcolor: "rgba(25, 118, 210, 0.04)" }
                             }}
                         >
                             <Typography 
@@ -60,11 +63,9 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
                                     color: 'primary.main',
                                     textTransform: 'uppercase',
                                     fontWeight: 500,
-                                    // '&:hover': { textDecoration: 'underline' }
                                 }}
                             >
                                 {actionName}
-                                {/* Reset */}
                             </Typography>
                         </Box>
                         )}
@@ -80,7 +81,6 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
     }
 
     return (
-        // <Box sx={{ pb: 2 }}>
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                 <Typography variant="h6" fontSize={16} gutterBottom>{title}</Typography>
@@ -96,14 +96,18 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
 
 function FilterSidebar({ applyFilters }) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { brands, isLoading, priceRange: apiPriceRange } = useSelector((state) => state.searchReducer);
+    const { brands, priceRange: apiPriceRange } = useSelector((state) => state.searchReducer);
     const [showClearAll, setShowClearAll] = useState(false);
     const [showAllBrands, setShowAllBrands] = useState(false);
     const priceRangeTimeoutRef = useRef(null);
 
+    // console.log(searchParams.get("priceRange").split(","));
+    const urlPriceRange = searchParams.get("priceRange")?.split(",") || []
+    // console.log(urlPriceRange);
+
     const urlFilters = parseURLToFilters(searchParams)
-    const displayMin = apiPriceRange?.min || 0;
-    const displayMax = apiPriceRange?.max || 1000;
+    const displayMin = Math.floor(apiPriceRange?.min || urlPriceRange[0] || 0)
+    const displayMax = Math.ceil(apiPriceRange?.max || urlPriceRange[1] || 1000)
 
     const filters = {
         query: urlFilters.query,
@@ -115,34 +119,15 @@ function FilterSidebar({ applyFilters }) {
 
     const defaultFilters = {
         priceRange: [displayMin, displayMax],
-        // priceRange: [0, 1010],
         brands: [],
         rating: null,
         inStock: false,
     };
 
-    const { handleSubmit, control, setValue, reset, watch, getValues } = useForm({
-        values: filters
-    });
+    const { handleSubmit, control, setValue, reset, watch, getValues } = useForm({ values: filters });
     const watchAllFields = watch();
-    // const priceRange = watch("priceRange");
 
-    // const displayMin = Math.floor(apiPriceRange?.min || 0);
-    // const displayMax = Math.ceil(apiPriceRange?.max || 1000);
-    
-    const sliderMin = displayMin;
-    const sliderMax = displayMax;
-
-    // console.log(sliderMin, sliderMax);
-    
-    // const range = displayMax - displayMin;
-    // const sliderMin = displayMin;
-    // const sliderMax = range < 10 ? displayMax + 10 : displayMax;
-
-    // const displayMax = 1000;
-    // const sliderUpperBound = 1010;
     const ratingOptions = [4, 3];
-    // const minDistance = 20;
     const initialBrandCount = 5;
 
     const handlePriceRangeChange = (newValue) => {
@@ -150,22 +135,12 @@ function FilterSidebar({ applyFilters }) {
             clearTimeout(priceRangeTimeoutRef.current);
         }
 
-        // priceRangeTimeoutRef.current = setTimeout(() => {
-        //     const newParams = new URLSearchParams(searchParams);
-        //     const min = newValue[0];
-        //     const max = newValue[1] > displayMax ? '' : newValue[1];
-        //     newParams.set('priceRange', `${min},${max}`);
-        //     newParams.set('page', '1');
-        //     setSearchParams(newParams);
-        // }, 300);
-
         priceRangeTimeoutRef.current = setTimeout(() => {
             const newParams = new URLSearchParams(searchParams);
             newParams.set('priceRange', `${newValue[0]},${newValue[1]}`);
             newParams.set('page', '1');
             setSearchParams(newParams);
         }, 300);
-
     };
 
     const handleBrandsChange = (newBrands) => {
@@ -229,14 +204,6 @@ function FilterSidebar({ applyFilters }) {
     };
 
     const formatValueLabel = (value) => {
-        // if (value > displayMax) {
-        //     return `$${displayMax}+`;
-        // }
-        // if (value < 1) {
-        //     return `Min.`;
-        // }
-        // return `$${value}`;
-
         return `$${value}`
     };
 
@@ -251,7 +218,7 @@ function FilterSidebar({ applyFilters }) {
     const handleClearAll = () => {
         const query = searchParams.get('query');
         const sort = searchParams.get('sort') || '_score,desc';
-        setSearchParams({ query, priceRange: "0,", sort, page: 1 });
+        setSearchParams({ query, sort, page: 1 });
         setShowAllBrands(false);
     };
 
@@ -289,14 +256,14 @@ function FilterSidebar({ applyFilters }) {
     }, []);
 
     useEffect(() => {
-        const changed = isFormChanged(watchAllFields, defaultFilters);
+        // const changed = isFormChanged(watchAllFields, defaultFilters);
+        const changed = isFormChanged(filters, defaultFilters);
         setShowClearAll(changed);
-    }, [watchAllFields]);
+    }, [filters, watchAllFields]);
 
     const visibleBrands = showAllBrands ? brands : brands?.slice(0, initialBrandCount);
 
     return (
-        // <Box sx={{ p: 2, maxWidth: 350, ml: "auto", position: "relative" }}>
         <Box sx={{ p: 2, maxWidth: 300, mr: "auto", position: "relative" }}>
             <Box sx={{ mb: 1.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mb: 1.5 }}>
@@ -322,7 +289,6 @@ function FilterSidebar({ applyFilters }) {
                     title="Price Range"
                     actionName="Reset"
                     actionFunction={() => {
-                        // setValue("priceRange", [0, 1010]);
                         handleResetSubsection("priceRange", [0, ""]);
                     }}
                     isDirty={isFieldChanged(watch("priceRange"), defaultFilters.priceRange)}
@@ -338,37 +304,35 @@ function FilterSidebar({ applyFilters }) {
                                     onChange={(_, newValue, activeThumb) => {
                                         if (!Array.isArray(newValue)) return;
 
-                                        const minDistance = Math.max(1, Math.floor((sliderMax - sliderMin) * 0.02));
+                                        const minDistance = Math.max(1, Math.floor((displayMax - displayMin) * 0.1));
+                                        let adjustedValue = newValue;
 
                                         if (newValue[1] - newValue[0] < minDistance) {
                                             if (activeThumb === 0) {
-                                                const clamped = Math.min(newValue[0], sliderMax - minDistance);
-                                                onChange([clamped, clamped + minDistance]);
+                                                const clamped = Math.min(newValue[0], displayMax - minDistance)
+                                                adjustedValue = [clamped, clamped + minDistance]
                                             } 
                                             else {
-                                                const clamped = Math.max(newValue[1], sliderMin + minDistance);
-                                                onChange([clamped - minDistance, clamped]);
+                                                const clamped = Math.max(newValue[1], displayMin + minDistance)
+                                                adjustedValue = [clamped - minDistance, clamped]
                                             }
-                                        } 
-                                        else {
-                                            onChange(newValue);
                                         }
-                                        handlePriceRangeChange(newValue);
+                                        onChange(adjustedValue)
+                                        handlePriceRangeChange(adjustedValue);
                                     }}
                                     valueLabelDisplay="auto"
                                     valueLabelFormat={formatValueLabel}
-                                    step={Math.max(1, Math.round((sliderMax - sliderMin) / 100))}
-                                    // step={10}
-                                    min={sliderMin}
-                                    max={sliderMax}
+                                    step={Math.max(1, Math.round((displayMax - displayMin) / 100))}
+                                    min={displayMin}
+                                    max={displayMax}
                                     disableSwap
                                 />
                             )}
                         />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2">{formatValueLabel(sliderMin)}</Typography>
-                        <Typography variant="body2">{formatValueLabel(sliderMax)}</Typography>
+                        <Typography variant="body2">{formatValueLabel(displayMin)}</Typography>
+                        <Typography variant="body2">{formatValueLabel(displayMax)}</Typography>
                     </Box>
                 </FilterSection>
 
@@ -376,7 +340,6 @@ function FilterSidebar({ applyFilters }) {
                     title="Brands"
                     actionName="Clear"
                     actionFunction={() => {
-                        // setValue("brands", []);
                         handleResetSubsection("brands");
                         setShowAllBrands(false);
                     }}
@@ -438,7 +401,6 @@ function FilterSidebar({ applyFilters }) {
                     title="Customer Rating"
                     actionName="Clear"
                     actionFunction={() => {
-                        // setValue("rating", null);
                         handleResetSubsection("rating");
                     }}
                     isDirty={isFieldChanged(watch("rating"), defaultFilters.rating)}
@@ -482,7 +444,6 @@ function FilterSidebar({ applyFilters }) {
                     title="Availability"
                     actionName="Clear"
                     actionFunction={() => {
-                        // setValue("inStock", null);
                         handleResetSubsection("inStock");
                     }}
                     isDirty={isFieldChanged(watch("inStock"), defaultFilters.inStock)}

@@ -105,63 +105,69 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     const mainFilterClauses = [];
     const postFilterClauses = [];
     const sortClause = [];
-    
 
+    let priceFilter = null
     if (filters.priceRange) {
         const rangeArr = filters.priceRange.split(",");
         const from = rangeArr[0];
         const to = rangeArr[1];
 
         if(from && to){
-            // mainFilterClauses.push({
-            postFilterClauses.push({
+            priceFilter = {
                 range: {
                     price: {
                         gte: parseFloat(from),
                         lte: parseFloat(to)
                     }
                 }
-            });
+            }
         }
         else if (from) {
-            postFilterClauses.push({
+            priceFilter = {
                 range: {
                     price: {
                         gte: parseFloat(from)
                     }
                 }
-            });
+            }
+        }
+
+        if(priceFilter){
+            postFilterClauses.push(priceFilter)
         }
     }
 
     if (filters.rating) {
-        mainFilterClauses.push({
+        const ratingFilter = {
             range: {
                 rating: {
-                    gt: filters.rating
+                    gte: parseInt(filters.rating)
                 }
             }
-        });
+        }
+        mainFilterClauses.push(ratingFilter)
     }
 
     if (filters.inStock) {
-        mainFilterClauses.push({
+        const stockFilter = {
             range: {
                 stock: {
                     gt: 0
                 }
             }
-        });
+        }
+        mainFilterClauses.push(stockFilter)
     }
 
+    let brandFilter = null;
     if(filters.brands?.length > 0){
         const brandsArr = filters.brands.split(",")
-        // console.log(brandsArr);
-        postFilterClauses.push({
-            terms:{
-                "brand.keyword": brandsArr,
+        brandFilter = {
+            terms: {
+                "brand.keyword": brandsArr
             }
-        })
+        };
+        postFilterClauses.push(brandFilter);
     }
 
     if(filters.sort){
@@ -173,6 +179,9 @@ exports.searchProductsElastic = async (client, filters = {}) => {
             }
         })
     }
+
+    const aggFilterClauses = [];
+    if (priceFilter) aggFilterClauses.push(priceFilter);
 
     const response = await client.search({
         index: 'products-search',
@@ -196,19 +205,41 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                 }
             },
             sort: sortClause,
-            "aggs": {
-                "brands": {
-                    "terms": {
-                        "field": "brand.keyword",
-                        // "order": {"_key": "asc"},
-                        "size": 100
+            // "aggs": {
+            //     "price_stats": {
+            //         "stats": {
+            //             "field": "price"
+            //         }
+            //     },
+            //     "brands": {
+            //         "terms": {
+            //             "field": "brand.keyword",
+            //             // "order": {"_key": "asc"},
+            //             "size": 100
+            //         }
+            //     },
+            // },
+            aggs: {
+                price_stats: {
+                    stats: {
+                        field: "price"
                     }
                 },
-                "price_stats": {
-                    "stats": {
-                        "field": "price"
+                filtered_brands: {
+                    filter: {
+                        bool: {
+                            filter: aggFilterClauses
+                        }
+                    },
+                    aggs: {
+                        brands: {
+                            terms: {
+                                field: "brand.keyword",
+                                size: 100
+                            }
+                        }
                     }
-                },
+                }
             },
             post_filter: {
                 bool: {
@@ -226,7 +257,8 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     return {
         products: response.hits.hits, 
         total: response.hits.total.value,
-        brands: response.aggregations.brands.buckets,
+        // brands: response.aggregations.brands.buckets,
+        brands: response.aggregations.filtered_brands.brands.buckets,
         price_stats: {
             min: Math.floor(response.aggregations.price_stats.min || 0),
             max: Math.ceil(response.aggregations.price_stats.max || 1000)

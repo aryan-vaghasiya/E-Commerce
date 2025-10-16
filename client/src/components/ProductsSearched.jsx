@@ -23,6 +23,7 @@ import HorizontalProductCard from "./HorizontalProductCard";
 import { useNavigate, useSearchParams } from "react-router";
 import AppliedFilters from "./AppliedFilters";
 import HorizontalProductCardSkeleton from "./HorizontalProductCardSkeleton";
+import NoResults from "./NoResults";
 
 function ProductsSearched() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -33,8 +34,6 @@ function ProductsSearched() {
 
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-
-
 
     const query = searchParams.get('query') || '';
     const currentPage = Math.max(1, Math.min(Number(searchParams.get('page')) || 1, pages));
@@ -54,10 +53,8 @@ function ProductsSearched() {
 
     useEffect(() => {
         const filters = Object.fromEntries(searchParams)
-        // console.log("Use Effect");
 
         if (!searchParams.toString() || !searchParams.get("query")) {
-            // setSearchParams({ query: '', sort: '_score,desc' })
             return navigate("/")
         }
         if(!filters.page || filters.page > currentPage){
@@ -82,22 +79,8 @@ function ProductsSearched() {
 
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh", position: "relative" }}>
-            {
-            // isLoading?
-            //     <Box
-            //         sx={{
-            //             position: "absolute",
-            //             inset: 0,
-            //             display: "flex",
-            //             alignItems: "center",
-            //             justifyContent: "center",
-            //             bgcolor: "#EEEEEE"
-            //         }}
-            //     >
-            //         <CircularProgress />
-            //     </Box>
-            // : 
-            !isLoading && (products?.length < 1 || !products) ?
+            {/* {
+            !isLoading && (!products || products?.length < 1) ?
                 <Box
                     sx={{
                         position: "absolute",
@@ -112,12 +95,12 @@ function ProductsSearched() {
                         Sorry, No results found
                     </Typography>
                 </Box>
-            :
-                <Box sx={{height: "100%", width: "100%"}}>
+            : */}
+                <Box sx={{height: "100%"}}>
                     <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
                         <Box>
                             {!isMobile && !isLoading &&
-                                <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total} results for "{query}"</Typography>
+                                <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total || 0} results for "{query}"</Typography>
                             }
                         </Box>
                         <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
@@ -161,42 +144,40 @@ function ProductsSearched() {
 
                     <Grid container spacing={1}>
                         <Grid size={{md: 2.5}}
-                            sx={{
-                                width: "auto",
-                                // maxWidth: 300,
-                                display: { xs: 'none', md: 'block' }
-                            }}
+                            sx={{ display: { xs: 'none', md: 'block' }}}
                         >
                             <FilterSidebar applyFilters={handleApplyFilters} />
                         </Grid>
 
-                        <Grid size={{xs: 12, md: 9.5}} sx={{p: 2}}>
-                            {/* {
-                            isLoading?
-                                <Box sx={{textAlign: "center", mt: 5}}>
-                                    <CircularProgress />
-                                </Box>
-                            :
-                            !isLoading && products?.length > 0 ? */}
-                                <Box sx={{height: "100%"}}>
-                                    <Box sx={{overflowX: "auto"}}>
-                                        <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
-                                    </Box>
-                                    <Box sx={{display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%"}}>
-                                        <Stack spacing={{ xs: 2, md: 2.5 }}>
-                                            {isLoading ?
-                                                Array.from({ length: 5 }).map((_, index) => (
-                                                    <HorizontalProductCardSkeleton key={index} />
-                                                ))
-                                            : products?.length > 0 ? 
-                                                products.map((product) => (
-                                                    <HorizontalProductCard key={product.id} product={product} loading={false} />
-                                                ))
-                                            : 
-                                                <Typography variant="h6">No results found</Typography>
-                                            }
-                                        </Stack>
+                        <Grid size={{xs: 12, md: 9.5}} sx={{p: 2, pb: 0}}>
+                            <Box sx={{display: "flex", flexDirection: "column"}}>
 
+                                <Box sx={{overflowX: "auto"}}>
+                                    <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
+                                </Box>
+
+                                <Box>
+                                    <Stack spacing={{ xs: 2, md: 2.5 }}>
+                                        {
+                                        isLoading ?
+                                            Array.from({ length: 5 }).map((_, index) => (
+                                                <HorizontalProductCardSkeleton key={index} />
+                                            ))
+                                        : products?.length > 0 ? 
+                                            products.map((product) => (
+                                                <HorizontalProductCard key={product.id} product={product} loading={false} />
+                                            ))
+                                        : 
+                                            <NoResults
+                                                searchParams={searchParams}
+                                                setSearchParams={setSearchParams}
+                                                query={query}
+                                            />
+                                            // <Typography variant="h6">Sorry, No results found</Typography>
+                                        }
+                                    </Stack>
+
+                                    {!isLoading && products?.length > 0 &&
                                         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                                             <Pagination 
                                                 count={pages} 
@@ -207,15 +188,13 @@ function ProductsSearched() {
                                                 showLastButton
                                             />
                                         </Box>
-                                    </Box>
+                                    }
                                 </Box>
-                            {/* :
-                                null
-                            } */}
+                            </Box>
                         </Grid>
                     </Grid>
                 </Box>
-            }
+            {/* } */}
 
             <Drawer
                 variant="temporary"

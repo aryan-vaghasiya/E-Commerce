@@ -191,7 +191,7 @@ function MyCart() {
                             flex: 1,
                             order: { xs: 2, md: 1 }
                         }}>
-                            {Array.from(Array(3)).map((_, index) => (
+                            {Array.from(Array(5)).map((_, index) => (
                                 <Card key={index} sx={{ mb: 2, p: 2 }}>
                                     <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                                         <Skeleton variant='rounded' sx={{ 

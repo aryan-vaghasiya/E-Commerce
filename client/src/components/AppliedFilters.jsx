@@ -24,6 +24,9 @@ function AppliedFilters({ searchParams, setSearchParams }) {
         urlFilters.priceRange[1] !== displayMax
     );
 
+    const minLabel = filters.priceRange ? (filters.priceRange[0] === displayMin ? "Min." : `$${filters.priceRange[0]}`) : null
+    const maxLabel = filters.priceRange ? (filters.priceRange[1] === displayMax ? "Max." : `$${filters.priceRange[1]}`) : null
+
     const checkScroll = () => {
         const element = scrollRef.current;
         if (!element) return;
@@ -76,7 +79,8 @@ function AppliedFilters({ searchParams, setSearchParams }) {
     };
 
     const hasActiveFilters = 
-        !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
+        // !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
+        isPriceFiltered ||
         filters.rating ||
         (filters.brands?.length > 0) ||
         filters.inStock;
@@ -123,7 +127,8 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                     }}
                 >
                     {[
-                        !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax),
+                        // !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax),
+                        isPriceFiltered,
                         !!filters.rating,
                         filters.brands?.length || 0,
                         !!filters.inStock
@@ -186,7 +191,8 @@ function AppliedFilters({ searchParams, setSearchParams }) {
                         <Chip
                             sx={{ flexShrink: 0 }}
                             // label={`${minPrice} - ${maxPrice}`}
-                            label={`$${urlFilters.priceRange[0]} - $${urlFilters.priceRange[1]}`}
+                            label={`${minLabel} - ${maxLabel}`}
+                            // label={`$${urlFilters.priceRange[0]} - $${urlFilters.priceRange[1]}`}
                             color="primary"
                             size="small"
                             onDelete={() => handleResetSubsection("priceRange")}

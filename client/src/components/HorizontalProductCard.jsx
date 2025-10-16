@@ -21,13 +21,13 @@ function HorizontalProductCard({ product }) {
 
     const discountPercent = calculateDiscount(product.mrp, product.price);
 
-    const handleAddToCart = () => {
+    const handleAddToCart = (e) => {
         e.preventDefault()
         e.stopPropagation()
         dispatch(addToCart(product));
     };
 
-    const handleWishlist = () => {
+    const handleWishlist = (e) => {
         e.preventDefault()
         e.stopPropagation()
         if (!userName) {
@@ -301,11 +301,8 @@ function HorizontalProductCard({ product }) {
                             </IconButton>
                         </Tooltip>
 
-                        {/* View Details - Hidden on Mobile, Shows on Hover on Desktop */}
-                        <Tooltip title="View Details">
+                        {/* <Tooltip title="View Details">
                             <IconButton
-                                // component={Link}
-                                // to={`/products/${product.id}`}
                                 size="small"
                                 className="view-details-btn"
                                 sx={{
@@ -324,7 +321,7 @@ function HorizontalProductCard({ product }) {
                             >
                                 <ArrowForward fontSize="small" />
                             </IconButton>
-                        </Tooltip>
+                        </Tooltip> */}
                     </Box>
                 </Box>
             </Box>

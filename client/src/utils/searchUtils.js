@@ -15,22 +15,20 @@ export const parseURLToFilters = (searchParams) => {
     let priceRange = null;
     
     if (priceRangeParam) {
-        const [min, max] = priceRangeParam.split(',');
-        priceRange = [
-            min ? parseFloat(min) : null,
-            max ? parseFloat(max) : null
-        ];
+        const [minStr, maxStr] = priceRangeParam.split(',');
+        const min = minStr ? parseFloat(minStr) : null;
+        const max = maxStr ? parseFloat(maxStr) : null;
+        
+        if (!isNaN(min) || !isNaN(max)) {
+            priceRange = [
+                isNaN(min) ? null : min,
+                isNaN(max) ? null : max
+            ];
+        }
     }
     
     return {
         query: searchParams.get('query') || '',
-        // priceRange: priceRangeParam 
-        //     ? priceRangeParam.split(',').map(val => {
-        //         if (val === '' || val === undefined) return null;
-        //         const parsed = parseFloat(val);
-        //         return isNaN(parsed) ? null : parsed;
-        //     })
-        //     : null,
         priceRange,
         brands: searchParams.get('brands')?.split(',') || [],
         rating: searchParams.get('rating') || null,
@@ -39,7 +37,17 @@ export const parseURLToFilters = (searchParams) => {
 };
 
 export const mergeFiltersWithDefaults = (urlFilters, apiDefaults) => {
-    return {
+    // return {
+    //     query: urlFilters.query,
+    //     priceRange: urlFilters.priceRange || [
+    //         apiDefaults.priceRange.min,
+    //         apiDefaults.priceRange.max
+    //     ],
+    //     brands: urlFilters.brands,
+    //     rating: urlFilters.rating,
+    //     inStock: urlFilters.inStock,
+    // };
+    const filters = {
         query: urlFilters.query,
         priceRange: urlFilters.priceRange || [
             apiDefaults.priceRange.min,
@@ -49,4 +57,15 @@ export const mergeFiltersWithDefaults = (urlFilters, apiDefaults) => {
         rating: urlFilters.rating,
         inStock: urlFilters.inStock,
     };
+
+    if (filters.priceRange) {
+        filters.priceRange = [
+            Math.max(apiDefaults.priceRange.min, Math.min(filters.priceRange[0] || apiDefaults.priceRange.min, apiDefaults.priceRange.max)),
+            Math.min(apiDefaults.priceRange.max, Math.max(filters.priceRange[1] || apiDefaults.priceRange.max, apiDefaults.priceRange.min))
+        ];
+    }
+
+    // console.log(filters);
+
+    return filters
 };
