@@ -142,7 +142,7 @@ function ProductsSearched() {
                         </Box>
                     </Paper>
 
-                    <Grid container spacing={1}>
+                    <Grid container spacing={1} sx={{ minHeight: "100%" }}>
                         <Grid size={{md: 2.5}}
                             sx={{ display: { xs: 'none', md: 'block' }}}
                         >
@@ -167,13 +167,16 @@ function ProductsSearched() {
                                             products.map((product) => (
                                                 <HorizontalProductCard key={product.id} product={product} loading={false} />
                                             ))
-                                        : 
+                                        : !isLoading && (!products || products?.length < 1) &&
                                             <NoResults
                                                 searchParams={searchParams}
                                                 setSearchParams={setSearchParams}
                                                 query={query}
+                                                isLoading={isLoading}
                                             />
                                             // <Typography variant="h6">Sorry, No results found</Typography>
+                                        // :
+                                        // null
                                         }
                                     </Stack>
 

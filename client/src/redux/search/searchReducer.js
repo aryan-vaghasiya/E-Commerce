@@ -18,14 +18,14 @@ const initialState = {
 export const searchReducer = (state = initialState, action) => {
     switch (action.type) {
         case SEARCH_PRODUCTS_REQUEST:
-            return{
+            return {
                 ...state,
                 products: [],
                 // brands: [],
                 total: 0,
                 pages: 1,
                 isLoading: true
-            }
+            };
         case SET_SEARCH_QUERY:
             return { ...state, 
                 query: action.payload,
@@ -41,30 +41,30 @@ export const searchReducer = (state = initialState, action) => {
                 currentPage: action.payload.currentPage,
                 priceRange: action.payload.priceRange || { min: 0, max: 1000 },
                 isLoading: false
-            }
+            };
         case SET_CURRENT_PAGE_SEARCH:
             return {
                 ...state,
                 currentPage: action.payload
-            }
+            };
         case ADD_TO_WISHLIST_SEARCH: 
-                return{
+                return {
                     ...state,
                     products: state.products.map(product => 
                         product.id === action.payload.id 
                             ? {...product, wishlisted: 1} 
                             : product
                     )
-                }
+                };
         case REMOVE_FROM_WISHLIST_SEARCH: 
-                return{
+                return {
                     ...state,
                     products: state.products.map(product =>
                         product.id === action.payload.id 
                             ? {...product, wishlisted: 0} 
                             : product
                     )
-                }
+                };
         default:
             return state;
     }

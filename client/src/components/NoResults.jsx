@@ -3,7 +3,7 @@ import SearchOffIcon from '@mui/icons-material/SearchOff';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { parseURLToFilters } from '../utils/searchUtils';
 
-function NoResults({ searchParams, setSearchParams, query }) {
+function NoResults({ searchParams, setSearchParams, query, isLoading }) {
     const filters = parseURLToFilters(searchParams);
     
     const hasFilters = 
@@ -43,7 +43,7 @@ function NoResults({ searchParams, setSearchParams, query }) {
                         : null}
             </Typography>
 
-            {hasFilters && (
+            {hasFilters && !isLoading &&  (
                 <Paper elevation={2} sx={{ p: 3, maxWidth: 500, width: '100%', textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Try removing your filters to see more results
@@ -54,12 +54,12 @@ function NoResults({ searchParams, setSearchParams, query }) {
                         startIcon={<RestartAltIcon />}
                         fullWidth
                     >
-                        Clear All Filters
+                        Clear Filters
                     </Button>
                 </Paper>
             )}
 
-            {!hasFilters && (
+            {!hasFilters && !isLoading && (
                 <Paper elevation={2} sx={{ p: 3, maxWidth: 500, width: '100%' }}>
                     <Stack gap={2}>
                         <Typography variant="body2" color="text.secondary">

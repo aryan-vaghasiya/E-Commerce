@@ -141,7 +141,7 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         const ratingFilter = {
             range: {
                 rating: {
-                    gte: parseInt(filters.rating)
+                    gte: parseFloat(filters.rating)
                 }
             }
         }
@@ -181,7 +181,8 @@ exports.searchProductsElastic = async (client, filters = {}) => {
     }
 
     const aggFilterClauses = [];
-    if (priceFilter) aggFilterClauses.push(priceFilter);
+    // if (priceFilter) aggFilterClauses.push(priceFilter);
+    if (brandFilter) aggFilterClauses.push(brandFilter);
 
     const response = await client.search({
         index: 'products-search',
@@ -205,30 +206,29 @@ exports.searchProductsElastic = async (client, filters = {}) => {
                 }
             },
             sort: sortClause,
-            // "aggs": {
-            //     "price_stats": {
-            //         "stats": {
-            //             "field": "price"
-            //         }
-            //     },
-            //     "brands": {
-            //         "terms": {
-            //             "field": "brand.keyword",
-            //             // "order": {"_key": "asc"},
-            //             "size": 100
-            //         }
-            //     },
-            // },
             aggs: {
-                price_stats: {
-                    stats: {
-                        field: "price"
+                // price_stats: {
+                //     stats: {
+                //         field: "price"
+                //     }
+                // },
+                filtered_price_stats: {
+                    filter: {
+                        bool: {
+                            filter: aggFilterClauses
+                        }
+                    },
+                    aggs: {
+                        price_stats: {
+                            stats: { field: "price" }
+                        }
                     }
                 },
                 filtered_brands: {
                     filter: {
                         bool: {
-                            filter: aggFilterClauses
+                            // filter: aggFilterClauses
+                            filter: priceFilter ? [priceFilter] : []
                         }
                     },
                     aggs: {
@@ -249,19 +249,15 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         }
     });
 
-    // console.log(response.aggregations);
-    // console.log(response.hits.hits);
-    // console.log(response.aggregations.brands.buckets);
-    // console.log(response.aggregations.price_stats);
-
     return {
-        products: response.hits.hits, 
+        products: response.hits.hits,
         total: response.hits.total.value,
-        // brands: response.aggregations.brands.buckets,
         brands: response.aggregations.filtered_brands.brands.buckets,
         price_stats: {
-            min: Math.floor(response.aggregations.price_stats.min || 0),
-            max: Math.ceil(response.aggregations.price_stats.max || 1000)
+            min: Math.floor(response.aggregations.filtered_price_stats.price_stats.min || 0),
+            max: Math.ceil(response.aggregations.filtered_price_stats.price_stats.max || 1000)
+            // min: Math.floor(response.aggregations.price_stats.min || 0),
+            // max: Math.ceil(response.aggregations.price_stats.max || 1000)
         }
     };
 }

@@ -155,13 +155,17 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     }
 
     const ids = products.map(item => item._source.id)
+    const placeholders = ids.map(() => '?').join(',');
+    // console.log(placeholders);
 
     const [{id: wishlist_id}] = await runQuery(`
         SELECT id FROM wishlists WHERE user_id = ? AND name = ?
         `, [userId, "my_wishlist"]);
+
     const wishlisted = await runQuery(`
-        SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (?)
-        `, [wishlist_id, ids]);
+        SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (${placeholders})
+        `, [wishlist_id, ...ids]);
+
     const wishlistedSet = new Set(wishlisted.map(r => r.product_id));
 
     const results = products.map((hit) => ({
