@@ -108,32 +108,41 @@ function FilterSidebar({ applyFilters }) {
     const urlPriceRange = searchParams.get("priceRange")?.split(",") || []
 
     const urlFilters = parseURLToFilters(searchParams)
-    const displayMin = Math.floor(apiPriceRange?.min || urlPriceRange[0] || 0)
-    const displayMax = Math.ceil(apiPriceRange?.max || urlPriceRange[1] || 1000)
+    const displayMin = Math.floor(apiPriceRange?.min || 0)
+    // const displayMin = Math.floor(apiPriceRange?.min || urlPriceRange[0] || 0)
+    const displayMax = Math.ceil(apiPriceRange?.max || 1000)
+    // const displayMax = Math.ceil(apiPriceRange?.max || urlPriceRange[1] || 1000)
+    const sliderMax = displayMax + 1;
 
     const filters = {
         query: urlFilters.query,
-        priceRange: urlFilters.priceRange || [displayMin, displayMax],
+        // priceRange: urlFilters.priceRange || [displayMin, sliderMax],
+        priceRange: urlFilters.priceRange 
+            ? [
+                urlFilters.priceRange[0] ?? displayMin,
+                urlFilters.priceRange[1] ?? sliderMax
+            ]
+            : [displayMin, sliderMax],
         brands: urlFilters.brands,
         rating: urlFilters.rating,
         inStock: urlFilters.inStock,
     };
 
     const defaultFilters = {
-        priceRange: [displayMin, displayMax],
+        priceRange: [displayMin, sliderMax],
         brands: [],
         rating: null,
         inStock: false,
     };
 
-    const hasActiveFilters = 
-        !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
-        // isPriceFiltered ||
-        filters.rating ||
-        (filters.brands?.length > 0) ||
-        filters.inStock;
+    // const hasActiveFilters = 
+    //     !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
+    //     // isPriceFiltered ||
+    //     filters.rating ||
+    //     (filters.brands?.length > 0) ||
+    //     filters.inStock;
 
-    const hasNoResults = !isLoading && !total && hasActiveFilters;
+    // const hasNoResults = !isLoading && !total && hasActiveFilters;
 
     const { handleSubmit, control, setValue, reset, watch, getValues } = useForm({ values: filters });
     const watchAllFields = watch();
@@ -148,9 +157,15 @@ function FilterSidebar({ applyFilters }) {
 
         priceRangeTimeoutRef.current = setTimeout(() => {
             if (!isMountedRef.current) return;
-
+            
             const newParams = new URLSearchParams(searchParams);
-            newParams.set('priceRange', `${newValue[0]},${newValue[1]}`);
+            const min = newValue[0];
+            const max = newValue[1];
+            
+            // If slider at max position (displayMax + 1), send empty string (no upper limit)
+            const maxParam = max >= sliderMax ? '' : max;
+            
+            newParams.set('priceRange', `${min},${maxParam}`);
             newParams.set('page', '1');
             setSearchParams(newParams);
         }, 300);
@@ -217,7 +232,11 @@ function FilterSidebar({ applyFilters }) {
     };
 
     const formatValueLabel = (value) => {
-        return `$${value}`
+        // return `$${value}`
+        if (value >= sliderMax) {
+            return `$${displayMax}+`;
+        }
+        return `$${value}`;
     };
 
     const handleResetSubsection = (name) => {
@@ -282,7 +301,7 @@ function FilterSidebar({ applyFilters }) {
     return (
         <Box sx={{ p: 2, maxWidth: 300, mr: "auto", position: "relative" }}>
 
-            {hasNoResults && (
+            {/* {hasNoResults && (
                 <Box
                     sx={{
                         position: 'absolute',
@@ -316,9 +335,10 @@ function FilterSidebar({ applyFilters }) {
                         Clear Filters
                     </Button>
                 </Box>
-            )}
+            )} */}
 
-            <Box sx={{ opacity: hasNoResults ? 0.5 : 1, pointerEvents: hasNoResults ? 'none' : 'auto'}}>
+            {/* <Box sx={{ opacity: hasNoResults ? 0.5 : 1, pointerEvents: hasNoResults ? 'none' : 'auto'}}> */}
+            <Box sx={{}}>
                 <Box sx={{ mb: 1.5 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mb: 1.5 }}>
                         <Typography variant="h6">Filters</Typography>
@@ -343,7 +363,8 @@ function FilterSidebar({ applyFilters }) {
                         title="Price Range"
                         actionName="Reset"
                         actionFunction={() => {
-                            handleResetSubsection("priceRange", [0, ""]);
+                            // handleResetSubsection("priceRange", [0, ""]);
+                            handleResetSubsection("priceRange")
                         }}
                         isDirty={isFieldChanged(watch("priceRange"), defaultFilters.priceRange)}
                         useAccordion={false}
@@ -358,14 +379,14 @@ function FilterSidebar({ applyFilters }) {
                                         onChange={(_, newValue, activeThumb) => {
                                             if (!Array.isArray(newValue)) return;
 
-                                            const minDistance = Math.max(1, Math.floor((displayMax - displayMin) * 0.1));
+                                            const minDistance = Math.max(1, Math.floor((sliderMax - displayMin) * 0.1));
                                             let adjustedValue = newValue;
 
                                             if (newValue[1] - newValue[0] < minDistance) {
                                                 if (activeThumb === 0) {
-                                                    const clamped = Math.min(newValue[0], displayMax - minDistance)
+                                                    const clamped = Math.min(newValue[0], sliderMax - minDistance)
                                                     adjustedValue = [clamped, clamped + minDistance]
-                                                } 
+                                                }
                                                 else {
                                                     const clamped = Math.max(newValue[1], displayMin + minDistance)
                                                     adjustedValue = [clamped - minDistance, clamped]
@@ -376,80 +397,84 @@ function FilterSidebar({ applyFilters }) {
                                         }}
                                         valueLabelDisplay="auto"
                                         valueLabelFormat={formatValueLabel}
-                                        step={Math.max(1, Math.round((displayMax - displayMin) / 100))}
+                                        step={Math.max(1, Math.round((sliderMax - displayMin) / 100))}
                                         min={displayMin}
-                                        max={displayMax}
+                                        max={sliderMax}
                                         disableSwap
                                     />
                                 )}
                             />
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="body2">{formatValueLabel(displayMin)}</Typography>
-                            <Typography variant="body2">{formatValueLabel(displayMax)}</Typography>
+                            <Typography variant="body2">{formatValueLabel(watch("priceRange")[0])}</Typography>
+                            <Typography variant="body2">{formatValueLabel(watch("priceRange")[1])}</Typography>
                         </Box>
                     </FilterSection>
 
-                    <FilterSection
-                        title="Brands"
-                        actionName="Clear"
-                        actionFunction={() => {
-                            handleResetSubsection("brands");
-                            setShowAllBrands(false);
-                        }}
-                        isDirty={isFieldChanged(watch("brands"), defaultFilters.brands)}
-                        useAccordion={true}
-                        defaultExpanded={true}
-                        onAccordionChange={handleBrandAccordionChange}
-                    >
-                        <Controller
-                            name="brands"
-                            control={control}
-                            render={({ field: { onChange, value } }) => (
-                                <>
-                                    <FormGroup>
-                                        {visibleBrands?.map((brand) => (
-                                            <FormControlLabel
-                                                key={brand.key}
-                                                control={
-                                                    <Checkbox
-                                                        checked={value.includes(brand.key)}
-                                                        onChange={(e) => {
-                                                            const newBrands = e.target.checked
-                                                                ? [...value, brand.key]
-                                                                : value.filter((v) => v !== brand.key);
-                                                            
-                                                            onChange(newBrands);
-                                                            handleBrandsChange(newBrands);
-                                                        }}
-                                                    />
-                                                }
-                                                label={`${brand.key} (${brand.doc_count})`}
-                                            />
-                                        ))}
-                                    </FormGroup>
-                                    {brands?.length > initialBrandCount && !showAllBrands && (
-                                        <Button
-                                            size="small"
-                                            onClick={() => setShowAllBrands(true)}
-                                            sx={{ mt: 1, textTransform: 'none' }}
-                                        >
-                                            Load More ({brands.length - initialBrandCount} more)
-                                        </Button>
-                                    )}
-                                    {showAllBrands && (
-                                        <Button
-                                            size="small"
-                                            onClick={() => setShowAllBrands(false)}
-                                            sx={{ mt: 1, textTransform: 'none' }}
-                                        >
-                                            Show Less
-                                        </Button>
-                                    )}
-                                </>
-                            )}
-                        />
-                    </FilterSection>
+                    {visibleBrands.length > 0?
+                        <FilterSection
+                            title="Brands"
+                            actionName="Clear"
+                            actionFunction={() => {
+                                handleResetSubsection("brands");
+                                setShowAllBrands(false);
+                            }}
+                            isDirty={isFieldChanged(watch("brands"), defaultFilters.brands)}
+                            useAccordion={true}
+                            defaultExpanded={true}
+                            onAccordionChange={handleBrandAccordionChange}
+                        >
+                            <Controller
+                                name="brands"
+                                control={control}
+                                render={({ field: { onChange, value } }) => (
+                                    <>
+                                        <FormGroup>
+                                            {visibleBrands?.map((brand) => (
+                                                <FormControlLabel
+                                                    key={brand.key}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={value.includes(brand.key)}
+                                                            onChange={(e) => {
+                                                                const newBrands = e.target.checked
+                                                                    ? [...value, brand.key]
+                                                                    : value.filter((v) => v !== brand.key);
+                                                                
+                                                                onChange(newBrands);
+                                                                handleBrandsChange(newBrands);
+                                                            }}
+                                                        />
+                                                    }
+                                                    label={`${brand.key} (${brand.doc_count})`}
+                                                />
+                                            ))}
+                                        </FormGroup>
+                                        {brands?.length > initialBrandCount && !showAllBrands && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllBrands(true)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Load More ({brands.length - initialBrandCount} more)
+                                            </Button>
+                                        )}
+                                        {showAllBrands && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllBrands(false)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Show Less
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                            />
+                        </FilterSection>
+                        :
+                        null
+                    }
 
                     <FilterSection
                         title="Customer Rating"

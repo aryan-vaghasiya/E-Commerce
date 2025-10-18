@@ -207,39 +207,45 @@ exports.searchProductsElastic = async (client, filters = {}) => {
             },
             sort: sortClause,
             aggs: {
-                // price_stats: {
-                //     stats: {
-                //         field: "price"
-                //     }
-                // },
-                filtered_price_stats: {
-                    filter: {
-                        bool: {
-                            filter: aggFilterClauses
-                        }
-                    },
-                    aggs: {
-                        price_stats: {
-                            stats: { field: "price" }
-                        }
+                price_stats: {
+                    stats: {
+                        field: "price"
                     }
                 },
-                filtered_brands: {
-                    filter: {
-                        bool: {
-                            // filter: aggFilterClauses
-                            filter: priceFilter ? [priceFilter] : []
-                        }
-                    },
-                    aggs: {
-                        brands: {
-                            terms: {
-                                field: "brand.keyword",
-                                size: 100
-                            }
-                        }
+                brands: {
+                    terms: {
+                        field: "brand.keyword",
+                        size: 100
                     }
-                }
+                },
+                // filtered_price_stats: {
+                //     filter: {
+                //         bool: {
+                //             filter: aggFilterClauses
+                //         }
+                //     },
+                //     aggs: {
+                //         price_stats: {
+                //             stats: { field: "price" }
+                //         }
+                //     }
+                // },
+                // filtered_brands: {
+                //     filter: {
+                //         bool: {
+                //             // filter: aggFilterClauses
+                //             filter: priceFilter ? [priceFilter] : []
+                //         }
+                //     },
+                //     aggs: {
+                //         brands: {
+                //             terms: {
+                //                 field: "brand.keyword",
+                //                 size: 100
+                //             }
+                //         }
+                //     }
+                // }
             },
             post_filter: {
                 bool: {
@@ -249,15 +255,42 @@ exports.searchProductsElastic = async (client, filters = {}) => {
         }
     });
 
+    const actualMin = Math.floor(response.aggregations.price_stats.min || 0);
+    const actualMax = Math.ceil(response.aggregations.price_stats.max || 1000);
+    const range = actualMax - actualMin;
+
+    let displayMin = actualMin;
+    let displayMax;
+
+    if (range > 10000) {
+        displayMax = actualMin + 10000;
+    } 
+    else if (range > 100) {
+        displayMax = actualMin + Math.round(range * 0.95);
+    } 
+    else {
+        displayMax = actualMin + Math.round(range * 0.90);
+    }
+
+    if (displayMax - displayMin < 10) {
+        displayMax = displayMin + 10;
+    }
+
     return {
         products: response.hits.hits,
         total: response.hits.total.value,
-        brands: response.aggregations.filtered_brands.brands.buckets,
+        // brands: response.aggregations.filtered_brands.brands.buckets || [],
+        brands: response.aggregations.brands.buckets || [],
         price_stats: {
-            min: Math.floor(response.aggregations.filtered_price_stats.price_stats.min || 0),
-            max: Math.ceil(response.aggregations.filtered_price_stats.price_stats.max || 1000)
+            // min: Math.floor(response.aggregations.filtered_price_stats.price_stats.min || 0),
+            // max: Math.ceil(response.aggregations.filtered_price_stats.price_stats.max || 1000)
+
             // min: Math.floor(response.aggregations.price_stats.min || 0),
             // max: Math.ceil(response.aggregations.price_stats.max || 1000)
+
+            min: displayMin,
+            max: displayMax,
+            actualMax
         }
     };
 }

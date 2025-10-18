@@ -136,17 +136,17 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     const {total, products, brands, price_stats} = await searchProductsElastic(client, queryParams)
     // const results = normalizeProducts(products)
 
-    if(products.length < 1){
-        return {}
-    }
+    // if(products.length < 1){
+    //     return {}
+    // }
 
-    if(!userId){
-        const results = products.map(item => item._source)
+    if(!userId || products.length < 1){
+        const results = products.length < 1 ? products.map(item => item._source) : []
 
         const productsRes = {
             products : results,
             currentPage : page,
-            pages: Math.ceil (total / limit),
+            pages: Math.ceil(total / limit),
             total,
             brands,
             priceRange: price_stats

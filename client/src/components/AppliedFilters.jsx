@@ -14,6 +14,7 @@ function AppliedFilters({ searchParams, setSearchParams }) {
     
     const displayMin = Math.floor(apiPriceRange?.min || 0);
     const displayMax = Math.ceil(apiPriceRange?.max || 1000);
+    const sliderMax = displayMax + 1;
 
     const filters = mergeFiltersWithDefaults(urlFilters, {
         priceRange: { min: displayMin, max: displayMax }
@@ -21,11 +22,17 @@ function AppliedFilters({ searchParams, setSearchParams }) {
     
     const isPriceFiltered = urlFilters.priceRange && (
         urlFilters.priceRange[0] !== displayMin || 
-        urlFilters.priceRange[1] !== displayMax
+        // urlFilters.priceRange[1] !== sliderMax
+        (urlFilters.priceRange[1] !== null && urlFilters.priceRange[1] !== sliderMax)
     );
 
-    const minLabel = filters.priceRange ? (filters.priceRange[0] === displayMin ? "Min." : `$${filters.priceRange[0]}`) : null
-    const maxLabel = filters.priceRange ? (filters.priceRange[1] === displayMax ? "Max." : `$${filters.priceRange[1]}`) : null
+    const minLabel = filters.priceRange[0] === displayMin 
+        ? "Min" 
+        : `$${filters.priceRange[0]}`;
+
+    const maxLabel = filters.priceRange[1] === null || filters.priceRange[1] >= sliderMax
+        ? `$${displayMax}+`
+        : `$${filters.priceRange[1]}`;
 
     const checkScroll = () => {
         const element = scrollRef.current;
@@ -62,14 +69,11 @@ function AppliedFilters({ searchParams, setSearchParams }) {
             if (applied.length > 1) {
                 const newBrands = applied.filter(brand => brand !== value);
                 newParams.set("brands", newBrands.join(","));
-            } 
+            }
             else {
                 newParams.delete(name);
             }
         } 
-        // else if (name === "priceRange") {
-        //     newParams.set("priceRange", "0,");
-        // } 
         else {
             newParams.delete(name);
         }

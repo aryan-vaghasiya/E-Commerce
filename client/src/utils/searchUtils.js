@@ -1,71 +1,50 @@
-// export const parseURLToFilters = (searchParams) => {
-//     return {
-//         query: searchParams.get('query') || '',
-//         priceRange: searchParams.get('priceRange')?.split(',').map(num => num === "" ? 1010 : parseInt(num)) || [0, 1010],
-//         // priceRange: searchParams.get('priceRange')?.split(',').map(num => parseInt(num)) || null,
-//         brands: searchParams.get('brands')?.split(',') || [],
-//         rating: searchParams.get('rating') || null,
-//         inStock: searchParams.get('inStock') === 'true',
-//     }
-// }
-
-
 export const parseURLToFilters = (searchParams) => {
     const priceRangeParam = searchParams.get('priceRange');
     let priceRange = null;
     
     if (priceRangeParam) {
-        const [minStr, maxStr] = priceRangeParam.split(',');
-        const min = minStr ? parseFloat(minStr) : null;
-        const max = maxStr ? parseFloat(maxStr) : null;
+        const parts = priceRangeParam.split(',');
+        const minStr = parts[0];
+        const maxStr = parts[1];
         
-        if (!isNaN(min) || !isNaN(max)) {
-            priceRange = [
-                isNaN(min) ? null : min,
-                isNaN(max) ? null : max
-            ];
-        }
+        const min = minStr && minStr !== '' ? parseFloat(minStr) : null;
+        const max = maxStr === '' || maxStr === undefined
+            ? null
+            : parseFloat(maxStr);
+        
+        priceRange = [
+            isNaN(min) || min === null ? null : min,
+            isNaN(max) || max === null ? null : max
+        ];
     }
     
     return {
         query: searchParams.get('query') || '',
         priceRange,
         brands: searchParams.get('brands')?.split(',') || [],
-        rating: searchParams.get('rating') || null,
+        // rating: searchParams.get('rating') || null,
+        rating: searchParams.get('rating') ? parseFloat(searchParams.get('rating')) : null,
         inStock: searchParams.get('inStock') === 'true',
     };
 };
 
 export const mergeFiltersWithDefaults = (urlFilters, apiDefaults) => {
-    // return {
-    //     query: urlFilters.query,
-    //     priceRange: urlFilters.priceRange || [
-    //         apiDefaults.priceRange.min,
-    //         apiDefaults.priceRange.max
-    //     ],
-    //     brands: urlFilters.brands,
-    //     rating: urlFilters.rating,
-    //     inStock: urlFilters.inStock,
-    // };
-    const filters = {
+    const getPriceMin = () => {
+        if (!urlFilters.priceRange) return apiDefaults.priceRange.min;
+        return urlFilters.priceRange[0] ?? apiDefaults.priceRange.min;
+    };
+
+    const getPriceMax = () => {
+        if (!urlFilters.priceRange) return apiDefaults.priceRange.max + 1;
+        // null in URL means sliderMax (displayMax + 1)
+        return urlFilters.priceRange[1] ?? (apiDefaults.priceRange.max + 1);
+    };
+
+    return {
         query: urlFilters.query,
-        priceRange: urlFilters.priceRange || [
-            apiDefaults.priceRange.min,
-            apiDefaults.priceRange.max
-        ],
+        priceRange: [getPriceMin(), getPriceMax()],
         brands: urlFilters.brands,
         rating: urlFilters.rating,
         inStock: urlFilters.inStock,
     };
-
-    if (filters.priceRange) {
-        filters.priceRange = [
-            Math.max(apiDefaults.priceRange.min, Math.min(filters.priceRange[0] || apiDefaults.priceRange.min, apiDefaults.priceRange.max)),
-            Math.min(apiDefaults.priceRange.max, Math.max(filters.priceRange[1] || apiDefaults.priceRange.max, apiDefaults.priceRange.min))
-        ];
-    }
-
-    // console.log(filters);
-
-    return filters
 };

@@ -27,19 +27,31 @@ export const searchReducer = (state = initialState, action) => {
                 isLoading: true
             };
         case SET_SEARCH_QUERY:
-            return { ...state, 
+            return { 
+                // ...state,
+                // query: action.payload,
+                // currentPage: 1
+                ...initialState,
                 query: action.payload,
-                currentPage: 1
             };
         case SET_SEARCH_PRODUCTS:
             return {
                 ...state,
-                products : action.payload.products,
-                brands : action.payload.brands,
-                total: action.payload.total,
-                pages: action.payload.pages,
-                currentPage: action.payload.currentPage,
-                priceRange: action.payload.priceRange || { min: 0, max: 1000 },
+                products : action.payload.products || [],
+                // brands : action.payload.brands,
+                brands : action.payload.brands?.length > 0 
+                    ? action.payload.brands 
+                    : state.brands,
+                total: action.payload.total || 0,
+                pages: action.payload.pages || 1,
+                currentPage: action.payload.currentPage || 1,
+                // priceRange: action.payload.priceRange || { min: 0, max: 1000 },
+                priceRange: action.payload.priceRange 
+                    ? {
+                        min: action.payload.priceRange.min,
+                        max: action.payload.priceRange.max
+                    }
+                    : state.priceRange,
                 isLoading: false
             };
         case SET_CURRENT_PAGE_SEARCH:
