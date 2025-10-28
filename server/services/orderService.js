@@ -31,7 +31,7 @@ exports.addOrder = async(userId, order, coupon) => {
                                         WHERE ci.user_id = ? 
                                             AND ci.cart_id = ?`, [userId, cartId]);
 
-    const freeShippingApplicable = order.cartValue >= 50 ? true : false
+    const freeShippingApplicable = order.cartValue >= 50
     const shippingCharges = freeShippingApplicable ? 0.00 : 4.99
     const userWallet = await walletService.getWallet(userId)
     const currentCartValue = order.newCartValue ? order.newCartValue : order.cartValue
@@ -296,36 +296,6 @@ exports.getOrdersService = async (userId, queryParams) => {
 
     const orderIds = limitedOrders.map(order => order.id)
 
-    // const getOrders = await runQuery(
-    //     `SELECT
-    //         o.id AS order_id,
-    //         o.total,
-    //         o.discount_amount,
-    //         o.final_total,
-    //         o.status,
-    //         SUM(oi.quantity) AS noOfItems,
-    //         JSON_ARRAYAGG(
-    //             JSON_OBJECT(
-    //                 'id', p.id,
-    //                 'quantity', oi.quantity,
-    //                 'price', oi.purchase_price,
-    //                 'title', p.title,
-    //                 'brand', p.brand,
-    //                 'thumbnail', p.thumbnail,
-    //                 'rating', p.rating,
-    //                 'category', c.category
-    //             )
-    //         ) AS items
-    //     FROM orders o
-    //     JOIN order_item oi ON o.id = oi.order_id
-    //     JOIN products p   ON oi.product_id = p.id
-    //     JOIN categories c ON c.id = p.category_id
-    //     WHERE o.id IN (?)
-    //     GROUP BY o.id
-    //     ORDER BY FIELD(o.id, ?)`,
-    //     [orderIds, orderIds]
-    // );
-
     const getOrders = await this.getOrdersByIdsHelper(orderIds)
 
     if (getOrders.length === 0) {
@@ -343,7 +313,6 @@ exports.getOrdersService = async (userId, queryParams) => {
         status: order.status
     }));
 
-
     return {
         orders,
         currentPage: page,
@@ -352,7 +321,6 @@ exports.getOrdersService = async (userId, queryParams) => {
         total
     };
 }
-
 
 exports.checkCouponCode = async (userId, code) => {
     // console.log(code);
@@ -652,61 +620,6 @@ exports.getSingleOrderData = async (userId, orderId) => {
         users
         WHERE id = ?
         `, [userId])
-
-    // const [order] = await runQuery(
-    //     `SELECT
-    //         o.id AS order_id,
-    //         o.subtotal,
-    //         o.discount_amount,
-    //         o.shipping,
-    //         o.final_total,
-    //         o.status,
-    //         o.order_date,
-    //         o.last_updated,
-    //         SUM(oi.quantity) AS noOfItems,
-    //         JSON_ARRAYAGG(
-    //             JSON_OBJECT(
-    //                 'id', p.id,
-    //                 'quantity', oi.quantity,
-    //                 'purchase_price', oi.purchase_price,
-    //                 'selling_price', oi.selling_price,
-    //                 'discount_amount', oi.discount_amount,
-    //                 'title', p.title,
-    //                 'brand', p.brand,
-    //                 'thumbnail', p.thumbnail,
-    //                 'rating', p.rating,
-    //                 'category', c.category
-    //             )
-    //         ) AS items,
-    //         CASE 
-    //             WHEN o.coupon_id IS NOT NULL 
-    //                 THEN 
-    //                     JSON_OBJECT(
-    //                         'id', cp.id,
-    //                         'name', cp.name,
-    //                         'code', cp.code,
-    //                         'discount_type', cp.discount_type,
-    //                         'discount_value', cp.discount_value,
-    //                         'threshold_amount', cp.threshold_amount,
-    //                         'applies_to', cp.applies_to
-    //                     )
-    //             ELSE NULL
-    //         END AS coupon
-    //     FROM orders o
-    //     JOIN order_item oi 
-    //         ON o.id = oi.order_id
-    //     JOIN products p 
-    //         ON oi.product_id = p.id
-    //     JOIN categories c 
-    //         ON c.id = p.category_id
-    //     LEFT JOIN coupons cp 
-    //         ON o.coupon_id = cp.id
-    //     WHERE o.id = ?
-    //     GROUP BY o.id`,
-    //     [orderId]
-    // );
-
-    // console.log(order);
 
     const [order] = await runQuery(`
         WITH 

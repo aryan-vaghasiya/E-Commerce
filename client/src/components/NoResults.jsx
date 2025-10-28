@@ -39,14 +39,14 @@ function NoResults({ searchParams, setSearchParams, query, isLoading }) {
                     ? 'No products match your search with the current filters' 
                     : query 
                         ? `We couldn't find any products matching "${query}"`
-                        // : 'No products found'}
-                        : null}
+                        : null
+                }
             </Typography>
 
             {hasFilters && !isLoading &&  (
                 <Paper elevation={2} sx={{ p: 3, maxWidth: 500, width: '100%', textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Try removing your filters to see more results
+                        Try modifying or removing your filters to see more results
                     </Typography>
                     <Button
                         variant="contained"

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-    Box, Grid, Typography, Button, Drawer, Toolbar, Pagination, Alert, Snackbar,
-    CircularProgress,
+    Box, Grid, Typography, Drawer, Pagination, Alert, Snackbar,
     Paper,
     Select,
     FormControl,
@@ -10,11 +9,8 @@ import {
     MenuItem,
     useTheme,
     IconButton,
-    Divider
 } from "@mui/material";
-import FilterListIcon from '@mui/icons-material/FilterList';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import ProductItem from "./ProductItem";
 import FilterSidebar from "./FilterSidebar";
 import { searchProducts } from "../redux/search/searchActions";
 import { hideSnack } from "../redux/snackbar/snackbarActions";
@@ -39,6 +35,7 @@ function ProductsSearched() {
     const currentPage = Math.max(1, Math.min(Number(searchParams.get('page')) || 1, pages));
     
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [hasAnyResults, setHasAnyResults] = useState(true);
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
@@ -65,6 +62,22 @@ function ProductsSearched() {
         dispatch(searchProducts(filters))
     }, [searchParams])
 
+    useEffect(() => {
+        if (!isLoading && products !== undefined) {
+            const filters = Object.fromEntries(searchParams);
+            const hasFilters = Object.keys(filters).some(
+                key => !['query', 'page', 'sort'].includes(key)
+            );
+
+            if (!hasFilters && products?.length === 0) {
+                setHasAnyResults(false);
+            }
+            else if (products?.length > 0) {
+                setHasAnyResults(true);
+            }
+        }
+    }, [products, isLoading, searchParams]);
+
     const handleApplyFilters = useCallback((filters, sort = "_score,desc") => {
         const params = new URLSearchParams();
         params.set("query", query)
@@ -79,138 +92,130 @@ function ProductsSearched() {
 
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh", position: "relative" }}>
-            {/* {
-            !isLoading && (!products || products?.length < 1) ?
-                <Box
-                    sx={{
-                        position: "absolute",
-                        inset: 0,
-                        top: "10%",
-                        display: "flex",
-                        justifyContent: "center",
-                        bgcolor: "#EEEEEE"
-                    }}
-                >
-                    <Typography variant="h6" gutterBottom>
-                        Sorry, No results found
-                    </Typography>
-                </Box>
-            : */}
-                <Box sx={{height: "100%"}}>
-                    <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
-                        <Box>
-                            {!isMobile && !isLoading &&
-                                <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total || 0} results for "{query}"</Typography>
-                            }
-                        </Box>
-                        <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
-                            <FormControl>
-                                <InputLabel id="sort_by">Sort by</InputLabel>
-                                <Select
-                                    sx={{minWidth: {xs: 165,md: 183}, fontSize: {xs: 14, md: 16}}}
-                                    size="small"
-                                    value={searchParams.get("sort") || "_score,desc"}
-                                    labelId="sort_by"
-                                    label="Sort by"
-                                    onChange={(e) => {                                    
-                                        const currentFilters = Object.fromEntries(searchParams);
-                                        delete currentFilters.page;
-                                        const newParams = new URLSearchParams({
-                                            ...currentFilters,
-                                            sort: e.target.value,
-                                            page: 1
-                                        });
-                                        setSearchParams(newParams);
-                                    }}
-                                >
-                                    <MenuItem value="_score,desc">Relevance</MenuItem>
-                                    <MenuItem value="price,asc">Price - Low to High</MenuItem>
-                                    <MenuItem value="price,desc">Price - High to Low</MenuItem>
-                                    <MenuItem value="rating,desc">Highest Rated</MenuItem>
-                                </Select>
-                            </FormControl>
-                            {isMobile &&
-                                <IconButton 
-                                    size="small" 
-                                    color="primary" 
-                                    sx={{border: "1px solid, rgba(25, 118, 210, 0.5)", borderRadius: 1, m: 0}}
-                                    onClick={handleDrawerToggle}
-                                >
-                                    <FilterAltIcon />
-                                </IconButton>
-                            }
-                        </Box>
-                    </Paper>
+            <Box sx={{height: "100%"}}>
+                {(hasAnyResults || isLoading) && (
+                <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
+                    <Box>
+                        {!isMobile && !isLoading &&
+                            <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total || 0} results for "{query}"</Typography>
+                        }
+                    </Box>
+                    <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
+                        <FormControl>
+                            <InputLabel id="sort_by">Sort by</InputLabel>
+                            <Select
+                                sx={{minWidth: {xs: 165,md: 183}, fontSize: {xs: 14, md: 16}}}
+                                size="small"
+                                value={searchParams.get("sort") || "_score,desc"}
+                                labelId="sort_by"
+                                label="Sort by"
+                                onChange={(e) => {                                    
+                                    const currentFilters = Object.fromEntries(searchParams);
+                                    delete currentFilters.page;
+                                    const newParams = new URLSearchParams({
+                                        ...currentFilters,
+                                        sort: e.target.value,
+                                        page: 1
+                                    });
+                                    setSearchParams(newParams);
+                                }}
+                            >
+                                <MenuItem value="_score,desc">Relevance</MenuItem>
+                                <MenuItem value="price,asc">Price - Low to High</MenuItem>
+                                <MenuItem value="price,desc">Price - High to Low</MenuItem>
+                                <MenuItem value="rating,desc">Highest Rated</MenuItem>
+                            </Select>
+                        </FormControl>
+                        {isMobile &&
+                            <IconButton 
+                                size="small" 
+                                color="primary" 
+                                sx={{border: "1px solid, rgba(25, 118, 210, 0.5)", borderRadius: 1, m: 0}}
+                                onClick={handleDrawerToggle}
+                            >
+                                <FilterAltIcon />
+                            </IconButton>
+                        }
+                    </Box>
+                </Paper>
+                )}
 
-                    <Grid container spacing={1} sx={{ minHeight: "100%" }}>
+                <Grid container spacing={1} sx={{ minHeight: "100%" }}>
+                    {/* <Grid size={{md: 2.5}}
+                        sx={{ display: { xs: 'none', md: 'block' }}}
+                    >
+                        <FilterSidebar applyFilters={handleApplyFilters} />
+                    </Grid> */}
+
+                    {(hasAnyResults || isLoading) && (
                         <Grid size={{md: 2.5}}
                             sx={{ display: { xs: 'none', md: 'block' }}}
                         >
                             <FilterSidebar applyFilters={handleApplyFilters} />
                         </Grid>
+                    )}
 
-                        <Grid size={{xs: 12, md: 9.5}} sx={{p: 2, pb: 0}}>
-                            <Box sx={{display: "flex", flexDirection: "column"}}>
+                    {/* <Grid size={{xs: 12, md: 9.5}} sx={{p: 2, pb: 0}}> */}
+                    <Grid size={{xs: 12, md: (hasAnyResults || isLoading) ? 9.5 : 12}} sx={{p: 2, pb: 0}} >
+                        <Box sx={{display: "flex", flexDirection: "column"}}>
 
-                                <Box sx={{overflowX: "auto"}}>
-                                    <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
-                                </Box>
-
-                                <Box>
-                                    <Stack spacing={{ xs: 2, md: 2.5 }}>
-                                        {
-                                        isLoading ?
-                                            Array.from({ length: 5 }).map((_, index) => (
-                                                <HorizontalProductCardSkeleton key={index} />
-                                            ))
-                                        : products?.length > 0 ? 
-                                            products.map((product) => (
-                                                <HorizontalProductCard key={product.id} product={product} loading={false} />
-                                            ))
-                                        : !isLoading && (!products || products?.length < 1) &&
-                                            <NoResults
-                                                searchParams={searchParams}
-                                                setSearchParams={setSearchParams}
-                                                query={query}
-                                                isLoading={isLoading}
-                                            />
-                                            // <Typography variant="h6">Sorry, No results found</Typography>
-                                        // :
-                                        // null
-                                        }
-                                    </Stack>
-
-                                    {!isLoading && products?.length > 0 &&
-                                        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                                            <Pagination 
-                                                count={pages} 
-                                                page={currentPage} 
-                                                onChange={handlePage} 
-                                                color="primary" 
-                                                showFirstButton
-                                                showLastButton
-                                            />
-                                        </Box>
-                                    }
-                                </Box>
+                            <Box sx={{overflowX: "auto"}}>
+                                <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
                             </Box>
-                        </Grid>
-                    </Grid>
-                </Box>
-            {/* } */}
 
-            <Drawer
-                variant="temporary"
-                open={mobileOpen}
-                onClose={handleDrawerToggle}
-                ModalProps={{ keepMounted: true }}
-                sx={{
-                    display: { xs: 'block', md: 'none' },
-                    '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "auto" },
-                }}
-            >
-                <FilterSidebar applyFilters={handleApplyFilters} />
-            </Drawer>
+                            <Box>
+                                <Stack spacing={{ xs: 2, md: 2.5 }}>
+                                    {
+                                    isLoading ?
+                                        Array.from({ length: 5 }).map((_, index) => (
+                                            <HorizontalProductCardSkeleton key={index} />
+                                        ))
+                                    : products?.length > 0 ? 
+                                        products.map((product) => (
+                                            <HorizontalProductCard key={product.id} product={product} loading={false} />
+                                        ))
+                                    : !isLoading && (!products || products?.length < 1) &&
+                                        <NoResults
+                                            searchParams={searchParams}
+                                            setSearchParams={setSearchParams}
+                                            query={query}
+                                            isLoading={isLoading}
+                                        />
+                                    }
+                                </Stack>
+
+                                {!isLoading && products?.length > 0 &&
+                                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                                        <Pagination 
+                                            count={pages} 
+                                            page={currentPage} 
+                                            onChange={handlePage} 
+                                            color="primary" 
+                                            showFirstButton
+                                            showLastButton
+                                        />
+                                    </Box>
+                                }
+                            </Box>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Box>
+
+            {(hasAnyResults || isLoading) && (
+                <Drawer
+                    variant="temporary"
+                    open={mobileOpen}
+                    onClose={handleDrawerToggle}
+                    ModalProps={{ keepMounted: true }}
+                    sx={{
+                        display: { xs: 'block', md: 'none' },
+                        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: "auto" },
+                    }}
+                >
+                    <FilterSidebar applyFilters={handleApplyFilters} />
+                </Drawer>
+            )}
 
             <Snackbar
                 open={snackbarState.show}

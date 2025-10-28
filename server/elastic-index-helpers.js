@@ -1,3 +1,4 @@
+const client = require('./elastic-client');
 
 exports.createProductIndex = async (client, indexName = 'products') => {
     console.log(`Checking for index "${indexName}"...`);
@@ -55,7 +56,6 @@ exports.createProductIndex = async (client, indexName = 'products') => {
     }
 }
 
-
 exports.indexBulkProducts = async (client, products, indexName = 'products') => {
     if (!products || products.length === 0) {
         console.log("No products to index.");
@@ -98,7 +98,7 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
     }
 }
 
-exports.searchProductsElastic = async (client, filters = {}) => {
+exports.searchProductsElastic = async (filters = {}) => {
 
     const {query: searchTerm, limit, offset} = filters
 

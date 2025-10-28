@@ -29,124 +29,13 @@ exports.getAllProducts = async(page, limit, offset, userId) => {
 
 exports.getSearchedProducts = async (queryParams, userId) => {
 
-    const {
-        query,
-        page,
-        limit,
-        offset,
-        priceRange,
-        inStock,
-        rating
-    } = queryParams
+    const {total, products, brands, price_stats} = await searchProductsElastic(queryParams)
 
-    // console.log(priceRange);
-
-    // if(query.trim().length < 1){
-    //     return {}
-    // }
-
-    // let whereClause = ` WHERE (title LIKE CONCAT('%', ?, '%') OR description LIKE CONCAT('%', ?, '%')) `
-    // const params = [userId, query, query]
-
-    // if(priceRange){
-    //     const rangeArr = priceRange.split(",")
-    //     // console.log(rangeArr);
-    //     const from = rangeArr[0]
-    //     const to = rangeArr[1]
-
-    //     whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `
-    //     params.push(from, to, to)
-    // }
-
-    // if(inStock === 'true'){
-    //     whereClause += ` AND stock > ?`
-    //     params.push(0)
-    // }
-
-    // if(rating){
-    //     whereClause += ` AND rating >= ?`
-    //     params.push(rating)
-    // }
-
-
-    // const finalQuery = 
-    //     `SELECT
-    //         *,
-    //         COUNT(*) OVER() AS total_filtered
-    //     FROM (
-    //         SELECT 
-    //             p.id,
-    //             p.title,
-    //             p.description,
-    //             p.rating,
-    //             p.brand,
-    //             p.thumbnail,
-    //             p.status,
-    //             c.category,
-    //             pp.mrp, 
-    //             i.stock,
-                
-    //             CASE 
-    //                 WHEN pd.offer_price IS NOT NULL 
-    //                     THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-    //                 ELSE NULL
-    //             END AS offer_discount,
-    //             CASE 
-    //                 WHEN pd.offer_price IS NOT NULL 
-    //                     THEN pd.offer_price
-    //                 ELSE pp.price
-    //             END AS price,
-                
-    //             CASE 
-    //                 WHEN wi.product_id IS NOT NULL THEN TRUE 
-    //                 ELSE FALSE 
-    //             END AS wishlisted
-
-    //         FROM 
-    //             products p
-    //         JOIN 
-    //             product_inventory i ON p.id = i.product_id
-    //         JOIN 
-    //             categories c ON c.id = p.category_id
-    //         JOIN 
-    //             product_pricing pp ON p.id = pp.product_id 
-    //             AND NOW() BETWEEN pp.start_time AND pp.end_time
-    //         LEFT JOIN 
-    //             product_discounts pd ON p.id = pd.product_id 
-    //             AND pd.is_active = 1 
-    //             AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
-    //         LEFT JOIN 
-    //             wishlist_items wi ON p.id = wi.product_id 
-    //             AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
-            
-    //         WHERE
-    //             1 = 1
-    //             -- p.status = 'active'
-    //     ) AS FilterableProducts
-
-    //     ${whereClause}
-
-    //     -- LIMIT ? OFFSET ?`
-
-    // params.push(limit, offset)
-
-    // const results = await runQuery(finalQuery, params)
-
-
-    const {total, products, brands, price_stats} = await searchProductsElastic(client, queryParams)
-    // const results = normalizeProducts(products)
-
-    // if(products.length < 1){
-    //     return {}
-    // }
-
-    if(!userId || products.length < 1){
-        const results = products.length < 1 ? products.map(item => item._source) : []
-
+    if(products.length < 1){
         const productsRes = {
-            products : results,
-            currentPage : page,
-            pages: Math.ceil(total / limit),
+            products: [],
+            currentPage: queryParams.page,
+            pages: Math.ceil(total / queryParams.limit),
             total,
             brands,
             priceRange: price_stats
@@ -154,45 +43,73 @@ exports.getSearchedProducts = async (queryParams, userId) => {
         return productsRes
     }
 
-    const ids = products.map(item => item._source.id)
-    const placeholders = ids.map(() => '?').join(',');
-    // console.log(placeholders);
+    const ids = products.map(item => item._source.id);
+    // const placeholders = ids.map(() => '?').join(',');
+    const placeholders = Array(ids.length).fill('?').join(',');
 
-    const [{id: wishlist_id}] = await runQuery(`
-        SELECT id FROM wishlists WHERE user_id = ? AND name = ?
-        `, [userId, "my_wishlist"]);
+    const prices = await runQuery(`
+        SELECT
+        p.id,
+        pp.mrp,
+        CASE 
+            WHEN pd.offer_price IS NOT NULL 
+                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+            ELSE NULL
+        END AS offer_discount,
+        CASE 
+            WHEN pd.offer_price IS NOT NULL 
+                THEN pd.offer_price
+            ELSE pp.price
+        END AS price
 
-    const wishlisted = await runQuery(`
-        SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (${placeholders})
-        `, [wishlist_id, ...ids]);
+        FROM products p
+            JOIN product_pricing pp    
+                ON pp.product_id = p.id
+                AND p.status = ?
+                AND NOW() BETWEEN pp.start_time AND pp.end_time
+            LEFT JOIN product_discounts pd
+                ON pd.product_id = p.id
+                AND pd.is_active = 1
+                AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                
+        WHERE p.id IN (${placeholders})
+        `, ["active", ...ids])
 
-    const wishlistedSet = new Set(wishlisted.map(r => r.product_id));
+    const priceMap = new Map(prices.map(p => [p.id, p]));
 
-    const results = products.map((hit) => ({
-        ...hit._source,
-        wishlisted: wishlistedSet.has(parseInt(hit._source.id)),
-    }));
+    let wishlistedSet = new Set();
+
+    if(userId){
+        const [{id: wishlist_id}] = await runQuery(`
+            SELECT id FROM wishlists WHERE user_id = ? AND name = ?
+            `, [userId, "my_wishlist"]);
     
-    // const results = products.map(item => item._source)
-
-    // if(results.length === 0){
-    //     return {}
-    // }
-
-    // await bulkUpdateThumbnails(client, results)
-    // await createProductIndex(client);
-    // await indexBulkProducts(client, results);
-
-    // const total = results[0].total_filtered;
-
-    if(!total){
-        throw new Error ("Could not count total searched products")
+        const wishlisted = await runQuery(`
+            SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (${placeholders})
+            `, [wishlist_id, ...ids]);
+    
+        wishlistedSet = new Set(wishlisted.map(r => r.product_id));
     }
+
+    const results = products.map((hit) => {
+        const productId = parseInt(hit._source.id);
+        const pricingData = priceMap.get(productId);
+        
+        return {
+            ...hit._source,
+            mrp: pricingData?.mrp || null,
+            price: pricingData?.price || null,
+            offer_discount: pricingData?.offer_discount || null,
+            // wishlisted: wishlistedSet.has(productId)
+            ...(userId && { wishlisted: wishlistedSet.has(productId) })
+        };
+    });
 
     const productsRes = {
         products : results,
-        currentPage : page,
-        pages: Math.ceil (total / limit),
+        currentPage : queryParams.page,
+        pages: Math.ceil (total / queryParams.limit),
         total,
         brands,
         priceRange: price_stats
@@ -423,34 +340,4 @@ exports.getProductsByIdsHelper = async (productIds, userId = null) => {
     `, ["active", userId, "my_wishlist", productIds, productIds]);
 
     return products
-}
-
-
-function normalizeProducts(products) {
-    if (!Array.isArray(products)) {
-        throw new Error('Input must be an array');
-    }
-    
-    return products.map(product => {
-        const { _id, _source, _score : score } = product;
-        
-        const normalized = {
-            // score: score,
-            id: parseInt(_id),
-            title: _source.title,
-            description: _source.description,
-            rating: _source.rating,
-            brand: _source.brand,
-            thumbnail: _source.thumbnail,
-            status: _source.status,
-            category: _source.category,
-            mrp: _source.mrp,
-            stock: _source.stock,
-            offer_discount: _source.offer_discount,
-            price: _source.price,
-            wishlisted: _source.wishlisted ? 1 : 0,
-        };
-        
-        return normalized;
-    });
 }

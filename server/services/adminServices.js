@@ -9,6 +9,7 @@ const walletService = require("./walletService");
 const { sendMail } = require("../mailer/sendMail");
 const { sendCampaignMail } = require("../mailer/sendMail");
 const { template } = require("handlebars");
+const client = require('../elastic-client');
 
 exports.loginAdmin = async(username, password) => {
     if(username !== "admin"){
@@ -338,6 +339,20 @@ exports.orderRefund = async (orderId, userId, reason = "", cancelledBy) => {
         if(updateStock.affectedRows === 0){
             throw new Error(`Could not Update Quantity for Product ID: ${item.product_id}`)
         }
+
+        await client.update({
+            index: "products-search",
+            id: item.product_id.toString(),
+            body: {
+                script: {
+                    source: "ctx._source.stock += params.increment",
+                    lang: "painless",
+                    params: {
+                        increment: item.quantity
+                    }
+                }
+            }
+        })
     }
 
     if(orderPayment.coupon_id){
@@ -522,13 +537,11 @@ exports.getOffersData = async (productId) => {
 
 exports.setOfferData = async (product_id, offer_price, offer_discount, start_time, end_time) => {
     if (!offer_price || !offer_discount || !start_time || !end_time) {
-        // console.log("no offer");
         throw new Error ("Not received values")
     }
 
-    // Deactivate any overlapping time-based discounts
     await runQuery(
-        `UPDATE product_discounts SET is_active = 0, 
+        `UPDATE product_discounts SET is_active = 0,
             end_time = ?
             WHERE product_id = ? AND discount_type = 'time_based'
             AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?))`,
@@ -542,7 +555,6 @@ exports.setOfferData = async (product_id, offer_price, offer_discount, start_tim
         is_active = 1
     }
 
-    // Insert new time-based discount
     const insertDiscount = await runQuery(
         `INSERT INTO product_discounts (product_id, discount_type, offer_price, discount_percentage, start_time, end_time, is_active) VALUES (?, 'time_based', ?, ?, ?, ?, ?)`,
         [product_id, offer_price, offer_discount, start_time, end_time, is_active]
@@ -551,19 +563,6 @@ exports.setOfferData = async (product_id, offer_price, offer_discount, start_tim
     if (insertDiscount.affectedRows === 0) {
         throw new Error("Failed to insert discount.")
     }
-    // const insertId = insertDiscount.insertId
-    // const offers = await runQuery(`SELECT 
-    //                             pd.*,
-    //                             pp.mrp,
-    //                             pp.price,
-    //                             ROUND(pp.mrp - (pp.mrp * pd.discount_percentage / 100), 2) AS offer_selling_price
-    //                             FROM product_discounts pd
-    //                             JOIN product_pricing pp ON pd.product_id = pp.product_id
-    //                                 AND NOW() BETWEEN pp.start_time AND pp.end_time
-    //                             WHERE pd.product_id = ?
-    //                                 AND pd.id = ?`,[product_id, insertId]);
-
-    // console.log([offers]);
 
     const newOffers = await this.getOffersData(product_id)
     return newOffers
@@ -577,7 +576,6 @@ exports.editOfferData = async (offer_id, start_time, end_time) => {
                 WHERE id = ?`,
             [start_time, offer_id]
         );
-        // console.log("start_time");
     
         if(updateStartTime.affectedRows === 0){
             throw new Error ("Could not extend start time")
@@ -590,7 +588,6 @@ exports.editOfferData = async (offer_id, start_time, end_time) => {
                 WHERE id = ?`,
             [end_time, offer_id]
         );
-        // console.log("end_time");
     
         if(updateEndTime.affectedRows === 0){
             throw new Error ("Could not extend end time")
