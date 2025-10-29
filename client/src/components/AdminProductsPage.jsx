@@ -17,7 +17,6 @@ import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import IconButton from '@mui/material/IconButton';
 import CancelIcon from '@mui/icons-material/Cancel';
-
 import dayjs from 'dayjs';
 import { DemoContainer, DemoItem } from '@mui/x-date-pickers/internals/demo';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -256,7 +255,7 @@ function AdminProductsPage() {
     }
 
     const revertRemoval = () => {
-        setData(prev => ({ ...prev, images: [...prev.images, ...toDelete] }))
+        setData(prev => ({ ...prev, image: [...prev.image, ...toDelete] }))
         setToDelete([])
         setEditable(false)
     }
@@ -360,493 +359,313 @@ function AdminProductsPage() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-        {
-            data ?
+        {data &&
             <TabContext value={page}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <TabList onChange={handlePageChange} aria-label="lab API tabs example">
-                    <Tab label="Details" value={1} />
-                    <Tab label="Offers" value={2} />
-                </TabList>
+                    <TabList onChange={handlePageChange} aria-label="lab API tabs example">
+                        <Tab label="Details" value={1} />
+                        <Tab label="Offers" value={2} />
+                    </TabList>
                 </Box>
                 <TabPanel value={1} sx={{px: 0}}>
-                    {/* <Card sx={{py: 4, px: 2}}> */}
-                        <Box sx={{ display: "flex", justifyContent: "space-around" }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                                <Card sx={{}}>
-                                    <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>THUMBNAIL</Typography>
-                                    <CardMedia
-                                        component="img"
-                                        sx={{ width: 385, height: 405, objectFit: "contain" }}
-                                        image={thumbnailPreview ? thumbnailPreview.url : getImageUrl(data.thumbnail)}
-                                        alt="Product Image"
-                                    />
-                                </Card>
-                                <Button
-                                    sx={{ ml: "auto", mt: 1 }}
-                                    component="label"
-                                    role={undefined}
-                                    variant="contained"
-                                    tabIndex={-1}
-                                    startIcon={<CloudUploadIcon />}
-                                >
-                                    Change THumbnail
-                                    <VisuallyHiddenInput
-                                        type="file"
-                                        onChange={uploadThumbnail}
-                                    />
-                                </Button>
+                    <Box sx={{ display: "flex", justifyContent: "space-around" }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                            <Card sx={{}}>
+                                <Typography 
+                                    sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>
+                                        THUMBNAIL
+                                </Typography>
+                                <CardMedia
+                                    component="img"
+                                    sx={{ width: 385, height: 405, objectFit: "contain" }}
+                                    image={thumbnailPreview ? thumbnailPreview.url : getImageUrl(data.thumbnail)}
+                                    alt="Product Image"
+                                />
+                            </Card>
+                            <Button
+                                sx={{ ml: "auto", mt: 1 }}
+                                component="label"
+                                role={undefined}
+                                variant="contained"
+                                tabIndex={-1}
+                                startIcon={<CloudUploadIcon />}
+                            >
+                                Change THumbnail
+                                <VisuallyHiddenInput
+                                    type="file"
+                                    onChange={uploadThumbnail}
+                                />
+                            </Button>
 
-                                <Box sx={{ mt: 2 }}>
-                                    <Card sx={{ bgcolor: "#F8F8F8" }}>
-
-                                        <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>PRODUCT IMAGES - ({data.image.length})</Typography>
-                                        {
-                                            data.image.length > 0 ?
-                                                <ImageList sx={{ width: 385, maxHeight: 405, height: "auto", p: 1 }} cols={2} rowHeight={"auto"} gap={5}>
-                                                    {
-                                                        data.image.map((item, index) => (
-                                                            <ImageListItem key={index}>
-                                                                <Paper elevation={3}>
-                                                                    {
-                                                                        editable ?
-                                                                            <IconButton
-                                                                                onClick={() => markToRemove(item)}
-                                                                                sx={{ position: "absolute", top: 0, right: 0 }}>
-                                                                                <CancelIcon></CancelIcon>
-                                                                            </IconButton>
-                                                                            :
-                                                                            null
-                                                                    }
-                                                                    <img
-                                                                        src={getImageUrl(item.image)}
-                                                                        alt={item.image}
-                                                                        style={{ height: "100%", width: "100%", objectFit: "cover" }}
-                                                                        loading="lazy"
-                                                                    />
-                                                                </Paper>
-                                                            </ImageListItem>
-                                                        ))
-                                                    }
-                                                </ImageList>
-                                                :
-                                                <Box sx={{ width: 385, height: 50 }}>
-                                                    <Typography >No Images for this Product</Typography>
-                                                </Box>
-                                        }
-                                    </Card>
-                                    {
-                                        showPreview && imagePreview.length > 0 ?
-                                            <Box sx={{ width: 385, height: "auto", py: 1, }}>
-                                                <Card sx={{ p: 1 }}>
-                                                    <Grid
-                                                        container
-                                                        spacing={2}
-                                                        columns={9}
-                                                    >
-                                                        {
-                                                            imagePreview.map(item => (
-                                                                <Grid key={item.url} size={3} sx={{ display: "flex", justifyContent: "center", alignItems: 'center' }}>
-                                                                    <Box sx={{ position: "relative" }}>
-                                                                        <IconButton
-                                                                            onClick={() => handleCancel(item)}
-                                                                            sx={{ position: "absolute", top: 0, right: 0 }}>
-                                                                            <CancelIcon></CancelIcon>
-                                                                        </IconButton>
-                                                                        <img src={item.url} style={{ width: 100, objectFit: "contain" }} />
-                                                                    </Box>
-                                                                </Grid>
-                                                            ))
-                                                        }
-                                                    </Grid>
-                                                </Card>
-                                            </Box>
-                                            :
-                                            null
+                            <Box sx={{ mt: 2 }}>
+                                <Card sx={{ bgcolor: "#F8F8F8" }}>
+                                    <Typography 
+                                        sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>
+                                            PRODUCT IMAGES - ({data.image.length})
+                                    </Typography>
+                                    {data.image.length > 0 ?
+                                        <ImageList sx={{ width: 385, maxHeight: 405, height: "auto", p: 1 }} cols={2} rowHeight={"auto"} gap={5}>
+                                            {
+                                                data.image.map((item, index) => (
+                                                    <ImageListItem key={index}>
+                                                        <Paper elevation={3}>
+                                                            {
+                                                                editable ?
+                                                                    <IconButton
+                                                                        onClick={() => markToRemove(item)}
+                                                                        sx={{ position: "absolute", top: 0, right: 0 }}>
+                                                                        <CancelIcon></CancelIcon>
+                                                                    </IconButton>
+                                                                    :
+                                                                    null
+                                                            }
+                                                            <img
+                                                                src={getImageUrl(item.image)}
+                                                                alt={item.image}
+                                                                style={{ height: "100%", width: "100%", objectFit: "cover" }}
+                                                                loading="lazy"
+                                                            />
+                                                        </Paper>
+                                                    </ImageListItem>
+                                                ))
+                                            }
+                                        </ImageList>
+                                        :
+                                        <Box sx={{ width: 385, height: 50 }}>
+                                            <Typography >No Images for this Product</Typography>
+                                        </Box>
                                     }
-                                    <Box sx={{ display: "flex", justifyContent: "space-around", gap: 2, mt: 2 }}>
-                                        {
-                                            !editable ?
-                                                <Button
-                                                    component="label"
-                                                    role={undefined}
-                                                    variant="contained"
-                                                    tabIndex={-1}
-                                                    startIcon={<CloudUploadIcon />}
-                                                >
-                                                    Upload Images
-                                                    <VisuallyHiddenInput
-                                                        type="file"
-                                                        onChange={handleImagePreview}
-                                                        multiple
-                                                    />
-                                                </Button>
-                                                :
-                                                null
-                                        }
-                                        {
-                                            imagePreview.length > 0 ?
-                                                <Button onClick={handleUpload} variant='contained'>Submit</Button>
-                                                :
-                                                null
-                                        }
-                                        {
-                                            !editable && imagePreview.length === 0 ?
-                                                <Button onClick={() => setEditable(true)} variant='contained'>Remove Images</Button>
-                                                : null
-                                        }
-                                        {
-                                            editable ?
-                                                <Box>
-                                                    <Button onClick={revertRemoval} variant='contained' color='error' sx={{ mr: 2 }}>Cancel</Button>
-                                                    <Button onClick={removeRequest} variant='contained'>Confirm</Button>
-                                                </Box>
-                                                : null
-                                        }
+                                </Card>
+                                {showPreview && imagePreview.length > 0 &&
+                                    <Box sx={{ width: 385, height: "auto", py: 1, }}>
+                                        <Card sx={{ p: 1 }}>
+                                            <Grid
+                                                container
+                                                spacing={2}
+                                                columns={9}
+                                            >
+                                                {
+                                                    imagePreview.map(item => (
+                                                        <Grid key={item.url} size={3} sx={{ display: "flex", justifyContent: "center", alignItems: 'center' }}>
+                                                            <Box sx={{ position: "relative" }}>
+                                                                <IconButton
+                                                                    onClick={() => handleCancel(item)}
+                                                                    sx={{ position: "absolute", top: 0, right: 0 }}>
+                                                                    <CancelIcon></CancelIcon>
+                                                                </IconButton>
+                                                                <img src={item.url} style={{ width: 100, objectFit: "contain" }} />
+                                                            </Box>
+                                                        </Grid>
+                                                    ))
+                                                }
+                                            </Grid>
+                                        </Card>
                                     </Box>
+                                }
+                                <Box sx={{ display: "flex", justifyContent: "space-around", gap: 2, mt: 2 }}>
+                                    {!editable &&
+                                        <Button
+                                            component="label"
+                                            role={undefined}
+                                            variant="contained"
+                                            tabIndex={-1}
+                                            startIcon={<CloudUploadIcon />}
+                                        >
+                                            Upload Images
+                                            <VisuallyHiddenInput
+                                                type="file"
+                                                onChange={handleImagePreview}
+                                                multiple
+                                            />
+                                        </Button>
+                                    }
+                                    {imagePreview.length > 0 &&
+                                        <Button onClick={handleUpload} variant='contained'>Submit</Button>
+                                    }
+                                    {!editable && imagePreview.length === 0 &&
+                                            <Button 
+                                                onClick={() => setEditable(true)} 
+                                                variant='contained'>
+                                                    Remove Images
+                                            </Button>
+                                    }
+                                    {editable &&
+                                        <Box>
+                                            <Button onClick={revertRemoval} variant='contained' color='error' sx={{ mr: 2 }}>Cancel</Button>
+                                            <Button onClick={removeRequest} variant='contained'>Confirm</Button>
+                                        </Box>
+                                    }
                                 </Box>
                             </Box>
-                            <Box sx={{ display: "flex", alignItems: "flex-start", flexDirection: "column" }}>
-                                <Card sx={{ width: "100%", mb: 3 }}>
-                                    <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>PRODUCT STATUS</Typography>
-                                    <Box sx={{ p: 2 }}>
-                                        <Typography color={productStatus === "active" ? 'success' : 'warning'} sx={{ fontSize: 30, fontWeight: 500, pb: 1 }}>{productStatus.toUpperCase()}</Typography>
-                                        <Button variant='contained' sx={{ width: "100%" }} onClick={updateStatus}>Mark as {productStatus === "active" ? "Inactive" : "Active"}</Button>
-                                    </Box>
-                                </Card>
-                                <Card sx={{ p: 2 }}>
-                                    <form key={data?.id || "loading"} onSubmit={handleSubmit(handleEdit)} noValidate>
-                                        <Stack spacing={3} width={{ lg: 600, md: 400 }}>
-                                            <Typography>Product Details </Typography>
-
-                                            {/* <Box sx={{ display: "inline-flex" }}> */}
-                                            <TextField multiline label="Title" type='text' sx={{ width: "100%", mr: 1 }} {...register("title", {
-                                                required: {
-                                                    value: true,
-                                                    message: "Title is required"
-                                                },
-                                                pattern: {
-                                                    value: /^.{5,}$/,
-                                                    message: "Title must be 5 or more characters"
-                                                },
-                                            })}
-                                                error={!!errors.title}
-                                                helperText={errors.title ? errors.title.message : ""}
-                                            />
-                                            <TextField label="Brand" type='text' sx={{ width: "100%" }} {...register("brand", {
-                                                required: {
-                                                    value: true,
-                                                    message: "Brand is required"
-                                                }
-                                            })}
-                                                error={!!errors.brand}
-                                                helperText={errors.brand ? errors.brand.message : ""}
-                                            />
-                                            {/* </Box> */}
-
-                                            <TextField multiline label="Description" type='text' {...register("description", {
-                                                required: {
-                                                    value: true,
-                                                    message: "Description is required"
-                                                },
-                                                pattern: {
-                                                    value: /^.{5,}$/,
-                                                    message: "Description must be 5 characters or more characters"
-                                                }
-                                            })}
-                                                error={!!errors.description}
-                                                helperText={errors.description ? errors.description.message : ""}
-                                            />
-
-                                            {/* <TextField multiline label="Category" type='text' {...register("category", {
-                                    required: {
-                                        value: true,
-                                        message: "Category is required"
-                                    },
-                                    pattern: {
-                                        value: /^.{5,}$/,
-                                        message: "Category must be 5 characters or more characters"
-                                    }
-                                })}
-                                    error={!!errors.category}
-                                    helperText={errors.category ? errors.category.message : ""}
-                                /> */}
-
-                                            <Controller
-                                                control={control}
-                                                name="category"
-                                                rules={{ required: "Category is required" }}
-                                                // defaultValue={null}
-                                                render={({ field: { onChange, value } }) => (
-                                                    <Autocomplete
-                                                        freeSolo
-                                                        options={categories}
-                                                        getOptionLabel={(option) =>
-                                                            typeof option === "string" ? option : option.category || ""
-                                                        }
-                                                        isOptionEqualToValue={(option, val) => option.id === val.id}
-                                                        value={value}
-                                                        onInputChange={(event, newInputValue) => {
-                                                            onChange({ id: null, category: newInputValue });
-                                                        }}
-                                                        onChange={(event, newValue) => {
-                                                            onChange(newValue);
-                                                        }}
-                                                        renderInput={(params) => (
-                                                            <TextField
-                                                                {...params}
-                                                                label="Search & Select Category"
-                                                                variant="outlined"
-                                                                error={!!errors.category}
-                                                                helperText={
-                                                                    errors.category
-                                                                        ? errors.category.message
-                                                                        : "Select an existing or add a new category"
-                                                                }
-                                                            />
-                                                        )}
-                                                    />
-                                                )}
-                                            />
-
-                                            <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
-                                                required: {
-                                                    value: true,
-                                                    message: "Stock is required"
-                                                },
-                                                pattern: {
-                                                    value: /^[0-9]{0,}$/,
-                                                    message: "Stock must be in digits only"
-                                                }
-                                            })}
-                                                error={!!errors.stock}
-                                                helperText={errors.stock ? errors.stock.message : ""}
-                                            />
-
-                                            {/* <Typography variant="h6" gutterBottom>Base Pricing</Typography> */}
-                                            <Box sx={{ display: "flex" }}>
-                                                {/* <Divider sx={{ mb: 2 }} /> */}
-
-                                                {/* <Stack spacing={2}> */}
-                                                <TextField
-                                                    label="Base MRP ($)"
-                                                    type="text"
-                                                    {...register("base_mrp", {
-                                                        required: {
-                                                            value: true,
-                                                            message: "Base MRP is required"
-                                                        },
-                                                        pattern: {
-                                                            value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                                            message: "Not a valid price format"
-                                                        }
-                                                    })}
-                                                    error={!!errors.base_mrp}
-                                                    helperText={errors.base_mrp ? errors.base_mrp.message : ""}
-                                                    sx={{ width: "40%", pr: 1 }}
-                                                />
-
-                                                <TextField
-                                                    label="Base Selling Price ($)"
-                                                    type="text"
-                                                    {...register("base_price", {
-                                                        required: {
-                                                            value: true,
-                                                            message: "Base Selling Price is required"
-                                                        },
-                                                        pattern: {
-                                                            value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                                            message: "Not a valid price format"
-                                                        }
-                                                    })}
-                                                    error={!!errors.base_price}
-                                                    helperText={errors.base_price ? errors.base_price.message : ""}
-                                                    sx={{ width: "40%", pr: 1 }}
-                                                />
-
-                                                <TextField
-                                                    label="Base Discount (%)"
-                                                    type='text'
-                                                    // {...register("base_discount", {
-                                                    //     required: {
-                                                    //         value: true,
-                                                    //         message: "Base Discount (%) is required"
-                                                    //     }
-                                                    // })}
-                                                    value={calcDiscount(base_mrp, base_price)}
-                                                    disabled
-                                                />
-                                                {/* </Stack> */}
-                                            </Box>
-
-                                            {/* {
-                                                data.offer_discount ?
-                                                    <Box>
-                                                        <Typography variant="h6">Current Offer</Typography>
-                                                        <Typography>Price: ${data.offer_price}</Typography>
-                                                        <Typography>Discount: {data.offer_discount}%</Typography>
-                                                        <Typography>Start Time: {dayjs(data.offer_start_time).format('DD/MM/YYYY h:mm:ss A')}</Typography>
-                                                        <Typography>End Time: {dayjs(data.offer_end_time).format('DD/MM/YYYY h:mm:ss A')}</Typography>
-                                                    </Box>
-                                                    :
-                                                    null
-                                            } */}
-
-
-                                            {/* <Typography variant="h6" gutterBottom mt={4}>Add Offer Pricing (Optional)</Typography> */}
-                                            {/* <Box sx={{ display: "flex" }}> */}
-
-                                                {/* <TextField label="Offer MRP ($)" type='text' {...register("offer_mrp", {
-                                                    // required: {
-                                                    //     value: true,
-                                                    //     message: "Offer MRP is required"
-                                                    // },
-                                                    pattern: {
-                                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                                        message: "Not a valid price format"
-                                                    }
-                                                })}
-                                                    error={!!errors.offer_mrp}
-                                                    helperText={errors.offer_mrp ? errors.offer_mrp.message : ""}
-                                                    sx={{width: "40%", pr: 1}}
-                                                /> */}
-                                                {/* <TextField label="Offer Selling Price ($)" type='text' {...register("offer_price", {
-                                                    // required: {
-                                                    //     value: true,
-                                                    //     message: "Offer Selling Price is required"
-                                                    // },
-                                                    pattern: {
-                                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                                        message: "Not a valid price format"
-                                                    }
-                                                })}
-                                                    error={!!errors.offer_price}
-                                                    helperText={errors.offer_price ? errors.offer_price.message : ""}
-                                                    sx={{ width: "60%", pr: 1 }}
-                                                />
-
-                                                <TextField label="Offer Discount (%)" type="text"
-                                                    // {...register("offer_discount", {
-                                                    //     required: {
-                                                    //         value: true,
-                                                    //         message: "Offer Discount (%) is required"
-                                                    //     }
-                                                    // })}
-                                                    value={calcDiscount(base_mrp, offer_price)}
-                                                    // slotProps={{
-                                                    //     input: {
-                                                    //     readOnly: true,
-                                                    //     },
-                                                    // }}
-                                                    disabled
-                                                    sx={{ width: "40%" }}
-                                                >
-
-                                                </TextField>
-                                            </Box>
-                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                                <DemoContainer
-                                                    components={[
-                                                        'DateTimePicker'
-                                                    ]}
-                                                >
-                                                    <DemoItem label="Sale Start">
-                                                        <Controller
-                                                            control={control}
-                                                            // defaultValue={dayjs()}
-                                                            name="start_time"
-                                                            // rules={{ required: "Start Date is required" }}
-                                                            render={({ field }) => (
-                                                                <DateTimePicker
-                                                                    disablePast
-                                                                    // value={field.value}
-                                                                    inputRef={field.ref}
-                                                                    onChange={(date) => {
-                                                                        field.onChange(date);
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        />
-                                                    </DemoItem>
-                                                    <DemoItem label="Sale End">
-                                                        <Controller
-                                                            control={control}
-                                                            // defaultValue={dayjs().add(1, 'day')}
-                                                            name="end_time"
-                                                            // rules={{ required: "End Date is required" }}
-                                                            render={({ field }) => (
-                                                                <DateTimePicker
-                                                                    disablePast
-                                                                    // value={field.value}
-                                                                    inputRef={field.ref}
-                                                                    onChange={(date) => {
-                                                                        field.onChange(date);
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        />
-                                                    </DemoItem>
-                                                </DemoContainer>
-                                            </LocalizationProvider> */}
-
-                                            <Button type='submit' variant="contained">Save Changes</Button>
-                                        </Stack>
-                                    </form>
-                                </Card>
-
-                            </Box>
                         </Box>
-                    {/* </Card> */}
+                        <Box sx={{ display: "flex", alignItems: "flex-start", flexDirection: "column" }}>
+                            <Card sx={{ width: "100%", mb: 3 }}>
+                                <Typography sx={{ p: 1, fontSize: "16px", bgcolor: "#3B92CA", color: "white" }}>
+                                    PRODUCT STATUS
+                                </Typography>
+                                <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                    <Typography 
+                                        color={productStatus === "active" ? 'success' : 'warning'} 
+                                        sx={{ fontSize: 30, fontWeight: 500}}
+                                    >
+                                        {productStatus.toUpperCase()}
+                                    </Typography>
+                                    <Button variant='contained' onClick={updateStatus}>
+                                        Mark as {productStatus === "active" ? "Inactive" : "Active"}
+                                    </Button>
+                                </Box>
+                            </Card>
+                            <Card sx={{ p: 2 }}>
+                                <form key={data?.id || "loading"} onSubmit={handleSubmit(handleEdit)} noValidate>
+                                    <Stack spacing={3} width={{ lg: 600, md: 400 }}>
+                                        <Typography>Product Details </Typography>
+
+                                        <TextField multiline label="Title" type='text' sx={{ width: "100%", mr: 1 }} {...register("title", {
+                                            required: {
+                                                value: true,
+                                                message: "Title is required"
+                                            },
+                                            pattern: {
+                                                value: /^.{5,}$/,
+                                                message: "Title must be 5 or more characters"
+                                            },
+                                        })}
+                                            error={!!errors.title}
+                                            helperText={errors.title ? errors.title.message : ""}
+                                        />
+                                        <TextField label="Brand" type='text' sx={{ width: "100%" }} {...register("brand", {
+                                            required: {
+                                                value: true,
+                                                message: "Brand is required"
+                                            }
+                                        })}
+                                            error={!!errors.brand}
+                                            helperText={errors.brand ? errors.brand.message : ""}
+                                        />
+
+                                        <TextField multiline label="Description" type='text' {...register("description", {
+                                            required: {
+                                                value: true,
+                                                message: "Description is required"
+                                            },
+                                            pattern: {
+                                                value: /^.{5,}$/,
+                                                message: "Description must be 5 characters or more characters"
+                                            }
+                                        })}
+                                            error={!!errors.description}
+                                            helperText={errors.description ? errors.description.message : ""}
+                                        />
+
+                                        <Controller
+                                            control={control}
+                                            name="category"
+                                            rules={{ required: "Category is required" }}
+                                            // defaultValue={null}
+                                            render={({ field: { onChange, value } }) => (
+                                                <Autocomplete
+                                                    freeSolo
+                                                    options={categories}
+                                                    getOptionLabel={(option) =>
+                                                        typeof option === "string" ? option : option.category || ""
+                                                    }
+                                                    isOptionEqualToValue={(option, val) => option.id === val.id}
+                                                    value={value}
+                                                    onInputChange={(event, newInputValue) => {
+                                                        onChange({ id: null, category: newInputValue });
+                                                    }}
+                                                    onChange={(event, newValue) => {
+                                                        onChange(newValue);
+                                                    }}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Search & Select Category"
+                                                            variant="outlined"
+                                                            error={!!errors.category}
+                                                            helperText={
+                                                                errors.category
+                                                                    ? errors.category.message
+                                                                    : "Select an existing or add a new category"
+                                                            }
+                                                        />
+                                                    )}
+                                                />
+                                            )}
+                                        />
+
+                                        <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
+                                            required: {
+                                                value: true,
+                                                message: "Stock is required"
+                                            },
+                                            pattern: {
+                                                value: /^[0-9]{0,}$/,
+                                                message: "Stock must be in digits only"
+                                            }
+                                        })}
+                                            error={!!errors.stock}
+                                            helperText={errors.stock ? errors.stock.message : ""}
+                                        />
+
+                                        <Box sx={{ display: "flex" }}>
+                                            <TextField
+                                                label="MRP ($)"
+                                                type="text"
+                                                {...register("base_mrp", {
+                                                    required: {
+                                                        value: true,
+                                                        message: "MRP is required"
+                                                    },
+                                                    pattern: {
+                                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                                        message: "Not a valid price format"
+                                                    }
+                                                })}
+                                                error={!!errors.base_mrp}
+                                                helperText={errors.base_mrp ? errors.base_mrp.message : ""}
+                                                sx={{ width: "40%", pr: 1 }}
+                                            />
+
+                                            <TextField
+                                                label="Selling Price ($)"
+                                                type="text"
+                                                {...register("base_price", {
+                                                    required: {
+                                                        value: true,
+                                                        message: "Selling Price is required"
+                                                    },
+                                                    pattern: {
+                                                        value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
+                                                        message: "Not a valid price format"
+                                                    }
+                                                })}
+                                                error={!!errors.base_price}
+                                                helperText={errors.base_price ? errors.base_price.message : ""}
+                                                sx={{ width: "40%", pr: 1 }}
+                                            />
+
+                                            <TextField
+                                                label="Discount (%)"
+                                                type='text'
+                                                value={calcDiscount(base_mrp, base_price)}
+                                                disabled
+                                            />
+                                        </Box>
+                                        <Button type='submit' variant="contained">Save Changes</Button>
+                                    </Stack>
+                                </form>
+                            </Card>
+                        </Box>
+                    </Box>
                 </TabPanel>
                 <TabPanel value={2} sx={{px: 0}}>
                     <Box>
                         <LimitedTimeOffers mrp={data.mrp} productId={productId}/>
                     </Box>
                 </TabPanel>
-
-                    {/* <Box sx={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}> */}
-                    <Box>
-                        
-                        {/* {
-                            offers && offers.length > 0 ? */}
-                                {/* <Card sx={{ p: 2, mt: 2}}> */}
-                                    {/* <LimitedTimeOffers offers={offers} productId={productId}/> */}
-                        
-                                    {/* {
-                                        offers.map(offer => (
-                                            <Card key={offer.id} sx={{ p: 2 }}>
-                                                <TextField label="Offer Selling Price ($)" type='text'
-                                                    // {...register("offer_price", {
-                                                    //     // required: {
-                                                    //     //     value: true,
-                                                    //     //     message: "Offer Selling Price is required"
-                                                    //     // },
-                                                    //     pattern: {
-                                                    //         value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                                                    //         message: "Not a valid price format"
-                                                    //     }
-                                                    // })}
-                                                    // error={!!errors.offer_price}
-                                                    // helperText={errors.offer_price ? errors.offer_price.message : ""}
-                                                    // sx={{width: "60%", pr: 1}}
-                                                    // defaultValue={null}
-                                                    value={offer.offer_selling_price || ""}
-                                                />
-                                                <TextField label="Discount" type='text'
-                                                    value={`${offer.discount_percentage} %` || ""}
-                                                />
-                                            </Card>
-                                        ))
-                                    } */}
-                                {/* </Card>
-                                :
-                                null */}
-                        {/* } */}
-                    </Box>
-                    </TabContext>
-                    :
-                    null
-            }
+            </TabContext>
+        }
         </Box>
     )
 }

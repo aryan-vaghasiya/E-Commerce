@@ -102,7 +102,12 @@ exports.searchProductsElastic = async (filters = {}) => {
 
     const {query: searchTerm, limit, offset} = filters
 
-    const mainFilterClauses = [];
+    const mainFilterClauses = [{
+        term: {
+            status: "active"
+        }
+    }];
+    // const mainFilterClauses = [];
     const postFilterClauses = [];
     const sortClause = [];
 
@@ -218,34 +223,6 @@ exports.searchProductsElastic = async (filters = {}) => {
                         size: 100
                     }
                 },
-                // filtered_price_stats: {
-                //     filter: {
-                //         bool: {
-                //             filter: aggFilterClauses
-                //         }
-                //     },
-                //     aggs: {
-                //         price_stats: {
-                //             stats: { field: "price" }
-                //         }
-                //     }
-                // },
-                // filtered_brands: {
-                //     filter: {
-                //         bool: {
-                //             // filter: aggFilterClauses
-                //             filter: priceFilter ? [priceFilter] : []
-                //         }
-                //     },
-                //     aggs: {
-                //         brands: {
-                //             terms: {
-                //                 field: "brand.keyword",
-                //                 size: 100
-                //             }
-                //         }
-                //     }
-                // }
             },
             post_filter: {
                 bool: {

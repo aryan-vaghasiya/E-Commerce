@@ -184,13 +184,11 @@ exports.deleteProductOffer = async (req, res) => {
 exports.setEditedProduct = async (req, res) => {
     const {id, title, brand, description, category, base_price, stock, base_discount, base_mrp} = req.body;
 
-    // console.log(category);
     const localTime = new Date(new Date().toISOString().slice(0, 19)+"-05:30")
     const currentTime = localTime.toISOString().slice(0, 19).replace('T', ' ')
     const tenYearsLater = (parseInt(localTime.toISOString().slice(0,4)) + 10)+ localTime.toISOString().slice(4, 19).replace('T', ' ')
 
     try{
-        // await adminServices.setProductData(id, title, brand, description, price, stock, discount, mrp, start_time ?? currentTime, end_time ?? tenYearsLater);
         await adminServices.setProductData(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, tenYearsLater, currentTime);
         return res.status(200).send("Product Edited Successfully");
     }
@@ -205,7 +203,6 @@ exports.uploadProductImages = async (req, res) => {
     const files = req.files
     const imagePaths = files.map(file => `/uploads/products/${productId}/${file.filename}`);
 
-    // console.log(productId, files);
     try{
         const newImages = await adminServices.setProductImages(productId, imagePaths);
         res.status(200).json(newImages);
@@ -215,16 +212,12 @@ exports.uploadProductImages = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
 exports.uploadProductThumbnail = async (req, res) => {
     const productId = req.params.id
     const file = req.file
-    // console.log(productId, file);
-
     const imagePath = `/uploads/products/${productId}/${file.filename}`
 
-
-    // const thumbnail = imagePath;
-    // await runQuery("UPDATE products SET thumbnail = ? WHERE id = ?", [thumbnail, productId]);
     try{
         await adminServices.setThumbnail(productId, imagePath);
         res.status(200).send("Thumbnail Added Successfully");
@@ -237,7 +230,6 @@ exports.uploadProductThumbnail = async (req, res) => {
 
 exports.removeProductImages = async (req, res) => {
     const toDeleteIds = req.body;
-    // console.log(toDeleteIds);
 
     try{
         await adminServices.removeImages(toDeleteIds);
@@ -252,7 +244,6 @@ exports.removeProductImages = async (req, res) => {
 exports.addProductDetails = async(req, res) => {
     const {title, brand, description, price, status, stock, mrp, discount, selected_category} = req.body
 
-    // console.log(selected_category);
     try{
         const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount, selected_category);
         return res.status(200).json(productId)

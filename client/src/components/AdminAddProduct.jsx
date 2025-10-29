@@ -5,10 +5,9 @@ import Stack from '@mui/material/Stack'
 import { styled } from '@mui/material/styles'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import Paper from '@mui/material/Paper'
 import CancelIcon from '@mui/icons-material/Cancel';
 import IconButton from '@mui/material/IconButton'
 import ImageList from '@mui/material/ImageList'
@@ -26,7 +25,6 @@ import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 
-
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
     clipPath: 'inset(50%)',
@@ -43,14 +41,12 @@ function AdminAddProduct() {
 
     const token = useSelector(state => state.userReducer.token)
     const snackbarState = useSelector(state => state.snackbarReducer)
-    const { register, handleSubmit, control, getValues, reset, watch, setValue, formState: { errors } } = useForm({})
+    const { register, handleSubmit, control, trigger, watch, setValue, formState: { errors } } = useForm({})
     const [thumbnailPreview, setThumbnailPreview] = useState(null)
     const [imagesPreview, setImagesPreview] = useState([])
-    const [productStatus, setProductStatus] = useState('')
     const navigate = useNavigate()
     const [inputMrp, inputPrice] = watch(["mrp", "price"])
     const [categories, setCategories] = useState([])
-    const [selectedCategory, setSelectedCategory] = useState(null)
     const dispatch = useDispatch()
 
     const getAllCategories = async () => {
@@ -66,7 +62,6 @@ function AdminAddProduct() {
                 return console.error(error.error);
             }
             const categories = await response.json()
-            // console.log(categories);
             setCategories(categories)
         }
         catch(err){
@@ -75,11 +70,19 @@ function AdminAddProduct() {
     }
 
     useEffect(() => {
-        // if(inputMrp < inputPrice){
-        //     return setValue("discount", "MRP < Price !!!")
+        const mrp = parseFloat(inputMrp)
+        const price = parseFloat(inputPrice)
+
+        // const percentage = ((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100) * -1
+        const percentage = ((mrp - price)/mrp) * 100
+        setValue("discount", (percentage).toFixed(2) || 0.00)
+
+        // if(mrp && price > mrp){
+        //     trigger("price")
         // }
-        const percentage = Math.abs((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100)
-        setValue("discount", percentage || 0)
+        if(mrp && price){
+            trigger("price")
+        }
     }, [inputMrp, inputPrice])
 
     useEffect(() => {
@@ -98,7 +101,7 @@ function AdminAddProduct() {
             console.error("At least 1 Product Image is required");
             return
         }
-        // console.log("ran");
+
         try{
             const res = await fetch(`http://localhost:3000/admin/product/add`, {
                 method: "POST",
@@ -115,7 +118,6 @@ function AdminAddProduct() {
             else{
                 return console.error("Could not add Details")
             }
-            // console.log(productId);
 
             const formDataThumb = new FormData()
             const thumbnailFile = thumbnailPreview.file
@@ -123,27 +125,26 @@ function AdminAddProduct() {
 
             const thumbUpload = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
                 method: "POST",
-                body: formDataThumb,
                 headers: {
                     Authorization: `Bearer ${token}`,
                     // "Content-Type": "multipart/form-data"
-                }
+                },
+                body: formDataThumb
             })
 
             const formDataImages = new FormData()
             const imagesFiles = imagesPreview.map(item => item.file)
-            // console.log(imagesFiles);
 
             for (let i = 0; i < imagesFiles.length; i++) {
                 formDataImages.append("images", imagesFiles[i]);
             }
             const imagesUpload = await fetch(`http://localhost:3000/admin/upload/product/${productId}`, {
                 method: "POST",
-                body: formDataImages,
                 headers: {
                     Authorization: `Bearer ${token}`,
                     // "Content-Type": "multipart/form-data"
-                }
+                },
+                body: formDataImages
             })
             navigate("/admin/products")
         }
@@ -155,12 +156,13 @@ function AdminAddProduct() {
     const handleThumbnailPreview = (event) => {
         const file = event.target.files[0]
         const url = URL.createObjectURL(file)
-        // console.log({file, url});
         
         setThumbnailPreview({file, url})
     }
 
     const handleImagesPreview = (event) => {
+        console.log(imagesPreview);
+        
         const files = event.target.files;
         const newFilePreviews = []
 
@@ -169,16 +171,14 @@ function AdminAddProduct() {
             const objectURL = URL.createObjectURL(file);
             newFilePreviews.push({file, url: objectURL});
         }
+        console.log(newFilePreviews);
+        
         setImagesPreview(prev => [...prev, ...newFilePreviews]);
     }
 
     const removeImagesPreview = (image) => {
         const filtered = imagesPreview.filter(item => item.url !== image.url)
         setImagesPreview(filtered)
-    }
-
-    const handleStatusChange = (event) => {
-        setProductStatus(event.target.value)
     }
 
     return (
@@ -197,12 +197,11 @@ function AdminAddProduct() {
             </Alert>
         </Snackbar>
         <Box sx={{ display: "flex", justifyContent: "center"}}>
-        <Card sx={{p: 2}}>
-            <form onSubmit={handleSubmit(submitProduct)} noValidate>
-                <Stack spacing={3} width={{ md: 600, sm: 400}}>
-                    <Typography>Product Details </Typography>
+            <Card sx={{p: 2}}>
+                <form onSubmit={handleSubmit(submitProduct)} noValidate>
+                    <Stack spacing={3} width={{ md: 600, sm: 400}}>
+                        <Typography>Product Details </Typography>
 
-                    {/* <Box sx={{ display: "inline-flex" }}> */}
                         <TextField multiline label="Title" type='text' sx={{ width: "100%", mr: 1 }} {...register("title", {
                             required: {
                                 value: true,
@@ -216,6 +215,7 @@ function AdminAddProduct() {
                             error={!!errors.title}
                             helperText={errors.title ? errors.title.message : ""}
                         />
+
                         <TextField label="Brand" type='text' sx={{ width: "100%" }} {...register("brand", {
                             required: {
                                 value: true,
@@ -225,104 +225,107 @@ function AdminAddProduct() {
                             error={!!errors.brand}
                             helperText={errors.brand ? errors.brand.message : ""}
                         />
-                    {/* </Box> */}
 
-                    <Controller
-                        control={control}
-                        name="selected_category"
-                        rules={{ required: "Category is required" }}
-                        defaultValue={null}
-                        render={({ field: { onChange, value } }) => (
-                            <Autocomplete
-                                freeSolo
-                                options={categories}
-                                getOptionLabel={(option) =>
-                                    typeof option === "string" ? option : option.category || ""
-                                }
-                                isOptionEqualToValue={(option, val) => option.id === val.id}
-                                value={value}
-                                onInputChange={(event, newInputValue) => {
-                                        onChange({ id: null, category: newInputValue });
-                                }}
-                                onChange={(event, newValue) => {
-                                    onChange(newValue);
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Search & Select Category"
-                                        variant="outlined"
-                                        error={!!errors.selected_category}
-                                        helperText={
-                                            errors.selected_category
-                                            ? errors.selected_category.message
-                                            : "Select an existing or add a new category"
-                                        }
-                                    />
-                                )}
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="selected_category"
+                            rules={{ required: "Category is required" }}
+                            defaultValue={null}
+                            render={({ field: { onChange, value } }) => (
+                                <Autocomplete
+                                    freeSolo
+                                    options={categories}
+                                    getOptionLabel={(option) =>
+                                        typeof option === "string" ? option : option.category || ""
+                                    }
+                                    isOptionEqualToValue={(option, val) => option.id === val.id}
+                                    value={value}
+                                    onInputChange={(event, newInputValue) => {
+                                            onChange({ id: null, category: newInputValue });
+                                    }}
+                                    onChange={(event, newValue) => {
+                                        onChange(newValue);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Search & Select Category"
+                                            variant="outlined"
+                                            error={!!errors.selected_category}
+                                            helperText={
+                                                errors.selected_category
+                                                ? errors.selected_category.message
+                                                : "Select an existing or add a new category"
+                                            }
+                                        />
+                                    )}
+                                />
+                            )}
+                        />
 
-                    <TextField multiline label="Description" type='text' {...register("description", {
-                        required: {
-                            value: true,
-                            message: "Description is required"
-                        },
-                        pattern: {
-                            value: /^.{5,}$/,
-                            message: "Description must be 5 characters or more characters"
-                        }
-                    })}
-                        error={!!errors.description}
-                        helperText={errors.description ? errors.description.message : ""}
-                    />
-
-                    <TextField label="MRP (in $)" type='text' {...register("mrp", {
-                        required: {
-                            value: true,
-                            message: "MRP is required"
-                        },
-                        pattern: {
-                            value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                            message: "Not a valid price format"
-                        }
-                    })}
-                        error={!!errors.mrp}
-                        helperText={errors.mrp ? errors.mrp.message : ""}
-                    />
-                    <Box sx={{display: "flex"}}>
-                    <TextField label="Selling Price (in $)" type='text' {...register("price", {
-                        required: {
-                            value: true,
-                            message: "Price is required"
-                        },
-                        pattern: {
-                            value: /^(0(?!\.00)|[1-9]\d{0,6})\.\d{2}$/,
-                            message: "Not a valid price format"
-                        }
-                    })}
-                        error={!!errors.price}
-                        helperText={errors.price ? errors.price.message : ""}
-                        sx={{width: "100%"}}
-                    />
-                    {
-                        inputMrp && inputPrice ?
-                        <TextField label="Discount Percentage" type='text' {...register("discount", {
+                        <TextField multiline label="Description" type='text' {...register("description", {
                             required: {
                                 value: true,
-                                message: "Discount Percentage is required"
+                                message: "Description is required"
+                            },
+                            pattern: {
+                                value: /^.{5,}$/,
+                                message: "Description must be 5 characters or more characters"
                             }
                         })}
-                            error={!!errors.discount}
-                            helperText={errors.discount ? errors.discount.message : ""}
-                            disabled
-                            sx={{pl: 1}}
+                            error={!!errors.description}
+                            helperText={errors.description ? errors.description.message : ""}
                         />
-                        :
-                        null
-                    }
-                    </Box>
+
+                        <TextField label="MRP (in $)" type='text' {...register("mrp", {
+                            required: {
+                                value: true,
+                                message: "MRP is required"
+                            },
+                            pattern: {
+                                value: /^(0|[1-9]\d{0,6})(\.\d{1,2})?$/,
+                                message: "Not a valid price format (Ex. 10.00)"
+                            }
+                        })}
+                            error={!!errors.mrp}
+                            helperText={errors.mrp ? errors.mrp.message : ""}
+                        />
+
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <TextField label="Selling Price (in $)" type='text' {...register("price", {
+                                required: {
+                                    value: true,
+                                    message: "Price is required"
+                                },
+                                pattern: {
+                                    value: /^(0|[1-9]\d{0,6})(\.\d{1,2})?$/,
+                                    message: "Not a valid price format (Ex. 10.00)"
+                                },
+                                validate: () => {
+                                    if(inputMrp && parseFloat(inputPrice) > parseFloat(inputMrp)){
+                                        return "Selling price can't be more than MRP"
+                                    }
+                                    return true
+                                }
+                            })}
+                                error={!!errors.price}
+                                helperText={errors.price?.message}
+                                sx={{width: "100%"}}
+                            />
+
+                            {inputMrp && inputPrice &&
+                                <TextField label="Discount (%)" type='text' {...register("discount", {
+                                    required: {
+                                        value: true,
+                                        message: "Discount Percentage is required"
+                                    }
+                                })}
+                                    error={!!errors.discount}
+                                    helperText={errors.discount ? errors.discount.message : ""}
+                                    disabled
+                                />
+                            }
+                        </Box>
 
                         <TextField label="Stock" type='text' sx={{ width: "100%" }} {...register("stock", {
                             required: {
@@ -331,29 +334,26 @@ function AdminAddProduct() {
                             },
                             pattern: {
                                 value: /^[0-9]{0,}$/,
-                                message: "Stock must be in digits only"
+                                message: "Invalid quantity"
                             }
                         })}
                             error={!!errors.stock}
                             helperText={errors.stock ? errors.stock.message : ""}
                         />
+
                         <FormControl fullWidth error={!!errors.status}>
                             <InputLabel id="product-status">Status</InputLabel>
                             <Controller
                                 name="status"
                                 control={control}
-                                // defaultValue="active"
+                                defaultValue="active"
                                 rules={{ required: "Status is required" }}
-                                
-                                // helperText={errors.status ? errors.status.message : ""}
                                 render={({field}) => (
                                     <Select
                                         {...field}
                                         labelId="product-status"
                                         label="Status"
-                                        // id="select-product-status"
                                         value={field.value ?? ""}
-                                        // onChange={handleStatusChange}
                                     >
                                         <MenuItem value={"active"}>Active</MenuItem>
                                         <MenuItem value={"inactive"}>Inactive</MenuItem>
@@ -362,13 +362,12 @@ function AdminAddProduct() {
                             />
                             {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
                         </FormControl>
-                        {
-                            thumbnailPreview? 
+
+                        {thumbnailPreview? 
                             <Box sx={{display: "flex"}}>
                             <Card elevation={3} sx={{position: "relative"}}>
                                 <Typography sx={{bgcolor: "#3B92CA", color: "white", textAlign: "center"}}>Thumbnail</Typography>
                                 <IconButton 
-                                    // onClick={() => setToDelete(prev => [...prev, item])}
                                     onClick={() => setThumbnailPreview(null)}
                                     sx={{position: "absolute", top: "15%", right: 0}}>
                                     <CancelIcon sx={{fontSize: 20}}></CancelIcon>
@@ -392,36 +391,26 @@ function AdminAddProduct() {
                                 Upload Thumbnail
                                 <VisuallyHiddenInput
                                     type="file"
-                                    // onChange={(event) => console.log(event.target.files)}
                                     onChange={handleThumbnailPreview}
-                                    // multiple
-                                    // {...register("thumbnail", {
-                                    //     required: {
-                                    //         value: true,
-                                    //         message: "Thumbnail is required"
-                                    //     }
-                                    // })}
                                 />
                             </Button>
                         }
-                        {
-                            imagesPreview.length > 0?
+
+                        {imagesPreview.length > 0 &&
                             <Card sx={{bgcolor: "#EEEEEE"}}>
-                            <Typography sx={{bgcolor: "#3B92CA", color: "white", textAlign: "left", pl: 2}}>Product Images</Typography>
-                            <ImageList sx={{ width: "100%", maxHeight: 300, height: "auto", p: 1}} cols={3} rowHeight={"auto"} gap={10}>
-                                {
-                                    imagesPreview.map(item => (
+                                <Typography sx={{bgcolor: "#3B92CA", color: "white", textAlign: "left", pl: 2}}>
+                                    Product Images
+                                </Typography>
+                                <ImageList sx={{ width: "100%", maxHeight: 300, height: "auto", p: 1}} cols={3} rowHeight={"auto"} gap={10}>
+                                    {imagesPreview.map(item => (
                                         <ImageListItem key={item.url}>
                                             <Card>
                                                 <IconButton 
-                                                    // onClick={() => setToDelete(prev => [...prev, item])}
                                                     onClick={() => removeImagesPreview(item)}
                                                     sx={{position: "absolute", top: 0, right: 0}}>
                                                     <CancelIcon sx={{fontSize: 22}}></CancelIcon>
                                                 </IconButton>
                                                 <img
-                                                    // srcSet={`${item}?w=164&h=164&fit=crop&auto=format&dpr=2 2x`}
-                                                    // src={`${item}?w=164&h=164&fit=crop&auto=format`}
                                                     src={item.url}
                                                     alt={item.url}
                                                     style={{ objectFit: "cover"}}
@@ -429,11 +418,9 @@ function AdminAddProduct() {
                                                 />
                                             </Card>
                                         </ImageListItem>
-                                    ))
-                                }
-                            </ImageList>
+                                    ))}
+                                </ImageList>
                             </Card>
-                            :null
                         }
                         <Button
                             sx={{width: "50%"}}
@@ -446,15 +433,14 @@ function AdminAddProduct() {
                             Upload Images
                             <VisuallyHiddenInput
                                 type="file"
-                                // onChange={(event) => console.log(event.target.files)}
                                 onChange={handleImagesPreview}
                                 multiple
                             />
                         </Button>
-                    <Button type='submit' variant="contained">Add Product</Button>
-                </Stack>
-            </form>
-        </Card>
+                        <Button type='submit' variant="contained">Add Product</Button>
+                    </Stack>
+                </form>
+            </Card>
         </Box>
     </Box>
     )

@@ -66,7 +66,6 @@ exports.getDashboard = async() => {
 }
 
 exports.getAllOrders = async(page, limit, offset) => {
-    // const results = await runQuery("SELECT p.*, i.stock FROM products p JOIN product_inventory i ON p.id = i.product_id LIMIT ? OFFSET ?", [limit, offset]);
     const results = await runQuery(`SELECT 
                                         o.id,
                                         u.first_name,
@@ -82,7 +81,6 @@ exports.getAllOrders = async(page, limit, offset) => {
     if(results.length === 0){
         throw new Error ("Could not select all orders (admin)")
     }
-    // console.log(results);
 
     const [{total}] = await runQuery("SELECT COUNT(*) as total FROM orders")
     if(!total){
@@ -91,7 +89,6 @@ exports.getAllOrders = async(page, limit, offset) => {
 
     const adminOrders = {
         orders : results,
-        // currentPage : page,
         pages: Math.ceil (total / limit),
         total
     }
@@ -99,8 +96,6 @@ exports.getAllOrders = async(page, limit, offset) => {
 }
 
 exports.setOrderStatus = async(id, status, note = "seller status update") => {
-    // console.log(id, status);
-    
     const setAccept = await runQuery(`UPDATE orders SET status = ? WHERE id = ?`, [status, id])
     if(setAccept.affectedRows === 0){
         throw new Error("Could not Update Order Status")
@@ -112,7 +107,6 @@ exports.setOrderStatus = async(id, status, note = "seller status update") => {
         throw new Error("Could not record status history")
     }
 
-    // this.sendOrderStatusEmail(ids[0])
     this.sendOrderStatusEmail(id)
 }
 
@@ -189,8 +183,6 @@ exports.sendOrderStatusEmail = async (id, status) => {
             console.error("Failed to send welcome email:", err);
         });
 }
-
-// this.sendOrderStatusEmail(87)
 
 exports.getOrderData = async (orderId) => {
     const [orderRow] = await runQuery(`SELECT
@@ -332,7 +324,8 @@ exports.orderRefund = async (orderId, userId, reason = "", cancelledBy) => {
     await this.setOrderStatus([orderPayment.order_id], "cancelled", statusNote)
 
     const orderItems = await runQuery(`SELECT product_id, quantity FROM order_item WHERE order_id = ?`, [orderId])
-    for (const item of orderItems) {
+
+    for(const item of orderItems){
         const updateStock = await runQuery(
             `UPDATE product_inventory SET stock = stock + ? WHERE product_id = ?`, [item.quantity, item.product_id]
         )
@@ -441,7 +434,6 @@ exports.getAllProducts = async(page, limit, offset) => {
     if(results.length === 0){
         throw new Error ("Could not select all products (admin)")
     }
-    // console.log(results);
 
     const [{total}] = await runQuery("SELECT COUNT(*) as total FROM products")
     if(!total){
@@ -450,7 +442,6 @@ exports.getAllProducts = async(page, limit, offset) => {
 
     const adminProducts = {
         products : results,
-        // currentPage : page,
         pages: Math.ceil (total / limit),
         total
     }
@@ -503,13 +494,7 @@ exports.getProductData = async (productId) => {
                                         AND (pd.end_time IS NULL OR pd.end_time > NOW())
                                     `, [productId]);
     const image = await runQuery(`SELECT id, image FROM product_images WHERE product_id = ?`,[productId])
-    // const images = image.map(item => item.image)
-    // console.log(images);
 
-    // console.log({...result, images});
-    // console.log(images);
-
-    // console.log({...result, image})
     return {...result, image}
 }
 
@@ -530,7 +515,6 @@ exports.getOffersData = async (productId) => {
                                     AND NOW() BETWEEN pp.start_time AND pp.end_time
                                 WHERE pd.product_id = ?
                                 ORDER BY pd.id DESC`,[productId])
-    // console.log(offers);
     
     return offers
 }
@@ -610,21 +594,15 @@ exports.deleteOfferData = async (offer_id) => {
 }
 
 exports.setProductData = async(id, title, brand, description, category, base_price, stock, base_discount, base_mrp, tenYearsLater, currentTime) => {
-    // console.log({id, title, brand, description, price, stock});
-    // console.log({start_time, end_time, tenYearsLater});
-    // console.log({id, title, brand, description, base_price, stock, base_discount, base_mrp, start_time, end_time , tenYearsLater, offer_price, offer_discount, currentTime});
 
-    
     let categoryId = category.id
     const categoryName = category.category
-    // console.log(categoryId, categoryName);
 
     const getCategory = await runQuery(`SELECT id FROM categories WHERE id = ? AND category = ?`, [categoryId, categoryName])
     if(getCategory.length === 0){
         const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
         categoryId = insertCategory.insertId
     }
-    // console.log(categoryId, categoryName);
 
     const updateProduct = await runQuery(`UPDATE products SET title = ?, brand = ?, description = ?, category_id = ? WHERE id = ?`, [title, brand, description, categoryId, id])
     if(updateProduct.affectedRows === 0){
@@ -640,8 +618,6 @@ exports.setProductData = async(id, title, brand, description, category, base_pri
         WHERE product_id = ? AND start_time <= NOW() AND end_time > NOW() 
         ORDER BY id DESC LIMIT 1`, [id]
     );
-    // console.log(current);
-    
 
     if (
         current &&
@@ -649,119 +625,40 @@ exports.setProductData = async(id, title, brand, description, category, base_pri
         parseFloat(current.mrp) === parseFloat(base_mrp) &&
         parseFloat(current.discount) === parseFloat(base_discount)
     ) {
-    console.log("No base price changes detected.");
-        // return;
-        // return { updated: false };
+        console.log("No base price changes detected.");
     }
     else{
         const [newEndDate] = await runQuery(`SELECT DATE_SUB(?, INTERVAL 1 SECOND) as new_eTime`, [currentTime])
         const new_eTime = newEndDate.new_eTime
 
         const res = await runQuery(`UPDATE product_pricing SET end_time = ? WHERE id = ?`, [new_eTime, current.id]);
-        if (res.affectedRows === 0) throw new Error("Failed to update old pricing");
-        // if (res[0].affectedRows === 0) throw new Error("Failed to update old pricing");
+        if (res.affectedRows === 0) {
+            throw new Error("Failed to update old pricing");
+        }
 
         const insert = await runQuery(`INSERT INTO product_pricing 
             (product_id, start_time, end_time, price, mrp, discount)
             VALUES (?, ?, ?, ?, ?, ?)`, 
             [id, currentTime, tenYearsLater, base_price, base_mrp, base_discount]
         );
-
-        if (insert.affectedRows === 0) throw new Error("Failed to insert new pricing");
-        // if (insert[0].affectedRows === 0) throw new Error("Failed to insert new pricing");
+        if (insert.affectedRows === 0) {
+            throw new Error("Failed to insert new pricing");
+        }
     }
 
-
-
-
-    // const [selectLastEntry] = await runQuery(`SELECT * FROM product_pricing WHERE product_id = ? ORDER BY id DESC`,[id])
-    // // console.log(selectLastEntry.id);
-    // const lastEntry = selectLastEntry.id
-    // const lastPrice = selectLastEntry.price
-    // const lastMrp = selectLastEntry.mrp
-    // const lastDiscount = selectLastEntry.discount
-    // if(!lastEntry){
-    //     throw new Error("Could not Find Pricing Entry")
-    // }
-
-    // const updateOldPricing = await runQuery(`UPDATE product_pricing SET end_time = ? WHERE id = ? AND product_id`,[start_time, lastEntry, id]);
-    // if(updateOldPricing.affectedRows === 0){
-    //     throw new Error("Could not Update Old Pricing")
-    // }
-
-    // const [newOfferStartDate] = await runQuery(`SELECT DATE_ADD(?, INTERVAL 1 SECOND) as new_sTime`, [start_time])
-    // // console.log(start_time);
-    // // console.log(newOfferStartDate.new_time);
-    // const new_sTime = newOfferStartDate.new_sTime
-    
-    // const addNewPricing = await runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [id, new_sTime, end_time, price, mrp, discount])
-    // if(addNewPricing.affectedRows === 0){
-    //     throw new Error("Could not Add New Pricing")
-    // }
-
-    // const [newOfferEndDate] = await runQuery(`SELECT DATE_ADD(?, INTERVAL 1 SECOND) as new_eTime`, [end_time])
-    // const new_eTime = newOfferEndDate.new_eTime
-    // const addLaterPricing = await runQuery(`INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`, [id, new_eTime, tenYearsLater, lastPrice, lastMrp, lastDiscount])
-
-
-
-    // // 1. Find currently active pricing for the product
-    // const [activePricing] = await runQuery(`
-    // SELECT * FROM product_pricing 
-    //     WHERE product_id = ? AND NOW() BETWEEN start_time AND end_time
-    //     ORDER BY id DESC LIMIT 1
-    // `, [id]);
-
-    // if (!activePricing) {
-    //     throw new Error("No active pricing entry found for this product");
-    // }
-
-    // const activeId = activePricing.id;
-    // const prevPrice = activePricing.price;
-    // const prevMrp = activePricing.mrp;
-    // const prevDiscount = activePricing.discount;
-
-    // // 2. Set end_time of current pricing to new offer's start time
-    // const update = await runQuery(
-    //     `UPDATE product_pricing SET end_time = ? WHERE id = ?`,
-    //     [start_time, activeId]
-    // );
-
-    // if (update.affectedRows === 0) {
-    //     throw new Error("Failed to update previous pricing");
-    // }
-
-    // // 3. Add the new pricing offer (start_time + 1s to avoid exact overlap)
-    // const [{ new_sTime }] = await runQuery(
-    //     `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_sTime`,
-    //     [start_time]
-    // );
-
-    // // You can also use: new Date(new Date(start_time).getTime() + 1000) in JS directly
-    // const insertNew = await runQuery(
-    //     `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
-    //     [id, new_sTime, end_time, price, mrp, discount]
-    // );
-
-    // if (insertNew.affectedRows === 0) {
-    //     throw new Error("Failed to insert new pricing");
-    // }
-
-    // // 4. Only re-add the "previous" pricing after offer ends if this is a temporary discount
-    // // (optional, based on business rule)
-    // const reAddTime = await runQuery(
-    //     `SELECT DATE_ADD(?, INTERVAL 1 SECOND) AS new_eTime`,
-    //     [end_time]
-    // );
-    // const new_eTime = reAddTime[0].new_eTime;
-
-    // // const defaultEnd = '2035-07-17 12:30:00'; // or calculate tenYearsLater in JS
-
-    // const reinstate = await runQuery(
-    //     `INSERT INTO product_pricing (product_id, start_time, end_time, price, mrp, discount) VALUES (?, ?, ?, ?, ?, ?)`,
-    //     [id, new_eTime, tenYearsLater, prevPrice, prevMrp, prevDiscount]
-    // );
-
+    await client.update({
+        index: "products-search",
+        id: id.toString(),
+        doc: {
+            title: title,
+            brand: brand,
+            description: description,
+            price: base_price,
+            mrp: base_mrp,
+            category: categoryName,
+            stock: stock
+        }
+    });
 }
 
 exports.setProductImages = async(productId, imagePaths) => {
@@ -773,31 +670,12 @@ exports.setProductImages = async(productId, imagePaths) => {
         );
         newImage.push({id: insertImage.insertId, image: `${imagePaths[i]}`})
     }
-    // console.log(newImage);
     return newImage;
 }
 
 exports.removeImages = async(toDeleteIds) => {
-    // const paths = []
-    // for (let i = 0; i < toDeleteIds.length; i++) {
-    //     const getPath = await runQuery(`SELECT image FROM product_images WHERE id =?`, [toDeleteIds[i]])
-    //     // console.log(getPath);
-    //     // console.log(getPath[0].image);
-    //     paths.push(getPath[0].image)
-    //     await runQuery(`DELETE FROM product_images WHERE id = ?`,[toDeleteIds[i]]);
-    // }
-    // // console.log(paths);
-    // for (let i = 0; i < toDeleteIds.length; i++) {
-    //     const absolutePath = path.join(__dirname, "..", `${paths[i]}`)
-    //     // console.log(absolutePath);
-    //     await fs.remove(absolutePath)
-    // }
-
     for (let i = 0; i < toDeleteIds.length; i++) {
         const getPath = await runQuery(`SELECT image FROM product_images WHERE id =?`, [toDeleteIds[i]])
-        // console.log(getPath);
-        // console.log(getPath[0].image);
-        // paths.push(getPath[0].image)
         await runQuery(`DELETE FROM product_images WHERE id = ?`,[toDeleteIds[i]]);
         const absolutePath = path.join(__dirname, "..", `${getPath[0].image}`)
         await fs.remove(absolutePath)
@@ -808,7 +686,14 @@ exports.setThumbnail = async(productId, imagePath) => {
     const [oldThumbnail] = await runQuery(`SELECT thumbnail FROM products WHERE id = ?`, [productId]) 
     await runQuery("UPDATE products SET thumbnail = ? WHERE id = ?", [imagePath, productId]);
 
-    // console.log(oldThumbnail.thumbnail);
+    await client.update({
+        index: "products-search",
+        id: productId.toString(),
+        doc: {
+            thumbnail: imagePath
+        }
+    });
+
     const absolutePath = path.join(__dirname, "..", `${oldThumbnail.thumbnail}`)
     await fs.remove(absolutePath)
 }
@@ -817,14 +702,12 @@ exports.addDetails = async (title, brand, description, price, status, stock, mrp
 
     let categoryId = selected_category.id
     const categoryName = selected_category.category
-    // console.log(categoryId, categoryName);
 
     const category = await runQuery(`SELECT id FROM categories WHERE id = ? AND category = ?`, [categoryId, categoryName])
     if(category.length === 0){
         const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
         categoryId = insertCategory.insertId
     }
-    // console.log(categoryId, categoryName);
 
     const result = await runQuery(`
         INSERT INTO products (title, brand, description, status, rating, category_id) 
@@ -835,7 +718,6 @@ exports.addDetails = async (title, brand, description, price, status, stock, mrp
     }
 
     const productId = result.insertId
-    // console.log(productId);
 
     const addPricing = runQuery(`INSERT INTO product_pricing (product_id, price, mrp, discount) VALUES (?, ?, ?, ?)`, [productId, price, mrp, discount])
     if(addPricing.affectedRows === 0){
@@ -847,39 +729,40 @@ exports.addDetails = async (title, brand, description, price, status, stock, mrp
         throw new Error("Could Add Stock")
     }
 
+    await client.index({
+        index: "products-search",
+        id: productId.toString(),
+        document: {
+            id: productId,
+            title,
+            brand, 
+            description,
+            price,
+            mrp,
+            stock,
+            status,
+            category: categoryName,
+            offer_discount: null,
+            rating: 0.00,
+            wishlisted: false,
+        }
+    });
+    console.log(productId);
+
     return productId
 }
 
 exports.updateProductStatus = async (newStatus, productId) => {
     await runQuery(`UPDATE products SET status = ? WHERE id = ?`, [newStatus, productId])
+
+    await client.update({
+        index: "products-search",
+        id: productId.toString(),
+        doc: {
+            status: newStatus
+        }
+    });
 }
-
-// exports.deleteProductPermanently = async(productId) => {
-//     const productInventory =  await runQuery(`DELETE FROM product_inventory WHERE product_id = ?`,[productId])
-//     if(productInventory.affectedRows === 0){
-//         throw new Error ("Product Inventory Not Found")
-//     }
-//     const productImages = await runQuery(`DELETE FROM product_images WHERE product_id = ?`,[productId])
-//     if(productImages.affectedRows === 0){
-//         throw new Error ("Product Images Not Found")
-//     }
-//     const removeCartItem = await runQuery(`DELETE FROM cart_item WHERE product_id = ?`, [productId])
-//     if(removeCartItem.affectedRows === 0){
-//         throw new Error ("Couldn't remove Product from Cart")
-//     }
-//     const removeOrderItem =  await runQuery(`DELETE FROM order_item WHERE product_id = ?`,[productId])
-//     if(removeOrderItem.affectedRows === 0){
-//         throw new Error ("Couldn't remove Product from Orders")
-//     }
-//     const productDetails = await runQuery(`DELETE FROM products WHERE id = ?`,[productId])
-//     if(productDetails.affectedRows === 0){
-//         throw new Error ("Product Details Not Found")
-//     }
-
-//     const absolutePath = path.join(__dirname, "../uploads/products", `${productId}`)
-//     // console.log(absolutePath);
-//     fs.remove(absolutePath)
-// }
 
 exports.getProductForCoupon = async (query, price) => {
     const result = await runQuery(`SELECT 
@@ -906,15 +789,7 @@ exports.getProductForCoupon = async (query, price) => {
                                         AND p.title LIKE ?
                                     HAVING price > ? 
                                     LIMIT ?`,[1, 'active', `%${query}%`, price, 5])
-    // const result = await runQuery(`SELECT 
-    //                                 id, 
-    //                                 title 
-    //                                 FROM products 
-    //                                 WHERE status = ? 
-    //                                 AND title LIKE ? 
-    //                                 LIMIT ?`,['active', `%${query}%`, 5])
 
-    // console.log(result);
     return result
 }
 
@@ -968,9 +843,6 @@ exports.addCouponData = async(name, code, discount_value, discount_type, applies
 }
 
 exports.getAllCoupons = async(queryParams) => {
-
-    // console.log(queryParams);
-    
     const {
         page,
         limit,
@@ -982,8 +854,6 @@ exports.getAllCoupons = async(queryParams) => {
         start_date = "",
         end_date = ""
     } = queryParams;
-
-    // console.log(queryParams);
 
     let whereClause = ` WHERE 1=1`
     const params = []
@@ -1051,50 +921,16 @@ exports.getAllCoupons = async(queryParams) => {
 
     params.push(limit, offset);
 
-    // console.log(dataQuery);
-    // console.log(params);
-    
     const results = await runQuery(dataQuery, params);
-    // console.log(results);
 
     const [{total}] = await runQuery(`SELECT COUNT(*) as total FROM coupons ${whereClause}`,countParams)
-    // if(!total){
-    //     throw new Error ("Could not count total coupons")
-    // }
-
-    // if(results.length === 0){
-    //     throw new Error ("Could not select all coupons")
-    // }
 
     const allCoupons = {
         coupons : results,
-        // currentPage : page,
         pages: Math.ceil (total / limit),
         total
     }
     return allCoupons
-
-    // const results = await runQuery(`SELECT
-    //                                     id, 
-    //                                     name, 
-    //                                     code, 
-    //                                     discount_type,
-    //                                     discount_value,
-    //                                     threshold_amount, 
-    //                                     applies_to, 
-    //                                     for_new_users_only, 
-    //                                     limit_per_user, 
-    //                                     DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
-    //                                     DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
-    //                                     is_active, 
-    //                                     DATE_FORMAT(created_at, '%d/%m/%Y') as created_at,  
-    //                                     total_coupons, 
-    //                                     times_used
-    //                                 FROM coupons
-
-    //                                 ORDER BY created_at DESC
-    //                                 LIMIT ?
-    //                                 OFFSET ?`, [limit, offset]);
 }
 
 exports.getSingleCoupon = async (couponId) => {
