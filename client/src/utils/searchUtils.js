@@ -22,7 +22,6 @@ export const parseURLToFilters = (searchParams) => {
         query: searchParams.get('query') || '',
         priceRange,
         brands: searchParams.get('brands')?.split(',') || [],
-        // rating: searchParams.get('rating') || null,
         rating: searchParams.get('rating') ? parseFloat(searchParams.get('rating')) : null,
         inStock: searchParams.get('inStock') === 'true',
     };
@@ -36,7 +35,6 @@ export const mergeFiltersWithDefaults = (urlFilters, apiDefaults) => {
 
     const getPriceMax = () => {
         if (!urlFilters.priceRange) return apiDefaults.priceRange.max + 1;
-        // null in URL means sliderMax (displayMax + 1)
         return urlFilters.priceRange[1] ?? (apiDefaults.priceRange.max + 1);
     };
 

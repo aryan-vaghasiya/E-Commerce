@@ -241,7 +241,7 @@ function AdminAddProduct() {
                                     isOptionEqualToValue={(option, val) => option.id === val.id}
                                     value={value}
                                     onInputChange={(event, newInputValue) => {
-                                            onChange({ id: null, category: newInputValue });
+                                        onChange({ id: null, category: newInputValue });
                                     }}
                                     onChange={(event, newValue) => {
                                         onChange(newValue);

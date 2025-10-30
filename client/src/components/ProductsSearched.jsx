@@ -94,59 +94,60 @@ function ProductsSearched() {
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh", position: "relative" }}>
             <Box sx={{height: "100%"}}>
                 {(hasAnyResults || isLoading) && (
-                <Paper sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}>
-                    <Box>
-                        {!isMobile && !isLoading &&
-                            <Typography>Showing {((currentPage - 1)*15) + 1 || 0} - {Math.min(currentPage*15, total) || 0} of {total || 0} results for "{query}"</Typography>
-                        }
-                    </Box>
-                    <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
-                        <FormControl>
-                            <InputLabel id="sort_by">Sort by</InputLabel>
-                            <Select
-                                sx={{minWidth: {xs: 165,md: 183}, fontSize: {xs: 14, md: 16}}}
-                                size="small"
-                                value={searchParams.get("sort") || "_score,desc"}
-                                labelId="sort_by"
-                                label="Sort by"
-                                onChange={(e) => {                                    
-                                    const currentFilters = Object.fromEntries(searchParams);
-                                    delete currentFilters.page;
-                                    const newParams = new URLSearchParams({
-                                        ...currentFilters,
-                                        sort: e.target.value,
-                                        page: 1
-                                    });
-                                    setSearchParams(newParams);
-                                }}
-                            >
-                                <MenuItem value="_score,desc">Relevance</MenuItem>
-                                <MenuItem value="price,asc">Price - Low to High</MenuItem>
-                                <MenuItem value="price,desc">Price - High to Low</MenuItem>
-                                <MenuItem value="rating,desc">Highest Rated</MenuItem>
-                            </Select>
-                        </FormControl>
-                        {isMobile &&
-                            <IconButton 
-                                size="small" 
-                                color="primary" 
-                                sx={{border: "1px solid, rgba(25, 118, 210, 0.5)", borderRadius: 1, m: 0}}
-                                onClick={handleDrawerToggle}
-                            >
-                                <FilterAltIcon />
-                            </IconButton>
-                        }
-                    </Box>
-                </Paper>
+                    <Paper 
+                        sx={{borderRadius: "0 0 7px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", py: 1.5, px: {xs: 1, md: 2}}}
+                    >
+                        <Box>
+                            {!isMobile && !isLoading &&
+                                <Typography>
+                                    {`Showing 
+                                        ${((currentPage - 1)*15) + 1 || 0} - ${Math.min(currentPage*15, total) || 0} 
+                                        of ${total || 0} results for "${query}"
+                                    `}
+                                </Typography>
+                            }
+                        </Box>
+                        <Box sx={{display: "flex", gap: 1, alignItems: "center", justifyContent: "space-between"}}>
+                            <FormControl>
+                                <InputLabel id="sort_by">Sort by</InputLabel>
+                                <Select
+                                    sx={{minWidth: {xs: 165,md: 183}, fontSize: {xs: 14, md: 16}}}
+                                    size="small"
+                                    value={searchParams.get("sort") || "_score,desc"}
+                                    labelId="sort_by"
+                                    label="Sort by"
+                                    onChange={(e) => {                                    
+                                        const currentFilters = Object.fromEntries(searchParams);
+                                        delete currentFilters.page;
+                                        const newParams = new URLSearchParams({
+                                            ...currentFilters,
+                                            sort: e.target.value,
+                                            page: 1
+                                        });
+                                        setSearchParams(newParams);
+                                    }}
+                                >
+                                    <MenuItem value="_score,desc">Relevance</MenuItem>
+                                    <MenuItem value="price,asc">Price - Low to High</MenuItem>
+                                    <MenuItem value="price,desc">Price - High to Low</MenuItem>
+                                    <MenuItem value="rating,desc">Highest Rated</MenuItem>
+                                </Select>
+                            </FormControl>
+                            {isMobile &&
+                                <IconButton 
+                                    size="small" 
+                                    color="primary" 
+                                    sx={{border: "1px solid, rgba(25, 118, 210, 0.5)", borderRadius: 1, m: 0}}
+                                    onClick={handleDrawerToggle}
+                                >
+                                    <FilterAltIcon />
+                                </IconButton>
+                            }
+                        </Box>
+                    </Paper>
                 )}
 
                 <Grid container spacing={1} sx={{ minHeight: "100%" }}>
-                    {/* <Grid size={{md: 2.5}}
-                        sx={{ display: { xs: 'none', md: 'block' }}}
-                    >
-                        <FilterSidebar applyFilters={handleApplyFilters} />
-                    </Grid> */}
-
                     {(hasAnyResults || isLoading) && (
                         <Grid size={{md: 2.5}}
                             sx={{ display: { xs: 'none', md: 'block' }}}
@@ -155,14 +156,11 @@ function ProductsSearched() {
                         </Grid>
                     )}
 
-                    {/* <Grid size={{xs: 12, md: 9.5}} sx={{p: 2, pb: 0}}> */}
                     <Grid size={{xs: 12, md: (hasAnyResults || isLoading) ? 9.5 : 12}} sx={{p: 2, pb: 0}} >
                         <Box sx={{display: "flex", flexDirection: "column"}}>
-
                             <Box sx={{overflowX: "auto"}}>
                                 <AppliedFilters searchParams={searchParams} setSearchParams={setSearchParams} />
                             </Box>
-
                             <Box>
                                 <Stack spacing={{ xs: 2, md: 2.5 }}>
                                     {

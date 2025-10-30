@@ -657,7 +657,8 @@ exports.setProductData = async(id, title, brand, description, category, base_pri
             mrp: base_mrp,
             category: categoryName,
             stock: stock
-        }
+        },
+        refresh: false
     });
 }
 
@@ -896,28 +897,29 @@ exports.getAllCoupons = async(queryParams) => {
         countParams.push(end_date)
     }
 
-    let dataQuery = `SELECT
-                        id, 
-                        name, 
-                        code, 
-                        discount_type,
-                        discount_value,
-                        threshold_amount, 
-                        applies_to, 
-                        for_new_users_only, 
-                        limit_per_user, 
-                        DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
-                        DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
-                        is_active, 
-                        created_at,  
-                        total_coupons, 
-                        coupons_left, 
-                        times_used
-                    FROM coupons
-                    ${whereClause}
-                    ORDER BY created_at DESC
-                    LIMIT ? OFFSET ?
-                    `;
+    let dataQuery = `
+        SELECT
+            id, 
+            name, 
+            code, 
+            discount_type,
+            discount_value,
+            threshold_amount, 
+            applies_to, 
+            for_new_users_only, 
+            limit_per_user, 
+            DATE_FORMAT(start_time, '%d/%m/%Y') as start_time, 
+            DATE_FORMAT(end_time, '%d/%m/%Y') as end_time, 
+            is_active, 
+            created_at,  
+            total_coupons, 
+            coupons_left, 
+            times_used
+        FROM coupons
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+    `;
 
     params.push(limit, offset);
 
@@ -943,31 +945,34 @@ exports.getSingleCoupon = async (couponId) => {
     if(coupon.applies_to === "product"){
         const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
         const orderIds = orders.map(item => item.id)
-        // console.log(orderIds);
 
         let orderItems = []
 
         if(orderIds.length > 0){
-            orderItems = await runQuery(`SELECT
-                                            oi.product_id,
-                                            SUM(oi.quantity) AS total_quantity,
-                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
-                                        FROM order_item oi
-                                        JOIN (
-                                            SELECT DISTINCT product_id 
-                                            FROM coupon_products    
-                                            WHERE coupon_id = ?
-                                        ) cp 
-                                            ON oi.product_id = cp.product_id
-                                        WHERE oi.order_id IN (?)
-                                        GROUP BY oi.product_id`, [couponId, orderIds])
-            // console.log(orderItems);
+            orderItems = await runQuery(`
+                SELECT
+                    oi.product_id,
+                    SUM(oi.quantity) AS total_quantity,
+                    SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                FROM order_item oi
+                    JOIN (
+                        SELECT
+                            DISTINCT product_id
+                        FROM coupon_products 
+                        WHERE coupon_id = ?
+                    ) cp 
+                        ON oi.product_id = cp.product_id
+                WHERE oi.order_id IN (?)
+                GROUP BY oi.product_id
+            `, [couponId, orderIds])
         }
+
         const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
+
         const totalSales = orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)
-        // console.log(totalSales);
 
         coupon = {...coupon, totalLoss, totalSales}
+
         return(coupon)
     }
 
@@ -975,45 +980,47 @@ exports.getSingleCoupon = async (couponId) => {
     if(coupon.applies_to === "category"){
         const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
         const orderIds = orders.map(item => item.id)
-        // console.log(orderIds);
 
         let orderItems = []
 
         if(orderIds.length > 0){
-            orderItems = await runQuery(`SELECT 
-                                            oi.product_id,
-                                            SUM(oi.quantity) AS total_quantity,
-                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
-                                        FROM order_item oi
-                                        JOIN products p 
-                                            ON oi.product_id = p.id
-                                        JOIN (
-                                            SELECT DISTINCT category_id 
-                                            FROM coupon_categories    
-                                            WHERE coupon_id = ?
-                                        ) cc
-                                            ON cc.category_id = p.category_id
-                                        WHERE oi.order_id IN (?)
-                                        GROUP BY oi.product_id`, [couponId, orderIds])
-            // console.log(orderItems);
+            orderItems = await runQuery(`
+                SELECT 
+                    oi.product_id,
+                    SUM(oi.quantity) AS total_quantity,
+                    SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                FROM order_item oi
+                    JOIN products p 
+                        ON oi.product_id = p.id
+                    JOIN (
+                        SELECT
+                            DISTINCT category_id 
+                        FROM coupon_categories    
+                        WHERE coupon_id = ?
+                    ) cc
+                        ON cc.category_id = p.category_id
+                WHERE oi.order_id IN (?)
+                GROUP BY oi.product_id
+            `, [couponId, orderIds])
         }
+
         const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
+
         const totalSales = orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)
-        // console.log(totalSales);
 
         coupon = {...coupon, totalLoss, totalSales}
+
         return(coupon)
     }
 
-    // else{
-        const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
-        const [{totalSales}] = await runQuery(`SELECT SUM(final_total) as totalSales FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
+    const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
 
-        coupon = {...coupon, totalLoss, totalSales}
-        return(coupon)
-    // }
+    const [{totalSales}] = await runQuery(`SELECT SUM(final_total) as totalSales FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
+
+    coupon = {...coupon, totalLoss, totalSales}
+
+    return(coupon)
 }
-
 
 exports.getCouponProducts = async (couponId, limit, offset) => {
     let [coupon] = await runQuery(`SELECT * FROM coupons WHERE id = ?`, [couponId])
@@ -1027,239 +1034,204 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
     let orderItems = []
 
     if(coupon.applies_to === "product"){
-        const result = await runQuery(`SELECT 
-                                        COUNT(*) as totalProducts
-                                        FROM coupon_products
-                                        WHERE coupon_id = ?
-                                    `, [couponId]);
+
+        const result = await runQuery(`
+            SELECT 
+                COUNT(*) as totalProducts
+            FROM coupon_products
+            WHERE coupon_id = ?
+        `, [couponId]);
+        
         totalProducts = result[0].totalProducts;
-        products = await runQuery(`SELECT 
-                                        p.id,
-                                        p.title,
-                                        p.description,
-                                        p.rating,
-                                        p.brand,
-                                        p.thumbnail,
-                                        p.status,
-                                        c.category,
-                                        DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
-                                        DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
 
-                                        pd.discount_type,
-                                        pd.start_time as offer_start_time,
-                                        pd.end_time as offer_end_time,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                                            ELSE NULL
-                                        END AS offer_discount,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN pd.offer_price
-                                            ELSE pp.price
-                                        END AS price
-                                    FROM coupon_products cp
-                                    JOIN products p
-                                        ON p.id = cp.product_id
-                                    JOIN categories c
-                                        ON c.id = p.category_id
-                                    JOIN product_pricing pp 
-                                        ON pp.product_id = p.id
-                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
-
-                                    LEFT JOIN product_discounts pd 
-                                        ON pd.product_id = p.id
-                                        AND pd.is_active = 1
-                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
-
-                                    WHERE cp.coupon_id = ?
-                                    ORDER BY p.id ASC
-                                    LIMIT ?
-                                    OFFSET ?`
-                                , [couponId, limit, offset]);
+        products = await runQuery(`
+            SELECT 
+                p.id,
+                p.title,
+                p.description,
+                p.rating,
+                p.brand,
+                p.thumbnail,
+                p.status,
+                c.category,
+                DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
+                DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
+                pd.discount_type,
+                pd.start_time as offer_start_time,
+                pd.end_time as offer_end_time,
+                CASE 
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                    ELSE NULL
+                END AS offer_discount,
+                CASE 
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN pd.offer_price
+                    ELSE pp.price
+                END AS price
+            FROM coupon_products cp
+                JOIN products p
+                    ON p.id = cp.product_id
+                JOIN categories c
+                    ON c.id = p.category_id
+                JOIN product_pricing pp 
+                    ON pp.product_id = p.id
+                        AND NOW() BETWEEN pp.start_time 
+                        AND pp.end_time
+                LEFT JOIN product_discounts pd 
+                    ON pd.product_id = p.id
+                        AND pd.is_active = 1
+                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+            WHERE cp.coupon_id = ?
+            ORDER BY p.id ASC
+            LIMIT ?
+            OFFSET ?
+        `, [couponId, limit, offset]);
 
         const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
         const orderIds = orders.map(item => item.id)
-        // console.log(orderIds);
 
         if(orderIds.length > 0){
-            orderItems = await runQuery(`SELECT 
-                                            oi.product_id,
-                                            SUM(oi.quantity) AS total_quantity,
-                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
-                                        FROM order_item oi
-                                        JOIN (
-                                            SELECT DISTINCT product_id 
-                                            FROM coupon_products    
-                                            WHERE coupon_id = ?
-                                        ) cp 
-                                            ON oi.product_id = cp.product_id
-                                        WHERE oi.order_id IN (?)
-                                        GROUP BY oi.product_id`, [couponId, orderIds])
-            // console.log(orderItems);
+            orderItems = await runQuery(`
+                SELECT 
+                    oi.product_id,
+                    SUM(oi.quantity) AS total_quantity,
+                    SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                FROM order_item oi
+                    JOIN (
+                        SELECT
+                            DISTINCT product_id
+                        FROM coupon_products
+                        WHERE coupon_id = ?
+                    ) cp
+                        ON oi.product_id = cp.product_id
+                WHERE oi.order_id IN (?)
+                GROUP BY oi.product_id
+            `, [couponId, orderIds])
         }
-
-        // const quantityMap = Object.fromEntries(
-        //     orderItems.map(q => [q.product_id, {total_quantity: q.total_quantity, total_purchase_price: q.total_purchase_price}])
-        // );
-        // console.log(quantityMap);
-        // console.log(quantityMap[3].total_quantity);
-
     }
 
     if(coupon.applies_to === "category"){
-
         const categories = await runQuery(`SELECT category_id FROM coupon_categories WHERE coupon_id = ?`, [couponId]);
         const categoryIds = categories.map(item => item.category_id)
-        // console.log(categoryIds);
+        const result = await runQuery(`
+            SELECT 
+                COUNT(*) as totalProducts
+            FROM products
+            WHERE category_id IN ?
+        `, [[categoryIds]]);
         
-
-        const result = await runQuery(`SELECT 
-                                        COUNT(*) as totalProducts
-                                        FROM products
-                                        WHERE category_id IN ?
-                                    `, [[categoryIds]]);
         totalProducts = result[0].totalProducts;
 
-        products = await runQuery(`SELECT 
-                                        p.id,
-                                        p.title,
-                                        p.description,
-                                        p.rating,
-                                        p.brand,
-                                        p.thumbnail,
-                                        p.status,
-                                        c.category,
-                                        DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
-                                        DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
-
-                                        pd.discount_type,
-                                        pd.start_time as offer_start_time,
-                                        pd.end_time as offer_end_time,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-                                            ELSE NULL
-                                        END AS offer_discount,
-                                        CASE 
-                                            WHEN pd.offer_price IS NOT NULL 
-                                                THEN pd.offer_price
-                                            ELSE pp.price
-                                        END AS price
-                                    FROM coupon_categories cc
-                                    JOIN products p
-                                        ON p.category_id = cc.category_id
-                                    JOIN categories c
-                                        ON c.id = p.category_id
-                                    JOIN product_pricing pp 
-                                        ON pp.product_id = p.id
-                                        AND NOW() BETWEEN pp.start_time AND pp.end_time
-
-                                    LEFT JOIN product_discounts pd 
-                                        ON pd.product_id = p.id
-                                        AND pd.is_active = 1
-                                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
-
-                                    WHERE cc.coupon_id = ?
-                                    ORDER BY p.id ASC
-                                    LIMIT ?
-                                    OFFSET ?`
-                                , [couponId, limit, offset]);
+        products = await runQuery(`
+            SELECT 
+                p.id,
+                p.title,
+                p.description,
+                p.rating,
+                p.brand,
+                p.thumbnail,
+                p.status,
+                c.category,
+                DATE_FORMAT(p.created_on, '%d/%m/%Y') as created_on,
+                DATE_FORMAT(p.last_updated, '%d/%m/%Y') as last_updated,
+                pd.discount_type,
+                pd.start_time as offer_start_time,
+                pd.end_time as offer_end_time,
+                CASE 
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                    ELSE NULL
+                END AS offer_discount,
+                CASE 
+                    WHEN pd.offer_price IS NOT NULL 
+                        THEN pd.offer_price
+                    ELSE pp.price
+                END AS price
+            FROM coupon_categories cc
+                JOIN products p
+                    ON p.category_id = cc.category_id
+                JOIN categories c
+                    ON c.id = p.category_id
+                JOIN product_pricing pp 
+                    ON pp.product_id = p.id
+                        AND NOW() BETWEEN pp.start_time 
+                        AND pp.end_time
+                LEFT JOIN product_discounts pd 
+                    ON pd.product_id = p.id
+                        AND pd.is_active = 1
+                        AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                        AND (pd.end_time IS NULL OR pd.end_time > NOW())
+            WHERE cc.coupon_id = ?
+            ORDER BY p.id ASC
+            LIMIT ?
+            OFFSET ?`
+        , [couponId, limit, offset]);
 
         const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND status != ?`, [couponId, "cancelled"])
         const orderIds = orders.map(item => item.id)
-        // console.log(orderIds);
-
 
         if(orderIds.length > 0){
-            orderItems = await runQuery(`SELECT 
-                                            oi.product_id,
-                                            SUM(oi.quantity) AS total_quantity,
-                                            SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
-                                        FROM order_item oi
-                                        JOIN products p 
-                                            ON oi.product_id = p.id
-                                        JOIN (
-                                            SELECT DISTINCT category_id 
-                                            FROM coupon_categories    
-                                            WHERE coupon_id = ?
-                                        ) cc
-                                            ON cc.category_id = p.category_id
-                                        WHERE oi.order_id IN (?)
-                                        GROUP BY oi.product_id`, [couponId, orderIds])
-            // console.log(orderItems);
+            orderItems = await runQuery(`
+                SELECT
+                    oi.product_id,
+                    SUM(oi.quantity) AS total_quantity,
+                    SUM(oi.purchase_price * oi.quantity) AS total_purchase_price
+                FROM order_item oi
+                    JOIN products p
+                        ON oi.product_id = p.id
+                    JOIN (
+                        SELECT
+                            DISTINCT category_id
+                        FROM coupon_categories
+                        WHERE coupon_id = ?
+                    ) cc
+                        ON cc.category_id = p.category_id
+                WHERE oi.order_id IN (?)
+                GROUP BY oi.product_id
+            `, [couponId, orderIds])
         }
     }
 
-        products = products.map(item => {
-            let coupon_discount_amount = 0;
-            if(coupon.discount_type === "fixed"){
-                coupon_discount_amount = coupon.discount_value
-            }
-            else{
-                coupon_discount_amount = (item.price/100) * coupon.discount_value
-            }
-            if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
-                coupon_discount_amount = coupon.threshold_amount 
-            }
-            const matchingOrderItem = orderItems.find(o => o.product_id === item.id);
-            const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
-            const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
+    products = products.map(item => {
+        let coupon_discount_amount = 0;
+        if(coupon.discount_type === "fixed"){
+            coupon_discount_amount = coupon.discount_value
+        }
+        else{
+            coupon_discount_amount = (item.price/100) * coupon.discount_value
+        }
+        if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
+            coupon_discount_amount = coupon.threshold_amount 
+        }
+        const matchingOrderItem = orderItems.find(o => o.product_id === item.id);
+        const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
+        const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
 
-            // let total_selling_price = coupon.discount_type === "percent" ? 
-            //                     total_purchase_price/(100 - coupon.discount_value) * 100
-            //                     :
-            //                     total_purchase_price + (coupon.discount_value * total_quantity);
-            
-            // let total_product_discount = total_selling_price - total_purchase_price
-            // console.log("total 1",total_product_discount);
-            // console.log("total 2",coupon.threshold_amount * total_quantity);
+        let total_selling_price;
+        let total_product_discount;
 
-            // if (coupon.threshold_amount && total_product_discount > (coupon.threshold_amount * total_quantity)) {
-            //     total_product_discount = coupon.threshold_amount;
-            // }
-        
-            let total_selling_price;
-            let total_product_discount;
+        if (coupon.discount_type === "percent") {
+            total_product_discount = Math.min(
+                (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
+                coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
+            );
+            total_selling_price = total_purchase_price + total_product_discount;
+        } 
+        else {
+            total_product_discount = coupon.discount_value * total_quantity;
+            total_selling_price = total_purchase_price + total_product_discount;
+        }
 
-            if (coupon.discount_type === "percent") {
-                total_product_discount = Math.min(
-                    (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
-                    coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
-                );
-
-                total_selling_price = total_purchase_price + total_product_discount;
-            } 
-            else {
-                total_product_discount = coupon.discount_value * total_quantity;
-                total_selling_price = total_purchase_price + total_product_discount;
-            }
-
-            // if(coupon.discount_type === "percent"){
-            //     let total_selling_price = total_purchase_price/(100 - coupon.discount_value) * 100
-            //     console.log((total_selling_price).toFixed(2));
-                
-            // }
-
-            // let productDiscount = coupon.discount_type === 'percent' 
-            //             ? 
-            //             total_purchase_price * (coupon.discount_value / 100)
-            //             : 
-            //             coupon.discount_value * total_quantity;
-            // if (coupon.threshold_amount && productDiscount > coupon.threshold_amount) {
-            //     productDiscount = coupon.threshold_amount;
-            // }
-            return {
-                    ...item,
-                    coupon_discount_amount: coupon_discount_amount, 
-                    final_price: item.price - coupon_discount_amount,
-                    // total_quantity: quantityMap[item.id] || 0 
-                    total_quantity,
-                    total_purchase_price,
-                    total_product_discount
-                }
+        return {
+            ...item,
+            coupon_discount_amount: coupon_discount_amount, 
+            final_price: item.price - coupon_discount_amount,
+            total_quantity,
+            total_purchase_price,
+            total_product_discount
+        }
     })
 
     const allProducts = {
@@ -1271,37 +1243,31 @@ exports.getCouponProducts = async (couponId, limit, offset) => {
 }
 
 exports.getCouponUsages = async (couponId, limit, offset) => {
-    const [{totalUsages}] = await runQuery(`SELECT COUNT(*) AS totalUsages FROM coupon_usages WHERE coupon_id = ? AND is_reversed = ?`, [couponId, false])
-    const usages = await runQuery(`SELECT 
-                                    u.id,
-                                    u.user_id,
-                                    u.used_at,
-                                    o.id as order_id,
-                                    o.subtotal,
-                                    o.discount_amount,
-                                    o.final_total
+    const [{totalUsages}] = await runQuery(`
+        SELECT COUNT(*) AS totalUsages FROM coupon_usages WHERE coupon_id = ? AND is_reversed = ?
+    `, [couponId, false])
 
-                                    FROM coupon_usages u
-                                JOIN orders o ON o.id = u.order_id
-                                    WHERE u.coupon_id = ?
-                                        AND u.is_reversed = ?
-                                        AND o.status != ?
-                                ORDER BY u.used_at DESC
-                                LIMIT ?
-                                OFFSET ?`
-                            , [couponId, false, "cancelled", limit, offset]);
-
-    // if (usages.length === 0) {
-    //     return {usages: [], pages: 0, totalUsages: 0};
-    // }
+    const usages = await runQuery(`
+        SELECT 
+            u.id,
+            u.user_id,
+            u.used_at,
+            o.id as order_id,
+            o.subtotal,
+            o.discount_amount,
+            o.final_total
+        FROM coupon_usages u
+            JOIN orders o
+                ON o.id = u.order_id
+        WHERE u.coupon_id = ?
+            AND u.is_reversed = ?
+            AND o.status != ?
+        ORDER BY u.used_at DESC
+        LIMIT ?
+        OFFSET ?
+    `, [couponId, false, "cancelled", limit, offset]);
 
     const allUsages = {
-        // usages: usages.map(item => (
-        //     {...item, 
-        //         total: (item.total).toFixed(2), 
-        //         discount_amount: (item.discount_amount).toFixed(2), 
-        //         final_total: (item.final_total).toFixed(2)
-        //     })),
         usages,
         pages: Math.ceil (totalUsages / limit),
         totalUsages: totalUsages,
@@ -1310,7 +1276,9 @@ exports.getCouponUsages = async (couponId, limit, offset) => {
 }
 
 exports.updateCouponData = async (end_time, total_coupons, limit_per_user, id) => {
-    const update = await runQuery(`UPDATE coupons SET end_time = ?, total_coupons = ?, limit_per_user = ? WHERE id = ?`, [end_time, total_coupons, limit_per_user, id])
+    const update = await runQuery(`
+        UPDATE coupons SET end_time = ?, total_coupons = ?, limit_per_user = ? WHERE id = ?
+    `, [end_time, total_coupons, limit_per_user, id])
 
     if(update.affectedRows === 0){
         throw new Error ("Could not update Coupon Data")
@@ -1318,7 +1286,9 @@ exports.updateCouponData = async (end_time, total_coupons, limit_per_user, id) =
 }
 
 exports.endCoupon = async (couponId) => {
-    const updateStatus = await runQuery(`UPDATE coupons SET end_time = NOW(), is_active = 0 WHERE id = ?`, [couponId])
+    const updateStatus = await runQuery(`
+        UPDATE coupons SET end_time = NOW(), is_active = 0 WHERE id = ?
+    `, [couponId])
 
     if(updateStatus.affectedRows === 0){
         throw new Error ("Could not deactivate Coupon")
@@ -1327,23 +1297,22 @@ exports.endCoupon = async (couponId) => {
 
 exports.getCategories = async () => {
     const categories = await runQuery(`SELECT id, category FROM categories`)
-    // console.log(categories);
     return categories
 }
 
 exports.getCouponCategories = async (couponId) => {
-    const couponCategories = await runQuery(`SELECT
-                                                cc.category_id AS id,
-                                                c.category
-                                            FROM coupon_categories cc
-                                            JOIN categories c
-                                                ON cc.category_id = c.id
-                                                WHERE cc.coupon_id = ?
-                                                `, [couponId]);
-    // console.log(couponCategories);
+    const couponCategories = await runQuery(`
+        SELECT
+            cc.category_id AS id,
+            c.category
+        FROM coupon_categories cc
+        JOIN categories c
+            ON cc.category_id = c.id
+        WHERE cc.coupon_id = ?
+    `, [couponId]);
+
     return couponCategories
 }
-
 
 exports.getCouponReport = async (couponId, fromTime, toTime) => {
     let [coupon] = await runQuery(`SELECT * FROM coupons WHERE id = ?`, [couponId])
@@ -1352,29 +1321,37 @@ exports.getCouponReport = async (couponId, fromTime, toTime) => {
         throw new Error("Coupon does not exist")
     }
 
-    const couponUsages = await runQuery(`SELECT 
-                                            id,
-                                            coupon_id,
-                                            user_id,
-                                            order_id,
-                                            DATE_FORMAT(used_at, '%m/%d/%Y') as used_at
-                                        FROM coupon_usages WHERE coupon_id = ? 
-                                            AND (used_at BETWEEN ? AND ?)
-                                            AND is_reversed = ?`, [couponId, fromTime, toTime, false]);
+    const couponUsages = await runQuery(`
+        SELECT 
+            id,
+            coupon_id,
+            user_id,
+            order_id,
+            DATE_FORMAT(used_at, '%m/%d/%Y') as used_at
+        FROM coupon_usages 
+        WHERE coupon_id = ? 
+            AND (used_at BETWEEN ? AND ?)
+            AND is_reversed = ?
+    `, [couponId, fromTime, toTime, false]);
 
     const totalUsage = couponUsages.length
 
-    const uniqueUsers = await runQuery(`SELECT 
-                                            DISTINCT user_id 
-                                        FROM coupon_usages 
-                                        WHERE coupon_id = ? 
-                                            AND (used_at BETWEEN ? AND ?)
-                                            AND is_reversed = ?`, [couponId, fromTime, toTime, false])
+    const uniqueUsers = await runQuery(`
+        SELECT 
+            DISTINCT user_id 
+        FROM coupon_usages 
+        WHERE coupon_id = ? 
+            AND (used_at BETWEEN ? AND ?)
+            AND is_reversed = ?
+    `, [couponId, fromTime, toTime, false])
 
     const uniqueUserIds = uniqueUsers.map(user => user.user_id)
     const totalUniqueUsers = uniqueUserIds.length
 
-    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const orders = await runQuery(`
+        SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
+
     const orderIds = orders.map(item => item.id)
     const totalOrders = orderIds.length
 
@@ -1388,10 +1365,25 @@ exports.getCouponReport = async (couponId, fromTime, toTime) => {
         orderItems = await adminUtils.orderedItemsCategoryCoupon(couponId, orderIds)
     }
 
-    const [{totalLoss}] = await runQuery(`SELECT SUM(discount_amount) as totalLoss FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const [{totalLoss}] = await runQuery(`
+        SELECT 
+            SUM(discount_amount) as totalLoss 
+        FROM orders 
+        WHERE coupon_id = ? 
+            AND (order_date BETWEEN ? AND ?) 
+            AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
+
     const totalSales = parseFloat((orderItems.reduce((acc, value) => acc + value.total_purchase_price, 0)).toFixed(2))
 
-    const [{totalGrossSales}] = await runQuery(`SELECT SUM(final_total) as totalGrossSales FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const [{totalGrossSales}] = await runQuery(`
+        SELECT
+            SUM(final_total) as totalGrossSales
+        FROM orders
+        WHERE coupon_id = ?
+            AND (order_date BETWEEN ? AND ?)
+            AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
 
     const targetedAOV = parseFloat((totalSales/totalOrders).toFixed(2))
     const grossAOV = parseFloat((totalGrossSales/totalOrders).toFixed(2))
@@ -1412,7 +1404,10 @@ exports.getCouponReportProducts = async (couponId, fromTime, toTime, limit, sort
         throw new Error("Coupon does not exist")
     }
 
-    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const orders = await runQuery(`
+        SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
+    
     const orderIds = orders.map(item => item.id)
 
     if(coupon.applies_to === "product" && orderIds.length > 0){
@@ -1421,45 +1416,45 @@ exports.getCouponReportProducts = async (couponId, fromTime, toTime, limit, sort
     if(coupon.applies_to === "category" && orderIds.length > 0){
         orderItems = await adminUtils.orderedItemsCategoryCoupon(couponId, orderIds)
     }
-    if (!orderItems || orderItems.length === 0) {        
+    if (!orderItems || orderItems.length === 0) {
         const productDetails = {products, totalProductsSold, totalProductsDiscounts, totalProductsSales}
         return productDetails
     }
 
     const productIds = orderItems.map(item => item.product_id)
 
-    products = await runQuery(`SELECT 
-                                    p.id,
-                                    p.title,
-                                    p.status,
-                                    p.category_id,
-                                    c.category,
-
-                                    CASE
-                                        WHEN pd.offer_price IS NOT NULL 
-                                            THEN pd.offer_price
-                                        ELSE pp.price
-                                    END AS price
-                                FROM products p
-                                JOIN categories c
-                                    ON c.id = p.category_id
-                                JOIN product_pricing pp 
-                                    ON pp.product_id = p.id
-                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
-
-                                LEFT JOIN product_discounts pd 
-                                    ON pd.product_id = p.id
-                                    AND pd.is_active = 1
-                                    AND pd.start_time <= NOW()
-                                    AND pd.end_time > NOW()
-
-                                WHERE p.id IN (?)
-                                ORDER BY p.id ASC`, [productIds]);
+    products = await runQuery(`
+        SELECT
+            p.id,
+            p.title,
+            p.status,
+            p.category_id,
+            c.category,
+            CASE
+                WHEN pd.offer_price IS NOT NULL
+                    THEN pd.offer_price
+                ELSE pp.price
+            END AS price
+        FROM products p
+            JOIN categories c
+                ON c.id = p.category_id
+            JOIN product_pricing pp
+                ON pp.product_id = p.id
+                AND NOW() BETWEEN pp.start_time AND pp.end_time
+            LEFT JOIN product_discounts pd
+                ON pd.product_id = p.id
+                AND pd.is_active = 1
+                AND pd.start_time <= NOW()
+                AND pd.end_time > NOW()
+        WHERE p.id IN (?)
+        ORDER BY p.id ASC
+    `, [productIds]);
 
     products = products.map(item => {
-        let coupon_discount_amount = coupon.discount_type === "fixed"
-                    ? coupon.discount_value
-                    : (item.price/100) * coupon.discount_value
+        let coupon_discount_amount = 
+            coupon.discount_type === "fixed"
+                ? coupon.discount_value
+                : (item.price/100) * coupon.discount_value
 
         if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
             coupon_discount_amount = coupon.threshold_amount 
@@ -1469,12 +1464,13 @@ exports.getCouponReportProducts = async (couponId, fromTime, toTime, limit, sort
         const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
         const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
 
-        const total_product_discount = coupon.discount_type === "percent"
-                                ? Math.min(
-                                        (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
-                                        coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
-                                    )
-                                : coupon.discount_value * total_quantity;
+        const total_product_discount = 
+            coupon.discount_type === "percent"
+                ? Math.min(
+                        (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
+                        coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
+                    )
+                : coupon.discount_value * total_quantity;
 
         return {
             ...item,
@@ -1517,7 +1513,10 @@ exports.getCouponReportCategories = async (couponId, fromTime, toTime, limit, so
         throw new Error("Coupon does not exist")
     }
 
-    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const orders = await runQuery(`
+        SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
+
     const orderIds = orders.map(item => item.id)
 
     if(coupon.applies_to === "product" && orderIds.length > 0){
@@ -1527,60 +1526,66 @@ exports.getCouponReportCategories = async (couponId, fromTime, toTime, limit, so
         orderItems = await adminUtils.orderedItemsCategoryCoupon(couponId, orderIds)
     }
     if (!orderItems || orderItems.length === 0) {        
-        const categoryDetails = {categories: [], totalCategoryProductsSold, totalCategoryProductsDiscounts, totalCategoryProductsSales}
+        const categoryDetails = {
+            categories: [], 
+            totalCategoryProductsSold, 
+            totalCategoryProductsDiscounts, 
+            totalCategoryProductsSales
+        }
         return categoryDetails
     }
 
     const productIds = orderItems.map(item => item.product_id)
 
-    products = await runQuery(`SELECT 
-                                    p.id,
-                                    p.title,
-                                    p.status,
-                                    p.category_id,
-                                    c.category,
-
-                                    CASE
-                                        WHEN pd.offer_price IS NOT NULL 
-                                            THEN pd.offer_price
-                                        ELSE pp.price
-                                    END AS price
-                                FROM products p
-                                JOIN categories c
-                                    ON c.id = p.category_id
-                                JOIN product_pricing pp 
-                                    ON pp.product_id = p.id
-                                    AND NOW() BETWEEN pp.start_time AND pp.end_time
-
-                                LEFT JOIN product_discounts pd 
-                                    ON pd.product_id = p.id
-                                    AND pd.is_active = 1
-                                    AND pd.start_time <= NOW()
-                                    AND pd.end_time > NOW()
-
-                                WHERE p.id IN (?)
-                                ORDER BY p.id ASC`, [productIds]);
-                                // ORDER BY p.id ASC`, [productIds]);
+    products = await runQuery(`
+        SELECT 
+            p.id,
+            p.title,
+            p.status,
+            p.category_id,
+            c.category,
+            CASE
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN pd.offer_price
+                ELSE pp.price
+            END AS price
+        FROM products p
+            JOIN categories c
+                ON c.id = p.category_id
+            JOIN product_pricing pp 
+                ON pp.product_id = p.id
+                AND NOW() BETWEEN pp.start_time AND pp.end_time
+            LEFT JOIN product_discounts pd 
+                ON pd.product_id = p.id
+                AND pd.is_active = 1
+                AND pd.start_time <= NOW()
+                AND pd.end_time > NOW()
+        WHERE p.id IN (?)
+        ORDER BY p.id ASC
+    `, [productIds]);
 
     products = products.map(item => {
-        let coupon_discount_amount = coupon.discount_type === "fixed"
-                    ? coupon.discount_value
-                    : (item.price/100) * coupon.discount_value
+        let coupon_discount_amount = 
+            coupon.discount_type === "fixed"
+                ? coupon.discount_value
+                : (item.price/100) * coupon.discount_value;
 
         if(coupon.threshold_amount && coupon_discount_amount > coupon.threshold_amount){
             coupon_discount_amount = coupon.threshold_amount 
         }
 
         const matchingOrderItem = orderItems.find(o => o.product_id === item.id);
-        const total_quantity = matchingOrderItem ? matchingOrderItem.total_quantity : 0
-        const total_purchase_price = matchingOrderItem ? matchingOrderItem.total_purchase_price : 0 
+        const total_quantity = matchingOrderItem?.total_quantity || 0;
+        const total_purchase_price = matchingOrderItem?.total_purchase_price || 0;
 
-        const total_product_discount = coupon.discount_type === "percent"
-                                ? Math.min(
-                                        (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
-                                        coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
-                                    )
-                                : coupon.discount_value * total_quantity;
+        const total_product_discount = 
+            coupon.discount_type === "percent"
+                ? Math.min(
+                        (total_purchase_price * coupon.discount_value) / (100 - coupon.discount_value),
+                        coupon.threshold_amount ? coupon.threshold_amount * total_quantity : Infinity
+                    )
+                : coupon.discount_value * total_quantity;
+        
         return {
             ...item,
             coupon_discount_amount: coupon_discount_amount, 
@@ -1608,10 +1613,6 @@ exports.getCouponReportCategories = async (couponId, fromTime, toTime, limit, so
         acc[cat].total_purchase_price += item.total_purchase_price;
         acc[cat].total_product_discount += item.total_product_discount;
 
-        // totalCategoryProductsSold += item.total_quantity
-        // totalCategoryProductsSales += item.total_purchase_price
-        // totalCategoryProductsDiscounts += item.total_product_discount
-
         return acc;
     }, {});
 
@@ -1624,13 +1625,20 @@ exports.getCouponReportCategories = async (couponId, fromTime, toTime, limit, so
     else{
         newCategories = [...categories].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, limit); 
     }
+
     for(item of newCategories){
         totalCategoryProductsSold += item.total_quantity
         totalCategoryProductsDiscounts += item.total_product_discount
         totalCategoryProductsSales += item.total_purchase_price
     }
 
-    const categoryDetails = {categories: newCategories, totalCategoryProductsSold, totalCategoryProductsDiscounts, totalCategoryProductsSales}
+    const categoryDetails = {
+        categories: newCategories, 
+        totalCategoryProductsSold, 
+        totalCategoryProductsDiscounts, 
+        totalCategoryProductsSales
+    }
+    
     return categoryDetails
 }
 
@@ -1645,11 +1653,10 @@ exports.getCouponReportUsers = async (couponId, fromTime, toTime, limit, sortBy,
         throw new Error("Coupon does not exist")
     }
 
-    const orders = await runQuery(`SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?`, [couponId, fromTime, toTime, "cancelled"])
+    const orders = await runQuery(`
+        SELECT * FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?) AND status != ?
+    `, [couponId, fromTime, toTime, "cancelled"])
 
-    // const orders = await runQuery(`SELECT orders.*, COUNT(orders.id) AS total_redeems FROM orders WHERE coupon_id = ? AND (order_date BETWEEN ? AND ?)`, [couponId, fromTime, toTime])
-    // console.log(orders);
-    
     const orderIds = orders.map(item => item.id)
 
     if (!orders || orders.length === 0) {
@@ -1658,114 +1665,87 @@ exports.getCouponReportUsers = async (couponId, fromTime, toTime, limit, sortBy,
     }
 
     if(coupon.applies_to === "all"){
-        // const groupedUsers = orders.reduce((acc, item) => {
-        //     const userId = item.user_id;
-    
-        //     if (!acc[userId]) {
-        //         acc[userId] = {
-        //             user_id: userId,
-        //             total_redeems: 0,
-        //             total_discount: 0,
-        //             total_sales: 0
-        //         };
-        //     }
-    
-        //     acc[userId].total_redeems += 1;
-        //     acc[userId].total_discount += item.discount_amount;
-        //     acc[userId].total_sales += item.final_total;
-    
-        //     totalUserRedeems += 1
-        //     totalUserDiscount += item.discount_amount
-        //     totalUserSales += item.final_total
-    
-        //     return acc;
-        // }, {})
-        
-        const groupedUsers = await runQuery(`SELECT 
-                                                o.user_id,
-                                                COUNT(o.id) AS total_redeems,
-                                                SUM(discount_amount) AS total_discount,
-                                                SUM(final_total) AS total_sales
-                                            FROM orders o
-                                            WHERE o.coupon_id = ?
-                                                AND o.order_date BETWEEN ? AND ?
-                                                AND o.status != ?
-                                            GROUP BY o.user_id`, [couponId, fromTime, toTime, "cancelled"])
+        const groupedUsers = await runQuery(`
+            SELECT 
+                o.user_id,
+                COUNT(o.id) AS total_redeems,
+                SUM(discount_amount) AS total_discount,
+                SUM(final_total) AS total_sales
+            FROM orders o
+            WHERE o.coupon_id = ?
+                AND o.order_date BETWEEN ? AND ?
+                AND o.status != ?
+            GROUP BY o.user_id
+        `, [couponId, fromTime, toTime, "cancelled"])
 
         users = Object.values(groupedUsers)
-        // const userDetails = {users, totalUserRedeems, totalUserDiscount, totalUserSales}
-    
-        // return userDetails
-        // return {users, totalUserRedeems, totalUserDiscount, totalUserSales}
     }
 
-    if(orderIds && orderIds.length > 0 && coupon.applies_to === 'product'){
-        const groupedUsers = await runQuery(`SELECT
-                                                user_id,
-                                                COUNT(order_id) AS total_redeems,
-                                                SUM(total_sales) AS total_sales,
-                                                SUM(total_discount) AS total_discount
-                                            FROM (
-                                                SELECT 
-                                                    o.user_id,
-                                                    o.id AS order_id,
-                                                    COUNT(DISTINCT o.id) AS total_redeems,
-                                                    SUM(oi.purchase_price * oi.quantity) AS total_sales,
-                                                    o.discount_amount AS total_discount
-                                                FROM orders o
-                                                JOIN order_item oi ON oi.order_id = o.id
-                                                JOIN (
-                                                        SELECT DISTINCT product_id 
-                                                        FROM coupon_products
-                                                        WHERE coupon_id = ?
-                                                    ) cp ON 
-                                                    cp.product_id = oi.product_id
-                                                WHERE o.id IN (?)
-                                                GROUP BY o.id
-                                            ) sub
-                                            GROUP BY user_id`,[couponId, orderIds]);
+    if(orderIds?.length > 0 && coupon.applies_to === 'product'){
+        const groupedUsers = await runQuery(`
+            SELECT
+                user_id,
+                COUNT(order_id) AS total_redeems,
+                SUM(total_sales) AS total_sales,
+                SUM(total_discount) AS total_discount
+            FROM (
+                SELECT 
+                    o.user_id,
+                    o.id AS order_id,
+                    COUNT(DISTINCT o.id) AS total_redeems,
+                    SUM(oi.purchase_price * oi.quantity) AS total_sales,
+                    o.discount_amount AS total_discount
+                FROM orders o
+                    JOIN order_item oi 
+                        ON oi.order_id = o.id
+                    JOIN (
+                            SELECT
+                                DISTINCT product_id
+                            FROM coupon_products
+                            WHERE coupon_id = ?
+                        ) cp 
+                        ON cp.product_id = oi.product_id
+                WHERE o.id IN (?)
+                GROUP BY o.id
+            ) sub
+            GROUP BY user_id
+        `,[couponId, orderIds]);
 
         users = Object.values(groupedUsers)
-        // for(item of groupedUsers){
-        //     totalUserDiscount += item.total_discount
-        //     totalUserRedeems += item.total_redeems
-        //     totalUserSales += item.total_sales
-        // }
     }
 
-    if(orderIds && orderIds.length > 0 && coupon.applies_to === 'category'){
-        const groupedUsers = await runQuery(`SELECT 
-                                                user_id,
-                                                COUNT(order_id) AS total_redeems,
-                                                SUM(total_sales) AS total_sales,
-                                                SUM(total_discount) AS total_discount
-                                            FROM (
-                                                SELECT 
-                                                    o.user_id,
-                                                    o.id AS order_id,
-                                                    SUM(oi.purchase_price * oi.quantity) AS total_sales,
-                                                    o.discount_amount AS total_discount
-                                                FROM orders o
-                                                JOIN order_item oi ON oi.order_id = o.id
-                                                JOIN products p ON p.id = oi.product_id
-                                                JOIN (
-                                                    SELECT DISTINCT category_id 
-                                                    FROM coupon_categories
-                                                    WHERE coupon_id = ?
-                                                ) cc ON cc.category_id = p.category_id
-                                                WHERE o.id IN (?)
-                                                GROUP BY o.id
-                                            ) sub
-                                            GROUP BY user_id;`,[couponId, orderIds]);
+    if(orderIds?.length > 0 && coupon.applies_to === 'category'){
+        const groupedUsers = await runQuery(`
+            SELECT 
+                user_id,
+                COUNT(order_id) AS total_redeems,
+                SUM(total_sales) AS total_sales,
+                SUM(total_discount) AS total_discount
+            FROM (
+                SELECT 
+                    o.user_id,
+                    o.id AS order_id,
+                    SUM(oi.purchase_price * oi.quantity) AS total_sales,
+                    o.discount_amount AS total_discount
+                FROM orders o
+                    JOIN order_item oi
+                        ON oi.order_id = o.id
+                    JOIN products p
+                        ON p.id = oi.product_id
+                    JOIN (
+                        SELECT
+                            DISTINCT category_id
+                        FROM coupon_categories
+                        WHERE coupon_id = ?
+                    ) cc
+                        ON cc.category_id = p.category_id
+                WHERE o.id IN (?)
+                GROUP BY o.id
+            ) sub
+            GROUP BY user_id;
+        `,[couponId, orderIds]);
 
-        // console.log(groupedUsers);
         users = Object.values(groupedUsers)
-
-        // for(item of groupedUsers){
-        //     totalUserDiscount += item.total_discount
-        //     totalUserRedeems += item.total_redeems
-        //     totalUserSales += item.total_sales
-        // }
     }
 
     let newUsers = []
@@ -1775,6 +1755,7 @@ exports.getCouponReportUsers = async (couponId, fromTime, toTime, limit, sortBy,
     else{
         newUsers = [...users].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, limit); 
     }
+
     for(item of newUsers){
         totalUserRedeems += item.total_redeems
         totalUserDiscount += item.total_discount
@@ -1786,63 +1767,22 @@ exports.getCouponReportUsers = async (couponId, fromTime, toTime, limit, sortBy,
 }
 
 exports.getCouponReportDates = async (couponId, fromTime, toTime, limit, sortBy, orderBy) => {
-    // const couponUsages = await runQuery(`SELECT 
-    //                                             id,
-    //                                             coupon_id,
-    //                                             user_id,
-    //                                             order_id,
-    //                                             DATE_FORMAT(used_at, '%m/%d/%Y') as used_at
-    //                                         FROM coupon_usages WHERE coupon_id = ? AND (used_at BETWEEN ? AND ?)`, [couponId, fromTime, toTime]);
-
-    // let totalDateRedeems = 0;
-    // groupedDateUsages = Object.values(
-    //     couponUsages.reduce((acc, item) => {
-    //         const date = item.used_at;
-
-    //         if (!acc[date]) {
-    //             acc[date] = {
-    //                 id: date,
-    //                 date: dayjs(date),
-    //                 total_redeems: 0,
-    //             };
-    //         }
-
-    //         acc[date].total_redeems += 1;
-
-    //         totalDateRedeems += 1
-    //         return acc;
-    //     }, {})
-    // );
-
     const order = orderBy === `asc` ? `ASC` : `DESC`
 
-    const groupedDateUsages = await runQuery(`SELECT 
-                                    DATE_FORMAT(used_at, '%m/%d/%Y') AS id,
-                                    DATE_FORMAT(used_at, '%m/%d/%Y') AS date,
-                                    COUNT(*) AS total_redeems
-                                FROM coupon_usages
-                                WHERE coupon_id = ?
-                                    AND used_at BETWEEN ? AND ?
-                                    AND is_reversed = ?
-                                GROUP BY DATE_FORMAT(used_at, '%m/%d/%Y')
-                                ORDER BY total_redeems ${order}`, [couponId, fromTime, toTime, false]);
-                                // ORDER BY STR_TO_DATE(date, '%m/%d/%Y') ${order}`, [couponId, fromTime, toTime]);
-    // console.log(groupedDateUsages);
+    const groupedDateUsages = await runQuery(`
+        SELECT
+            DATE_FORMAT(used_at, '%m/%d/%Y') AS id,
+            DATE_FORMAT(used_at, '%m/%d/%Y') AS date,
+            COUNT(*) AS total_redeems
+        FROM coupon_usages
+        WHERE coupon_id = ?
+            AND used_at BETWEEN ? AND ?
+            AND is_reversed = ?
+        GROUP BY DATE_FORMAT(used_at, '%m/%d/%Y')
+        ORDER BY total_redeems ${order}
+    `, [couponId, fromTime, toTime, false]);
 
     const totalDateRedeems = groupedDateUsages.reduce((sum, row) => sum + row.total_redeems, 0);
-
-    // let newUsers = []
-    // if(orderBy === "asc"){
-    //     newUsers = [...users].sort((a, b) => a[sortBy] - b[sortBy]).slice(0, limit);
-    // }
-    // else{
-    //     newUsers = [...users].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, limit); 
-    // }
-    // for(item of newUsers){
-    //     totalUserRedeems += item.total_redeems
-    //     totalUserDiscount += item.total_discount
-    //     totalUserSales += item.total_sales
-    // }
 
     return {dates: groupedDateUsages, totalDateRedeems}
 }
@@ -1852,7 +1792,6 @@ exports.getFirstBasicTemplate = async () => {
 
     const basicTemplateData = await fs.readFile(basicTemplatePath, 'utf-8')
 
-    // console.log(basicTemplateData);
     return basicTemplateData
 }
 
@@ -1874,10 +1813,7 @@ exports.getSingleTemplateContent = async (username, template) => {
 }
 
 exports.getAllTemplateFiles = async (username, active) => {
-    // console.log(username, active);
-    
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
-
     const templatesExist = await fs.pathExists(adminTemplatesDir)
 
     if(!templatesExist){
@@ -1885,8 +1821,6 @@ exports.getAllTemplateFiles = async (username, active) => {
     }
 
     const dirContents = await fs.readdir(adminTemplatesDir)
-    // console.log(dirContents);
-
     if(dirContents.length === 0){
         return {files: {}}
     }
@@ -1894,7 +1828,6 @@ exports.getAllTemplateFiles = async (username, active) => {
     const files = []
     for(let file of dirContents){
         const woExt = file.replace(path.extname(file), "")
-        // files[woExt] = ""
         files.push({ name: woExt, content: "" })
     }
 
@@ -1902,20 +1835,12 @@ exports.getAllTemplateFiles = async (username, active) => {
         const firstFile = dirContents[0]
         const firstFilePath = path.join(adminTemplatesDir, firstFile)
         const firstFileContent = await fs.readFile(firstFilePath, 'utf-8')
-
-        // files[firstFile.replace(".hbs", "")] = firstFileContent
-        // return {files}
-
         files[0].content = firstFileContent;
     }
     else{
         const activeFile = active + ".hbs"
         const activeFilePath = path.join(adminTemplatesDir, activeFile)
         const activeFileContent = await fs.readFile(activeFilePath, 'utf-8')
-
-        // files[activeFile.replace(".hbs", "")] = activeFileContent
-        // return {files}
-
         const match = files.find(f => f.name === active);
         if (match) match.content = activeFileContent;
     }
@@ -1924,10 +1849,6 @@ exports.getAllTemplateFiles = async (username, active) => {
 }
 
 exports.addNewTemplateFile = async (username, fileName, extension = ".hbs") => {
-
-    // console.log(username, fileName, extension);
-    
-
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
 
     await fs.ensureDir(adminTemplatesDir)
@@ -1982,49 +1903,19 @@ exports.renameTemplateFile = async (username, oldFileName, newFileName) => {
 }
 
 exports.deleteTemplateFile = async (username, fileName) => {
+
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
-
     await fs.ensureDir(adminTemplatesDir)
-
     const templatePath = path.join(adminTemplatesDir, `${fileName}.hbs`)
-
     await fs.remove(templatePath)
+
 }
 
-// exports.sendCampaignEmail = async(username, templateName, subject) => {
-//     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
-//     await fs.ensureDir(adminTemplatesDir)
-
-//     const templatePath = path.join(adminTemplatesDir, `${templateName}.hbs`)
-
-//     const allUsers = await runQuery(`SELECT first_name, last_name, email FROM users`)
-
-//     if(allUsers.length === 0){
-//         throw new Error("Could not fetch users to send email")
-//     }
-
-//     const usersData = []
-
-//     for(let user of allUsers){
-//         usersData.push([user.email, user.first_name, user.last_name])
-//     }
-
-//     for(let user of usersData){
-//         // console.log(user);
-//         await sendCampaignMail({
-//             from: '"Cartify" <no-reply@cartify.com>',
-//             to: user[0],
-//             subject,
-//             templatePath,
-//             replacements: {fName: user[1], lName: user[2],}
-//         })
-//     }
-
-// }
-
 exports.sendCampaignEmailService = async(campaignId) => {
-    const [campaign] = await runQuery(`SELECT * FROM campaigns WHERE id = ?`, [campaignId])
-    const recipients = await runQuery(`SELECT * FROM campaign_recipients WHERE campaign_id = ? AND status = ?`, [campaignId, "pending"]);
+    const [campaign] = await runQuery(`SELECT * FROM campaigns WHERE id = ?`, [campaignId]);
+    const recipients = await runQuery(`
+        SELECT * FROM campaign_recipients WHERE campaign_id = ? AND status = ?
+    `, [campaignId, "pending"]);
 
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", campaign.created_by)
     await fs.ensureDir(adminTemplatesDir)
@@ -2044,13 +1935,19 @@ exports.sendCampaignEmailService = async(campaignId) => {
             await runQuery(`UPDATE campaign_recipients SET status='sent', sent_at = NOW() WHERE id=?`, [r.id]);
         } 
         catch (err) {
-            await runQuery(`UPDATE campaign_recipients SET status='failed', sent_at = NOW(), error_message = ?  WHERE id=?`, [r.id, err.message]);
+            await runQuery(`
+                UPDATE campaign_recipients SET status = 'failed', sent_at = NOW(), error_message = ?  WHERE id = ?
+            `, [r.id, err.message]);
         }
     }
 
-    const [left] = await runQuery(`SELECT COUNT(*) as remaining
-                                FROM campaign_recipients
-                                WHERE campaign_id=? AND status= ?`, [campaignId, "pending"]);
+    const [left] = await runQuery(`
+        SELECT
+            COUNT(*) as remaining
+        FROM campaign_recipients
+        WHERE campaign_id = ?
+            AND status = ?
+    `, [campaignId, "pending"]);
 
     if (left.remaining === 0) {
         await runQuery(`UPDATE campaigns SET status = ? WHERE id=?`, ["completed", campaignId]);
@@ -2058,26 +1955,28 @@ exports.sendCampaignEmailService = async(campaignId) => {
 }
 
 exports.addCampaignEntries = async (username, campaignName, subject, templateName, scheduleTime) => {
-    // console.log(username, campaignName, subject, templateName, scheduleTime);
-
-    const addCampaign = await runQuery(`INSERT INTO campaigns (name, template_name, subject, scheduled_at, created_by, status) VALUES (?, ?, ?, ?, ?, ?)`, [campaignName, templateName, subject, scheduleTime, username, "scheduled"])
+    const addCampaign = await runQuery(`
+        INSERT INTO campaigns (name, template_name, subject, scheduled_at, created_by, status) VALUES (?, ?, ?, ?, ?, ?)
+    `, [campaignName, templateName, subject, scheduleTime, username, "scheduled"]);
 
     if(addCampaign.affectedRows === 0){
         throw new Error("Could not add Campaign")
     }
     const campaignId = addCampaign.insertId
-    // console.log(campaignId);
 
-    const addRecipients  = await runQuery(`INSERT INTO campaign_recipients (campaign_id, user_id, email, first_name, last_name, status)
-                                                SELECT 
-                                                    c.id AS campaign_id,
-                                                    u.id AS user_id,
-                                                    u.email,
-                                                    u.first_name,
-                                                    u.last_name,
-                                                    'pending' AS status
-                                                FROM users u
-                                                JOIN campaigns c ON c.id = ?`, [campaignId]);
+    const addRecipients  = await runQuery(`
+        INSERT INTO campaign_recipients 
+            (campaign_id, user_id, email, first_name, last_name, status)
+                SELECT 
+                    c.id AS campaign_id,
+                    u.id AS user_id,
+                    u.email,
+                    u.first_name,
+                    u.last_name,
+                    'pending' AS status
+                FROM users u
+                    JOIN campaigns c ON c.id = ?
+    `, [campaignId]);
 
     if(addRecipients.affectedRows === 0){
         throw new Error("Could not add Campaign")
@@ -2090,9 +1989,7 @@ exports.sendCampaignTestEmail = async (username, template, userId) => {
     await fs.ensureDir(adminTemplatesDir)
 
     const templatePath = path.join(adminTemplatesDir, `${template}.hbs`)
-
     const [getUser] = await runQuery(`SELECT * FROM users WHERE id = ?`, [userId])
-
     if(!getUser){
         throw new Error("Admin user not found")
     }
@@ -2109,30 +2006,35 @@ exports.sendCampaignTestEmail = async (username, template, userId) => {
 }
 
 exports.getAllCampaignsData = async (userId, limit, offset) => {
-    const campaigns = await runQuery(`SELECT 
-                                        c.id,
-                                        c.name,
-                                        c.template_name,
-                                        c.subject,
-                                        c.scheduled_at,
-                                        c.created_by,
-                                        c.status,
-                                        c.created_by,
-                                        c.created_at,
-                                        c.updated_at
-                                    FROM campaigns c
-                                    JOIN users u
-                                        ON u.username = c.created_by
-                                    WHERE u.id = ? 
-                                    ORDER BY created_at DESC 
-                                    LIMIT ? OFFSET ?`, [userId, limit, offset])
+    const campaigns = await runQuery(`
+        SELECT
+            c.id,
+            c.name,
+            c.template_name,
+            c.subject,
+            c.scheduled_at,
+            c.created_by,
+            c.status,
+            c.created_by,
+            c.created_at,
+            c.updated_at
+        FROM campaigns c
+            JOIN users u
+                ON u.username = c.created_by
+        WHERE u.id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+        OFFSET ?
+    `, [userId, limit, offset])
 
-    const [{total}] = await runQuery(`SELECT 
-                                            COUNT(*) as total 
-                                        FROM campaigns c
-                                        JOIN users u
-                                            ON u.username = c.created_by
-                                        WHERE u.id = ? `, [userId])
+    const [{total}] = await runQuery(`
+        SELECT 
+            COUNT(*) as total 
+        FROM campaigns c
+            JOIN users u
+                ON u.username = c.created_by
+        WHERE u.id = ?
+    `, [userId])
 
     if(!total){
         throw new Error("There are no campaigns")
@@ -2152,11 +2054,16 @@ exports.getCampaignsData = async (campaignId) => {
 }
 
 exports.getCampaignRecipients = async (campaignId, limit, offset) => {
-    const recipients = await runQuery(`SELECT * FROM campaign_recipients WHERE campaign_id = ? ORDER BY sent_at DESC LIMIT ? OFFSET ?`, [campaignId, limit, offset])
+    const recipients = await runQuery(`
+        SELECT * FROM campaign_recipients WHERE campaign_id = ? ORDER BY sent_at DESC LIMIT ? OFFSET ?
+    `, [campaignId, limit, offset])
 
-    const [{total}] = await runQuery(`SELECT 
-                                            COUNT(*) as total 
-                                        FROM campaign_recipients WHERE campaign_id = ?`, [campaignId])
+    const [{total}] = await runQuery(`
+        SELECT
+            COUNT(*) as total
+        FROM campaign_recipients
+        WHERE campaign_id = ?
+    `, [campaignId])
 
     if(!total){
         throw new Error("There are no recipients")

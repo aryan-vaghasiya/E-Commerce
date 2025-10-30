@@ -44,24 +44,22 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     }
 
     const ids = products.map(item => item._source.id);
-    // const placeholders = ids.map(() => '?').join(',');
     const placeholders = Array(ids.length).fill('?').join(',');
 
     const prices = await runQuery(`
         SELECT
-        p.id,
-        pp.mrp,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-            ELSE NULL
-        END AS offer_discount,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN pd.offer_price
-            ELSE pp.price
-        END AS price
-
+            p.id,
+            pp.mrp,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                ELSE NULL
+            END AS offer_discount,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN pd.offer_price
+                ELSE pp.price
+            END AS price
         FROM products p
             JOIN product_pricing pp    
                 ON pp.product_id = p.id
@@ -72,9 +70,8 @@ exports.getSearchedProducts = async (queryParams, userId) => {
                 AND pd.is_active = 1
                 AND (pd.start_time IS NULL OR pd.start_time <= NOW())
                 AND (pd.end_time IS NULL OR pd.end_time > NOW())
-                
         WHERE p.id IN (${placeholders})
-        `, ["active", ...ids])
+    `, ["active", ...ids])
 
     const priceMap = new Map(prices.map(p => [p.id, p]));
 
@@ -83,11 +80,11 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     if(userId){
         const [{id: wishlist_id}] = await runQuery(`
             SELECT id FROM wishlists WHERE user_id = ? AND name = ?
-            `, [userId, "my_wishlist"]);
+        `, [userId, "my_wishlist"]);
     
         const wishlisted = await runQuery(`
             SELECT product_id FROM wishlist_items WHERE wishlist_id = ? AND product_id IN (${placeholders})
-            `, [wishlist_id, ...ids]);
+        `, [wishlist_id, ...ids]);
     
         wishlistedSet = new Set(wishlisted.map(r => r.product_id));
     }
@@ -101,7 +98,6 @@ exports.getSearchedProducts = async (queryParams, userId) => {
             mrp: pricingData?.mrp || null,
             price: pricingData?.price || null,
             offer_discount: pricingData?.offer_discount || null,
-            // wishlisted: wishlistedSet.has(productId)
             ...(userId && { wishlisted: wishlistedSet.has(productId) })
         };
     });
@@ -116,6 +112,8 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     }
     return productsRes
 }
+
+// KEEP THIS COMMENTED SERVICE
 
 // exports.getSearchedProducts = async (queryParams, userId) => {
 //     const {
@@ -234,37 +232,54 @@ exports.getSearchedProducts = async (queryParams, userId) => {
 
 
 exports.getTrendingProducts = async (limit, userId) => {
-    const oneWeekAgo = dayjs().startOf('day').subtract(7, "day").format("YYYY-MM-DD hh:mm:ss")
+    const threeMonthsAgo = dayjs().startOf('day').subtract(3, 'month').format('YYYY-MM-DD HH:mm:ss')
 
-    const query = `SELECT id FROM orders WHERE order_date BETWEEN ? AND NOW() ORDER BY order_date DESC`
+    const products = await runQuery(`
+        SELECT 
+            oi.product_id,
+            COUNT(oi.product_id) AS order_count
+        FROM order_item oi
+            JOIN orders o 
+                ON o.id = oi.order_id
+        WHERE o.order_date BETWEEN ? AND NOW()
+        GROUP BY oi.product_id
+        ORDER BY order_count DESC
+        LIMIT ?
+    `, [threeMonthsAgo, limit])
 
-    let orderIds = []
-    const oneWeekOrders = await runQuery(query, [oneWeekAgo])
-    orderIds = oneWeekOrders.map(order => order.id)
-
-    if(oneWeekOrders.length < 1){
-        const oneMonthAgo = dayjs().startOf('day').subtract(1, "month").format("YYYY-MM-DD hh:mm:ss")
-        const oneMonthOrders = await runQuery(query, [oneMonthAgo])
-        orderIds = oneMonthOrders.map(order => order.id)
+    let finalProducts = products
+    if (finalProducts.length === 0) {
+        finalProducts = await runQuery(`
+            SELECT 
+                oi.product_id,
+                COUNT(oi.product_id) AS order_count
+            FROM order_item oi
+            GROUP BY oi.product_id
+            ORDER BY order_count DESC
+            LIMIT ?
+        `, [limit])
     }
 
-    const products = await runQuery(`SELECT product_id, COUNT(product_id) AS count FROM order_item WHERE order_id IN (?) GROUP BY product_id ORDER BY count DESC LIMIT ?`, [orderIds, limit])
-    const productIds = products.map(prod => prod.product_id)
+    const productIds = finalProducts.map(p => p.product_id)
 
     const results = await this.getProductsByIdsHelper(productIds, userId)
-    if(results.length === 0){
-        throw new Error ("Could not select all products")
+
+    if (results.length === 0) {
+        throw new Error("Could not fetch trending products")
     }
 
     return results
 }
 
 exports.getRecentlyOrderedProducts = async (limit, userId) => {
-    const orderItems = await runQuery(`SELECT product_id
-                                        FROM order_item
-                                        GROUP BY product_id
-                                        ORDER BY MAX(id) DESC
-                                        LIMIT ?`, [limit])
+    const orderItems = await runQuery(`
+        SELECT 
+            product_id
+        FROM order_item
+        GROUP BY product_id
+        ORDER BY MAX(id) DESC
+        LIMIT ?
+    `, [limit]);
     const productIds = orderItems.map(prod => prod.product_id)
 
     const results = await this.getProductsByIdsHelper(productIds, userId)
@@ -294,50 +309,50 @@ exports.getSingleProduct = async(productId, userId) => {
 
 exports.getProductsByIdsHelper = async (productIds, userId = null) => {
     const products = await runQuery(`
-    SELECT 
-        p.*, 
-        c.category,
-        pp.mrp, 
-        pp.discount, 
-        i.stock,
-        pd.discount_type,
-        CASE 
-            WHEN wi.product_id IS NOT NULL 
-                THEN true 
-            ELSE false 
-        END AS wishlisted,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
-            ELSE NULL
-        END AS offer_discount,
-        CASE 
-            WHEN pd.offer_price IS NOT NULL 
-                THEN pd.offer_price
-            ELSE pp.price
-        END AS price
-
-        FROM products p 
-            JOIN product_inventory i 
-                ON p.id = i.product_id
-            JOIN categories c 
-                ON c.id = p.category_id
-            JOIN product_pricing pp    
-                ON pp.product_id = p.id
-                AND p.status = ?
-                AND NOW() BETWEEN pp.start_time AND pp.end_time
-            LEFT JOIN product_discounts pd
-                ON pd.product_id = p.id
-                AND pd.is_active = 1
-                AND (pd.start_time IS NULL OR pd.start_time <= NOW())
-                AND (pd.end_time IS NULL OR pd.end_time > NOW())
-            LEFT JOIN wishlist_items wi
-                ON p.id = wi.product_id AND wi.wishlist_id = (
-                    SELECT id FROM wishlists WHERE user_id = ? AND name = ?
-                )
+        SELECT 
+            p.*, 
+            c.category,
+            pp.mrp, 
+            pp.discount, 
+            i.stock,
+            pd.discount_type,
+            CASE 
+                WHEN wi.product_id IS NOT NULL 
+                    THEN true 
+                ELSE false 
+            END AS wishlisted,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN ROUND(((pp.mrp - pd.offer_price) / pp.mrp) * 100, 2)
+                ELSE NULL
+            END AS offer_discount,
+            CASE 
+                WHEN pd.offer_price IS NOT NULL 
+                    THEN pd.offer_price
+                ELSE pp.price
+            END AS price
+            FROM products p 
+                JOIN product_inventory i 
+                    ON p.id = i.product_id
+                JOIN categories c 
+                    ON c.id = p.category_id
+                JOIN product_pricing pp    
+                    ON pp.product_id = p.id
+                    AND p.status = ?
+                    AND NOW() BETWEEN pp.start_time AND pp.end_time
+                LEFT JOIN product_discounts pd
+                    ON pd.product_id = p.id
+                    AND pd.is_active = 1
+                    AND (pd.start_time IS NULL OR pd.start_time <= NOW())
+                    AND (pd.end_time IS NULL OR pd.end_time > NOW())
+                LEFT JOIN wishlist_items wi
+                    ON p.id = wi.product_id 
+                    AND wi.wishlist_id = (
+                        SELECT id FROM wishlists WHERE user_id = ? AND name = ?
+                    )
             WHERE p.id IN (?)
             ORDER BY FIELD(p.id, ?)
-    `, ["active", userId, "my_wishlist", productIds, productIds]);
+        `, ["active", userId, "my_wishlist", productIds, productIds]);
 
     return products
 }

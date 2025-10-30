@@ -405,7 +405,7 @@ const HomePage = () => {
 
         {recentProducts.length > 0 && (
           <ProductCarousel
-            title="🕒 Recently Ordered"
+            title="🕒 Being Ordered"
             subtitle="Popular purchases happening right now"
             products={recentProducts}
           />

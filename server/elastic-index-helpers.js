@@ -203,6 +203,7 @@ exports.searchProductsElastic = async (filters = {}) => {
                                 fields: ["title^5", "brand^3", "category^2", "description^1"],
                                 type: "best_fields",
                                 // "fuzziness": "AUTO",
+                                "fuzziness": 1,
                             }
                         }
                     ],

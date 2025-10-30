@@ -37,8 +37,6 @@ export const removeFromWishlistSearch = (item) => {
     }
 }
 
-
-// export const searchProducts = (filters, page = 1, limit = 15) => {
 export const searchProducts = (filters) => {
     return async (dispatch, getState) => {
 
@@ -48,7 +46,7 @@ export const searchProducts = (filters) => {
 
         const token = getState().userReducer.token
         dispatch(searchRequest())
-        // setTimeout(async () => {
+        setTimeout(async () => {
             try {
                 const res = await fetch(`http://localhost:3000/products/search?${params.toString()}`, {
                     headers: {
@@ -67,6 +65,6 @@ export const searchProducts = (filters) => {
             catch (err) {
                 console.error("Search fetch failed:", err.message);
             }
-        // }, 300)
+        }, 300)
     };
 };

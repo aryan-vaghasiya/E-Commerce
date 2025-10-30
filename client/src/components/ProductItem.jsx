@@ -39,7 +39,6 @@ function ProductItem({ product, loading }) {
 
     const handleAddToCart = () => {
         dispatch(addToCart(product));
-        // dispatch(showSnack({ message: `${product.title} added to cart`, severity: "success" }));
     };
 
     const handleWishlist = () => {
@@ -59,9 +58,9 @@ function ProductItem({ product, loading }) {
     return (
         <Card sx={{
             height: "100%",
-            width:"100%",
-            // maxWidth: 400,
-            // mx: "auto",
+            // width:"100%",
+            width: 280,
+            mx: "auto",
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
