@@ -2,3 +2,4 @@ server/.env
 .vscode/settings.json
 server/node_modules
 server/http_ca.crt
+client/.env

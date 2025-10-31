@@ -3,16 +3,18 @@ import {
     Box, Typography, Slider, FormGroup, FormControlLabel,
     Checkbox, Rating, Divider, Button, FormControl,
     RadioGroup, Radio, Accordion, AccordionSummary, 
-    AccordionDetails, Chip,
-    Backdrop,
-    CircularProgress
+    AccordionDetails,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router';
 import { parseURLToFilters } from '../utils/searchUtils';
-import StarIcon from '@mui/icons-material/Star';
+
+const selectBrands = (state) => state.searchReducer.brands;
+const selectPriceRange = (state) => state.searchReducer.priceRange;
+const ratingOptions = [4, 3];
+const initialBrandCount = 5;
 
 const FilterSection = ({ title, children, actionName, actionFunction, isDirty, useAccordion = false, defaultExpanded = true, onAccordionChange }) => {
     if (useAccordion) {
@@ -23,6 +25,9 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
                 disableGutters
                 elevation={0}
                 onChange={onAccordionChange}
+                slotProps={{
+                    transition: { unmountOnExit: true }
+                }}
                 sx={{
                     bgcolor: 'inherit',
                     '&:before': { display: 'none' },
@@ -96,27 +101,22 @@ const FilterSection = ({ title, children, actionName, actionFunction, isDirty, u
 
 function FilterSidebar({ applyFilters }) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { brands, priceRange: apiPriceRange, total, isLoading } = useSelector((state) => state.searchReducer);
-    // const hasNoResults = total === 0;
-    // const hasNoResults = (!isLoading && !total) ? true : false;
-    
+
+    const brands = useSelector(selectBrands);
+    const apiPriceRange = useSelector(selectPriceRange);
+
     const [showClearAll, setShowClearAll] = useState(false);
     const [showAllBrands, setShowAllBrands] = useState(false);
     const priceRangeTimeoutRef = useRef(null);
-    const isMountedRef = useRef(true);
-
-    const urlPriceRange = searchParams.get("priceRange")?.split(",") || []
+    // const isMountedRef = useRef(true);
 
     const urlFilters = parseURLToFilters(searchParams)
     const displayMin = Math.floor(apiPriceRange?.min || 0)
-    // const displayMin = Math.floor(apiPriceRange?.min || urlPriceRange[0] || 0)
     const displayMax = Math.ceil(apiPriceRange?.max || 1000)
-    // const displayMax = Math.ceil(apiPriceRange?.max || urlPriceRange[1] || 1000)
     const sliderMax = displayMax + 1;
 
     const filters = {
         query: urlFilters.query,
-        // priceRange: urlFilters.priceRange || [displayMin, sliderMax],
         priceRange: urlFilters.priceRange 
             ? [
                 urlFilters.priceRange[0] ?? displayMin,
@@ -135,20 +135,14 @@ function FilterSidebar({ applyFilters }) {
         inStock: false,
     };
 
-    // const hasActiveFilters = 
-    //     !(filters.priceRange[0] === displayMin && filters.priceRange[1] === displayMax) ||
-    //     // isPriceFiltered ||
-    //     filters.rating ||
-    //     (filters.brands?.length > 0) ||
-    //     filters.inStock;
+    const { handleSubmit, control, setValue, reset, watch, getValues } = useForm({
+        values: filters
+    });
 
-    // const hasNoResults = !isLoading && !total && hasActiveFilters;
-
-    const { handleSubmit, control, setValue, reset, watch, getValues } = useForm({ values: filters });
-    const watchAllFields = watch();
-
-    const ratingOptions = [4, 3];
-    const initialBrandCount = 5;
+    const priceRange = watch("priceRange");
+    const brandsValue = watch("brands");
+    const ratingValue = watch("rating");
+    const inStockValue = watch("inStock");
 
     const handlePriceRangeChange = (newValue) => {
         if (priceRangeTimeoutRef.current) {
@@ -156,13 +150,10 @@ function FilterSidebar({ applyFilters }) {
         }
 
         priceRangeTimeoutRef.current = setTimeout(() => {
-            if (!isMountedRef.current) return;
-            
+            // if (!isMountedRef.current) return;
             const newParams = new URLSearchParams(searchParams);
             const min = newValue[0];
             const max = newValue[1];
-            
-            // If slider at max position (displayMax + 1), send empty string (no upper limit)
             const maxParam = max >= sliderMax ? '' : max;
             
             newParams.set('priceRange', `${min},${maxParam}`);
@@ -207,6 +198,7 @@ function FilterSidebar({ applyFilters }) {
     const isFieldChanged = (current, def) => {
         if (Array.isArray(current) && Array.isArray(def)) {
             return current.join() !== def.join();
+            // return current.length !== def.length || current.some((v, i) => v !== def[i]);
         }
         return current !== def;
     };
@@ -232,7 +224,6 @@ function FilterSidebar({ applyFilters }) {
     };
 
     const formatValueLabel = (value) => {
-        // return `$${value}`
         if (value >= sliderMax) {
             return `$${displayMax}+`;
         }
@@ -254,24 +245,24 @@ function FilterSidebar({ applyFilters }) {
         setShowAllBrands(false);
     };
 
-    const applySearchFilters = (formData) => {
-        console.log("Applied");
-        let filtersToSend = {};
+    // const applySearchFilters = (formData) => {
+    //     console.log("Applied");
+    //     let filtersToSend = {};
 
-        Object.entries(formData).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-                if (value.length > 0 && key !== "priceRange") filtersToSend[key] = value;
-                if (key === "priceRange") {
-                    filtersToSend[key] = [value[0], value[1] > displayMax ? null : value[1]];
-                }
-            } else if (value) {
-                filtersToSend[key] = value;
-            }
-        });
+    //     Object.entries(formData).forEach(([key, value]) => {
+    //         if (Array.isArray(value)) {
+    //             if (value.length > 0 && key !== "priceRange") filtersToSend[key] = value;
+    //             if (key === "priceRange") {
+    //                 filtersToSend[key] = [value[0], value[1] > displayMax ? null : value[1]];
+    //             }
+    //         } else if (value) {
+    //             filtersToSend[key] = value;
+    //         }
+    //     });
 
-        const currentSort = new URLSearchParams(window.location.search).get("sort") || "_score,desc";
-        applyFilters(filtersToSend, currentSort);
-    };
+    //     const currentSort = new URLSearchParams(window.location.search).get("sort") || "_score,desc";
+    //     applyFilters(filtersToSend, currentSort);
+    // };
 
     const handleBrandAccordionChange = (event, isExpanded) => {
         if (!isExpanded) {
@@ -280,10 +271,10 @@ function FilterSidebar({ applyFilters }) {
     };
 
     useEffect(() => {
-        isMountedRef.current = true;
+        // isMountedRef.current = true;
 
         return () => {
-            isMountedRef.current = false;
+            // isMountedRef.current = false;
             if (priceRangeTimeoutRef.current) {
                 clearTimeout(priceRangeTimeoutRef.current);
             }
@@ -291,52 +282,14 @@ function FilterSidebar({ applyFilters }) {
     }, []);
 
     useEffect(() => {
-        // const changed = isFormChanged(watchAllFields, defaultFilters);
         const changed = isFormChanged(filters, defaultFilters);
         setShowClearAll(changed);
-    }, [filters, watchAllFields]);
+    }, [filters]);
 
     const visibleBrands = showAllBrands ? brands : brands?.slice(0, initialBrandCount);
 
     return (
         <Box sx={{ p: 2, maxWidth: 300, mr: "auto", position: "relative" }}>
-
-            {/* {hasNoResults && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        bgcolor: 'rgba(255, 255, 255, 0.9)',
-                        zIndex: 10,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        p: 3,
-                        borderRadius: 1
-                    }}
-                >
-                    <Typography variant="h6" gutterBottom>
-                        No Results Found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 2 }}>
-                        Current filters don't match any products
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            reset(defaultFilters);
-                            handleClearAll();
-                            // const query = searchParams.get('query');
-                            // const sort = searchParams.get('sort') || '_score,desc';
-                            // setSearchParams({ query, sort, page: 1 });
-                        }}
-                    >
-                        Clear Filters
-                    </Button>
-                </Box>
-            )} */}
-
             {/* <Box sx={{ opacity: hasNoResults ? 0.5 : 1, pointerEvents: hasNoResults ? 'none' : 'auto'}}> */}
             <Box sx={{}}>
                 <Box sx={{ mb: 1.5 }}>
@@ -358,15 +311,14 @@ function FilterSidebar({ applyFilters }) {
                     <Divider orientation="horizontal" variant="fullWidth" sx={{ mt: 1 }} />
                 </Box>
 
-                <form onSubmit={handleSubmit(applySearchFilters)}>
+                {/* <form onSubmit={handleSubmit(applySearchFilters)}> */}
                     <FilterSection
                         title="Price Range"
                         actionName="Reset"
                         actionFunction={() => {
-                            // handleResetSubsection("priceRange", [0, ""]);
                             handleResetSubsection("priceRange")
                         }}
-                        isDirty={isFieldChanged(watch("priceRange"), defaultFilters.priceRange)}
+                        isDirty={isFieldChanged(priceRange, defaultFilters.priceRange)}
                         useAccordion={false}
                     >
                         <Box sx={{ p: 1 }}>
@@ -406,8 +358,12 @@ function FilterSidebar({ applyFilters }) {
                             />
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="body2">{formatValueLabel(watch("priceRange")[0])}</Typography>
-                            <Typography variant="body2">{formatValueLabel(watch("priceRange")[1])}</Typography>
+                            <Typography variant="body2">
+                                {formatValueLabel(priceRange[0])}
+                            </Typography>
+                            <Typography variant="body2">
+                                {formatValueLabel(priceRange[1])}
+                            </Typography>
                         </Box>
                     </FilterSection>
 
@@ -419,7 +375,7 @@ function FilterSidebar({ applyFilters }) {
                                 handleResetSubsection("brands");
                                 setShowAllBrands(false);
                             }}
-                            isDirty={isFieldChanged(watch("brands"), defaultFilters.brands)}
+                            isDirty={isFieldChanged(brandsValue, defaultFilters.brands)}
                             useAccordion={true}
                             defaultExpanded={true}
                             onAccordionChange={handleBrandAccordionChange}
@@ -482,7 +438,7 @@ function FilterSidebar({ applyFilters }) {
                         actionFunction={() => {
                             handleResetSubsection("rating");
                         }}
-                        isDirty={isFieldChanged(watch("rating"), defaultFilters.rating)}
+                        isDirty={isFieldChanged(ratingValue, defaultFilters.rating)}
                         useAccordion={true}
                         defaultExpanded={true}
                     >
@@ -525,7 +481,7 @@ function FilterSidebar({ applyFilters }) {
                         actionFunction={() => {
                             handleResetSubsection("inStock");
                         }}
-                        isDirty={isFieldChanged(watch("inStock"), defaultFilters.inStock)}
+                        isDirty={isFieldChanged(inStockValue, defaultFilters.inStock)}
                         useAccordion={true}
                         defaultExpanded={true}
                     >
@@ -550,7 +506,7 @@ function FilterSidebar({ applyFilters }) {
                             )}
                         />
                     </FilterSection>
-                </form>
+                {/* </form> */}
             </Box>
         </Box>
     );

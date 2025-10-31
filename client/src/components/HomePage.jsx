@@ -23,6 +23,7 @@ import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRound
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 // ---- Helper: Smooth scrollable horizontal carousel with buttons ----
 const HorizontalScroller = ({ children, ariaLabel }) => {
@@ -149,6 +150,10 @@ const ProductCarousel = ({ title, subtitle, products }) => {
 
 const HomePage = () => {
   const productsState = useSelector((state) => state.productReducer);
+  const totalPages = useSelector((state) => state.productReducer.pages);
+  const currentPage = useSelector((state) => state.productReducer.currentPage);
+  const productsToShow = useSelector((state) => state.productReducer.products);
+  const isLoading = useSelector((state) => state.productReducer.isLoading);
   const userState = useSelector((state) => state.userReducer);
   // const searchState = useSelector((state) => state.searchReducer);
   const snackbarState = useSelector((state) => state.snackbarReducer);
@@ -158,7 +163,8 @@ const HomePage = () => {
 
   const getTrendingProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`, {
+      // const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`, {
+      const res = await fetch(`${API_URL}/products/trending?limit=${limit}`, {
           headers: {
             Authorization: `Bearer ${userState.token}`,
           },
@@ -206,13 +212,6 @@ const HomePage = () => {
     // }
     dispatch(setPageAll(value));
   };
-
-  // const totalPages = searchState.query ? searchState.pages : productsState.pages;
-  const totalPages = productsState.pages;
-  // const currentPage = searchState.query ? searchState.currentPage : productsState.currentPage;
-  const currentPage = productsState.currentPage;
-  // const productsToShow = searchState.query ? searchState.products : productsState.products;
-  const productsToShow = productsState.products;
 
   useEffect(() => {
     // if (searchState.query.trim() !== "") {
@@ -436,14 +435,14 @@ const HomePage = () => {
         </Typography>
 
         <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
-          {productsState.isLoading &&
+          {isLoading &&
             Array.from({ length: 12 }).map((_, index) => (
               <Grid key={index} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
                 <ProductItem loading={true} />
               </Grid>
             ))}
 
-          {!productsState.isLoading &&
+          {!isLoading &&
             (productsToShow?.length ? (
               productsToShow.map((product) => (
                 <Grid key={product.id} size={{xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4}}>

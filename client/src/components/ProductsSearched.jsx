@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     Box, Grid, Typography, Drawer, Pagination, Alert, Snackbar,
@@ -21,24 +21,35 @@ import AppliedFilters from "./AppliedFilters";
 import HorizontalProductCardSkeleton from "./HorizontalProductCardSkeleton";
 import NoResults from "./NoResults";
 
+const selectSnackbar = (state) => state.snackbarReducer;
+const selectProducts = (state) => state.searchReducer.products;
+const selectPages = (state) => state.searchReducer.pages;
+const selectIsLoading = (state) => state.searchReducer.isLoading;
+const selectTotal = (state) => state.searchReducer.total;
+
 function ProductsSearched() {
     const [searchParams, setSearchParams] = useSearchParams()
     const dispatch = useDispatch();
     const navigate = useNavigate()
-    const snackbarState = useSelector((state) => state.snackbarReducer);
-    const { products, pages, isLoading, total } = useSelector((state) => state.searchReducer);
+
+    const snackbarState = useSelector(selectSnackbar);
+    const products = useSelector(selectProducts);
+    const pages = useSelector(selectPages);
+    const isLoading = useSelector(selectIsLoading);
+    const total = useSelector(selectTotal);
 
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
     const query = searchParams.get('query') || '';
-    const currentPage = Math.max(1, Math.min(Number(searchParams.get('page')) || 1, pages));
+    const currentPage = Math.max(1, Math.min(Number(searchParams.get('page')) || 1, pages || 1));
+    const sortValue = searchParams.get("sort") || "_score,desc";
     
     const [mobileOpen, setMobileOpen] = useState(false);
     const [hasAnyResults, setHasAnyResults] = useState(true);
 
     const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
+        setMobileOpen(prev => !prev);
     };
 
     const handlePage = (event, value) => {
@@ -49,18 +60,28 @@ function ProductsSearched() {
     };
 
     useEffect(() => {
-        const filters = Object.fromEntries(searchParams)
-
-        if (!searchParams.toString() || !searchParams.get("query")) {
-            return navigate("/")
+        if (!query) {
+            navigate("/", { replace: true });
         }
-        if(!filters.page || filters.page > currentPage){
-            console.log(currentPage);
-            return setSearchParams({...filters, page: currentPage})
+    }, [query, navigate]);
+
+    useEffect(() => {
+        if (!query) return;
+
+        const filters = Object.fromEntries(searchParams);
+        const pageParam = Number(filters.page) || 1;
+
+        if (pageParam < 1 || (pages > 0 && pageParam > pages)) {
+            const validPage = Math.max(1, Math.min(pageParam, pages || 1));
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('page', validPage);
+            setSearchParams(newParams, { replace: true });
+            return;
         }
 
-        dispatch(searchProducts(filters))
-    }, [searchParams])
+        dispatch(searchProducts(filters));
+    }, [searchParams, query, dispatch, setSearchParams, navigate]);
+    // }, [searchParams]);
 
     useEffect(() => {
         if (!isLoading && products !== undefined) {
@@ -81,14 +102,28 @@ function ProductsSearched() {
     const handleApplyFilters = useCallback((filters, sort = "_score,desc") => {
         const params = new URLSearchParams();
         params.set("query", query)
+
         for (const [key, value] of Object.entries(filters)) {
             params.set(key, value)
         }
+
         params.set("sort", sort)
         params.set("page", 1)
-
         setSearchParams(params)
     }, [query, setSearchParams]);
+
+    const handleSortChange = (e) => {
+        const currentFilters = Object.fromEntries(searchParams);
+        delete currentFilters.page;
+        
+        const newParams = new URLSearchParams({
+            ...currentFilters,
+            sort: e.target.value,
+            page: "1"
+        });
+        
+        setSearchParams(newParams);
+    };
 
     return (
         <Box sx={{ bgcolor: "#EEEEEE", minHeight: "91vh", position: "relative" }}>
@@ -116,16 +151,7 @@ function ProductsSearched() {
                                     value={searchParams.get("sort") || "_score,desc"}
                                     labelId="sort_by"
                                     label="Sort by"
-                                    onChange={(e) => {                                    
-                                        const currentFilters = Object.fromEntries(searchParams);
-                                        delete currentFilters.page;
-                                        const newParams = new URLSearchParams({
-                                            ...currentFilters,
-                                            sort: e.target.value,
-                                            page: 1
-                                        });
-                                        setSearchParams(newParams);
-                                    }}
+                                    onChange={handleSortChange}
                                 >
                                     <MenuItem value="_score,desc">Relevance</MenuItem>
                                     <MenuItem value="price,asc">Price - Low to High</MenuItem>
