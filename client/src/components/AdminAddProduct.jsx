@@ -24,6 +24,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -51,7 +52,7 @@ function AdminAddProduct() {
 
     const getAllCategories = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+            const response = await fetch(`${API_URL}/admin/product/categories`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -103,7 +104,7 @@ function AdminAddProduct() {
         }
 
         try{
-            const res = await fetch(`http://localhost:3000/admin/product/add`, {
+            const res = await fetch(`${API_URL}/admin/product/add`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -123,7 +124,7 @@ function AdminAddProduct() {
             const thumbnailFile = thumbnailPreview.file
             formDataThumb.append('thumbnail', thumbnailFile)
 
-            const thumbUpload = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
+            const thumbUpload = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -138,7 +139,7 @@ function AdminAddProduct() {
             for (let i = 0; i < imagesFiles.length; i++) {
                 formDataImages.append("images", imagesFiles[i]);
             }
-            const imagesUpload = await fetch(`http://localhost:3000/admin/upload/product/${productId}`, {
+            const imagesUpload = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
