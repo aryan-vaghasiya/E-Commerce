@@ -6,17 +6,15 @@ import Card from '@mui/material/Card'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
-import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { addDetails } from '../redux/checkout/checkoutActions'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { addUser } from '../redux/user/userActions'
+import { authService } from '../api/services/authService'
 
 function Signup() {
-    // const [signup, setSignup] = useState(false)
-    // const {referral} = useParams()
     const [searchParams] = useSearchParams();
     const referralCode = searchParams.get("referral");
     const invitationId = searchParams.get("invitationId");
@@ -24,58 +22,34 @@ function Signup() {
     const navigate = useNavigate()
     const snackbarState = useSelector((state) => state.snackbarReducer)
 
-    const { register, handleSubmit, control, getValues, watch, formState: { errors } } = useForm({
-        defaultValues: {
-            username: "",
-            password: ""
-        }
-    })
-
-    const location = useLocation()
-    const fromPath = location.state
-    // console.log(fromPath);
-    
+    const { register, handleSubmit, control, getValues, watch, formState: { errors } } = useForm()
 
     const passwordValue = watch("password")
 
     const handleLogin = () => {
-        // setSignup(prev => !prev)
-        navigate("/login", {replace: true, state: "/my-orders"})
+        navigate("/login")
     }
 
-    const onSubmitOne = async (data) => {
-        dispatch(addDetails(getValues()))
-        try{
-            const response = await fetch(`http://localhost:3000/signup`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: data.username,
-                    password: data.password,
-                    fName: data.fName,
-                    lName: data.lName,
-                    email: data.email,
-                    // referral: data.referral ? data.referral : null
-                    referral: data.referral || null,
-                    referralMode: invitationId ? invitationId : data.referral ? "manual" : null
-                })
+    const onSubmitOne = (data) => {
+        authService.signup({
+            username: data.username,
+            password: data.password,
+            fName: data.fName,
+            lName: data.lName,
+            email: data.email,
+            referral: data.referral || null,
+            referralMode: invitationId ? invitationId : data.referral ? "manual" : null
+        })
+            .then(data => {
+                const decoded = JSON.parse(atob(data?.token.split('.')[1]))
+                dispatch(addUser(decoded.username, data.token, "user"))
+                dispatch(addDetails(getValues()))
+                return navigate("/", {replace: true})
             })
-            if (response.ok) {
-                const resData = await response.json()
-                const token = resData.token
-                dispatch(addUser(data.username, token))
-                return navigate("/")
-            }
-            const error = await response.json()
-            console.error(error.error);
-            dispatch(showSnack({message: error.error, severity: "warning"}))
-        }
-        catch(err){
-            console.error(err.error);
-            dispatch(showSnack({message: err.error, severity: "warning"}))
-        }
+            .catch(err => {
+                console.error(err);
+                dispatch(showSnack({message: err.message, severity: "warning"}))
+            })
     }
 
     return (
@@ -94,8 +68,8 @@ function Signup() {
                 </Alert>
             </Snackbar>
             <Card sx={{ bgcolor: "white", px: 7, pb: 3, pt: 5,  my: "auto"}}>
-                <form onSubmit={handleSubmit(onSubmitOne)} noValidate >
-                    <Stack spacing={2.5} width={400} >
+                <form onSubmit={handleSubmit(onSubmitOne)} noValidate>
+                    <Stack spacing={2.5} width={400}>
                         <Box sx={{ display: "inline-flex" }}>
                             <TextField label="First Name" type='text' sx={{ width: "100%", mr: 1 }} {...register("fName", {
                                 required: {

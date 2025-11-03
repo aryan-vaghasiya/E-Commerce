@@ -37,7 +37,8 @@ function Login() {
 
     const handleSignup = () => {
         // setSignup(prev => !prev)
-        navigate("/signup", {replace: true, state: "/my-orders"})
+        // navigate("/signup", {replace: true, state: "/my-orders"})
+        navigate("/signup")
     }
 
     const onSubmitOne = async (data) => {
@@ -65,7 +66,7 @@ function Login() {
             dispatch(fetchOrders(token))
             dispatch(fetchDetails(token))
             dispatch(getFullWishlist(token))
-            navigate(fromPath, { replace: true })
+            navigate(fromPath ?? "/", { replace: true })
         }
         else{
             const error = await response.json()

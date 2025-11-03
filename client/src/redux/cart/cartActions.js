@@ -32,7 +32,9 @@ export const addToCart = (product) => {
         }
         const token = getState().userReducer.token
         if(!token){
-            dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
+            dispatch({type: ADD_TO_CART, payload: product})
+            dispatch(showSnack({message: "Item added to Cart", severity: "success"}))
+            // dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
             return
         }
         const productId = product.id || product.product_id
@@ -58,6 +60,11 @@ export const addToCart = (product) => {
 export const removeFromCart = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
+        if(!token){
+            dispatch({type: REMOVE_FROM_CART, payload: product})
+            dispatch(showSnack({message: "Item removed from Cart", severity: "success"}))
+            return
+        }
         const productId = product.id
         const response = await fetch("http://localhost:3000/cart/remove", {
             method: "POST",

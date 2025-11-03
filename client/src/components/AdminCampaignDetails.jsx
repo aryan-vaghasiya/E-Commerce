@@ -2,7 +2,6 @@ import { Box, Card, CardContent, Chip, Divider, Stack, Typography } from '@mui/m
 import { DataGrid } from '@mui/x-data-grid'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
 import { useLocation, useParams } from 'react-router'
 import Split from "react-split";
 import { campaignService } from '../api/services/campaignService'
@@ -18,7 +17,6 @@ const statusColors = {
 }
 
 function AdminCampaignDetails() {
-
     const { campaignId } = useParams()
     const location = useLocation()
     const templateName = location.state
@@ -49,27 +47,10 @@ function AdminCampaignDetails() {
     };
 
     const recipientColumns = [
-        { 
-            field: 'user_id', headerName: 'User ID', width: 110, align : "right"
-        },
-        {
-            field: 'first_name',
-            headerName: 'First Name',
-            width: 150,
-            editable: false,
-        },
-        {
-            field: 'last_name',
-            headerName: 'Last Name',
-            width: 150,
-            editable: false,
-        },
-        {
-            field: 'email',
-            headerName: 'Email',
-            width: 180,
-            editable: false,
-        },
+        { field: 'user_id', headerName: 'User ID', width: 110, align : "right" },
+        { field: 'first_name', headerName: 'First Name', width: 150, editable: false },
+        { field: 'last_name', headerName: 'Last Name', width: 150, editable: false },
+        { field: 'email', headerName: 'Email', width: 180, editable: false },
         {
             field: 'status',
             headerName: 'Status',
@@ -110,79 +91,82 @@ function AdminCampaignDetails() {
                     width: "8px",
                 }
             }}>
-            <Split
-                className="split"
-                direction="horizontal"
-                sizes={[70, 30]}
-                minSize={[250, 250]}
-                gutterSize={8}
-            >
-                <Box sx={{ p: 2, height: `calc(100vh - 64px)`, overflow: 'auto' }}>
-                    {campaign &&
-                        <Card sx={{borderRadius: 3, boxShadow: 3, width: "100%"}}>
-                            <CardContent>
-                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                    <Typography variant="h6" fontWeight="bold">
-                                        {campaign.name}
+                <Split
+                    className="split"
+                    direction="horizontal"
+                    sizes={[70, 30]}
+                    minSize={[250, 250]}
+                    gutterSize={8}
+                >
+                    <Box sx={{ p: 2, height: `calc(100vh - 64px)`, overflow: 'auto' }}>
+                        {campaign &&
+                            <Card sx={{borderRadius: 3, boxShadow: 3, width: "100%"}}>
+                                <CardContent>
+                                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="h6" fontWeight="bold">
+                                            {campaign.name}
+                                        </Typography>
+                                        <Chip
+                                            label={
+                                                campaign.status.charAt(0).toUpperCase() + 
+                                                campaign.status.slice(1).toLowerCase()
+                                            }
+                                            color={statusColors[campaign.status]}
+                                            variant="filled" 
+                                        />
+                                    </Box>
+
+                                    <Divider sx={{ mb: 2 }} />
+
+                                    <Typography variant="body2" color="text.secondary">
+                                        <strong>Template: </strong>
+                                        {campaign.template_name}
                                     </Typography>
-                                    <Chip 
-                                        label={campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1).toLowerCase()} 
-                                        color={statusColors[campaign.status]}
-                                        variant="filled" 
-                                    />
-                                </Box>
-
-                                <Divider sx={{ mb: 2 }} />
-
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Template: </strong>
-                                    {campaign.template_name}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Subject: </strong>
-                                    {campaign.subject}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Scheduled At: </strong>
-                                    {dayjs(campaign.scheduled_at).format("hh:mm A, D MMMM YYYY")}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Created By: </strong>
-                                    {campaign.created_by}
-                                </Typography>
-
-                                <Divider sx={{ my: 2 }} />
-
-                                <Stack spacing={1}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        <strong>Created At: </strong>
-                                        {dayjs(campaign.created_at).format("hh:mm A, D MMMM YYYY")}
+                                    <Typography variant="body2" color="text.secondary">
+                                        <strong>Subject: </strong>
+                                        {campaign.subject}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        <strong>Last Updated: </strong>
-                                        {dayjs(campaign.updated_at).format("hh:mm A, D MMMM YYYY")}
+                                    <Typography variant="body2" color="text.secondary">
+                                        <strong>Scheduled At: </strong>
+                                        {dayjs(campaign.scheduled_at).format("hh:mm A, D MMMM YYYY")}
                                     </Typography>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    }
-                    {recipients && totalRecipients &&
-                        <DataGrid
-                            sx={{ maxHeight: 690, height: "auto", width: "100%", mt: 3}}
-                            rows={recipients}
-                            columns={recipientColumns}
-                            rowCount={totalRecipients}
-                            pagination
-                            paginationMode="server"
-                            paginationModel={paginationModel}
-                            onPaginationModelChange={handlePaginationChange}
-                            loading={loading}
-                            pageSizeOptions={[5, 10, 20]}
-                            disableRowSelectionOnClick
-                        />
-                    }
-                </Box>
-                <Box sx={{height: `calc(100vh - 64px)`, overflow: 'auto' }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        <strong>Created By: </strong>
+                                        {campaign.created_by}
+                                    </Typography>
+
+                                    <Divider sx={{ my: 2 }} />
+
+                                    <Stack spacing={1}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            <strong>Created At: </strong>
+                                            {dayjs(campaign.created_at).format("hh:mm A, D MMMM YYYY")}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            <strong>Last Updated: </strong>
+                                            {dayjs(campaign.updated_at).format("hh:mm A, D MMMM YYYY")}
+                                        </Typography>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        }
+                        {recipients && totalRecipients &&
+                            <DataGrid
+                                sx={{ maxHeight: 690, height: "auto", width: "100%", mt: 3}}
+                                rows={recipients}
+                                columns={recipientColumns}
+                                rowCount={totalRecipients}
+                                pagination
+                                paginationMode="server"
+                                paginationModel={paginationModel}
+                                onPaginationModelChange={handlePaginationChange}
+                                loading={loading}
+                                pageSizeOptions={[5, 10, 20]}
+                                disableRowSelectionOnClick
+                            />
+                        }
+                    </Box>
+                    <Box sx={{height: `calc(100vh - 64px)`, overflow: 'auto' }}>
                         {template &&
                             <iframe
                                 srcDoc={template ? template.replaceAll("{{fName}}", "John").replaceAll("{{lName}}", "Doe") : ''}
@@ -191,8 +175,8 @@ function AdminCampaignDetails() {
                                 height="100%"
                             />
                         }
-                </Box>
-            </Split>
+                    </Box>
+                </Split>
             </Box>
         </Box>
     )
