@@ -166,7 +166,7 @@ const HomePage = () => {
       const res = await fetch(`${API_URL}/products/trending?limit=${limit}`, {
           headers: {
             Authorization: `Bearer ${userState.token}`,
-            'ngrok-skip-browser-warning': 'true'
+            // 'ngrok-skip-browser-warning': 'true'
           },
         });
         if(!res.ok){
@@ -188,7 +188,7 @@ const HomePage = () => {
       const res = await fetch(`${API_URL}/products/recently-ordered?limit=${limit}`, {
           headers: {
             Authorization: `Bearer ${userState.token}`,
-            'ngrok-skip-browser-warning': 'true'
+            // 'ngrok-skip-browser-warning': 'true'
           },
         });
         if(!res.ok){
