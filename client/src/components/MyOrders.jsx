@@ -21,6 +21,7 @@ import { ExpandMore, ExpandLess, LocalShipping, CheckCircle, Cancel, Pending, Re
 import OrderItem from './OrderItem'
 import OrderFilterModal from './OrderFilterModal'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyOrders() {
     const userState = useSelector(state => state.userReducer)
@@ -53,7 +54,7 @@ function MyOrders() {
         setLoading(true)
         try {
             const params = new URLSearchParams({page, limit, ...filters})
-            const res = await fetch(`http://localhost:3000/orders/get-orders?${params.toString()}`, {
+            const res = await fetch(`${API_URL}/orders/get-orders?${params.toString()}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -81,7 +82,7 @@ function MyOrders() {
     const handleRepeatOrder = async (products)=> {
         const newItems = products.map(item => ({productId: item.id, quantity: item.quantity}))
         try{
-            const response = await fetch(`http://localhost:3000/cart/bulk-add`, {
+            const response = await fetch(`${API_URL}/cart/bulk-add`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -103,7 +104,7 @@ function MyOrders() {
     const handleCancel = async () => {
         if(!selectedOrderId) return
         try{
-            const response = await fetch(`http://localhost:3000/orders/cancel-user`, {
+            const response = await fetch(`${API_URL}/orders/cancel-user`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,

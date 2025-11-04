@@ -9,8 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import { useNavigate } from 'react-router';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
-
-
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminOrders() {
     const [orders, setOrders] = useState([]);
@@ -31,7 +30,7 @@ function AdminOrders() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`http://localhost:3000/admin/get-orders?page=${page}&limit=${pageSize}`, {
+            const response = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${pageSize}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

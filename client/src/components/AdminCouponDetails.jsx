@@ -26,6 +26,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import AdminCouponReport from './AdminCouponReport';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponDetails() {
 
@@ -70,7 +71,7 @@ function AdminCouponDetails() {
             width: 140,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography>${(params.value).toFixed(2)}</Typography>
+                    <Typography>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -81,7 +82,7 @@ function AdminCouponDetails() {
             align: "center",
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography color='error'>${(params.value).toFixed(2)}</Typography>
+                    <Typography color='error'>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -91,7 +92,7 @@ function AdminCouponDetails() {
             width: 140,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography color='success'>${(params.value).toFixed(2)}</Typography>
+                    <Typography color='success'>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -202,7 +203,7 @@ function AdminCouponDetails() {
     const fetchCouponUsages = async (page, limit) => {
         setLoadingUsages(true)
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/usages/${couponId}?page=${page}&limit=${limit}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/usages/${couponId}?page=${page}&limit=${limit}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -227,7 +228,7 @@ function AdminCouponDetails() {
     const fetchCouponProducts = async (page, limit) => {
         setLoadingProducts(true)
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -252,7 +253,7 @@ function AdminCouponDetails() {
 
     const fetchCoupon = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }

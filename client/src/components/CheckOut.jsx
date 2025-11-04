@@ -19,6 +19,7 @@ import { getImageUrl } from '../utils/imageUrl'
 import { useState } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function CheckOut() {
     const cartReducer =  useSelector(state => state.cartReducer)
@@ -54,7 +55,7 @@ function CheckOut() {
     const handleCouponQuery = async () => {
         if(!couponQuery) return
 
-        const response = await fetch("http://localhost:3000/orders/check-coupon", {
+        const response = await fetch(`${API_URL}/orders/check-coupon`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${userState.token}`,
@@ -100,7 +101,7 @@ function CheckOut() {
     const handleCheckout = async (data) => {
         // console.log(data)
 
-        const response = await fetch("http://localhost:3000/checkout", {
+        const response = await fetch(`${API_URL}/checkout`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${userState.token}`,

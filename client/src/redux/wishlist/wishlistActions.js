@@ -1,7 +1,8 @@
 import { addProductToWishlist, removeProductFromWishlist } from "../products/productActions";
 import { addToWishlistSearch, removeFromWishlistSearch } from "../search/searchActions";
 import { showSnack } from "../snackbar/snackbarActions";
-import { ADD_TO_WISHLIST, REMOVE_FROM_WISHLIST, GET_FULL_WISHLIST, SET_FULL_WISHLIST } from "./wishlistTypes"; 
+import { ADD_TO_WISHLIST, REMOVE_FROM_WISHLIST, GET_FULL_WISHLIST, SET_FULL_WISHLIST } from "./wishlistTypes";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 // export const addToWishlist = (id) => {
 //     return{
@@ -33,7 +34,7 @@ export const addWishlistDb = (product) => {
             return 
         }
         const productId = product.id
-        const response = await fetch("http://localhost:3000/wishlist/add", {
+        const response = await fetch(`${API_URL}/wishlist/add`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -63,7 +64,7 @@ export const removeWishlistDb = (product) => {
             return 
         }
         const productId = product.id
-        const response = await fetch("http://localhost:3000/wishlist/remove", {
+        const response = await fetch(`${API_URL}/wishlist/remove`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -88,7 +89,7 @@ export const getFullWishlist = (token) => {
     return async (dispatch) => {
         // const token = getState().userReducer.token
         try {
-            const res = await fetch("http://localhost:3000/wishlist/get-wishlist", {
+            const res = await fetch(`${API_URL}/wishlist/get-wishlist`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

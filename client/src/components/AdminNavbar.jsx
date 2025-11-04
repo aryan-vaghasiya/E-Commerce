@@ -20,6 +20,7 @@ import Tooltip from "@mui/material/Tooltip"
 import IconButton from "@mui/material/IconButton"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 
 function AdminNavBar() {
@@ -82,7 +83,7 @@ function AdminNavBar() {
         e.preventDefault()
 
         if(userState.token){
-            const res = await fetch("http://localhost:3000/auth/check", {
+            const res = await fetch(`${API_URL}/auth/check`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
                     // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`

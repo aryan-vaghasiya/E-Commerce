@@ -17,6 +17,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminProducts() {
     const [products, setProducts] = useState([]);
@@ -50,7 +51,7 @@ function AdminProducts() {
         console.log(productId);
         handleClose()
 
-        const res = await fetch(`http://localhost:3000/admin/product/delete`, {
+        const res = await fetch(`${API_URL}/admin/product/delete`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -72,7 +73,7 @@ function AdminProducts() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`http://localhost:3000/admin/get-products?page=${page}&limit=${limit}`, {
+            const response = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

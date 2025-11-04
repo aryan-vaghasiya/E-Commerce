@@ -11,6 +11,7 @@ import { getImageUrl } from '../utils/imageUrl'
 import IconButton from '@mui/material/IconButton'
 import { Tooltip, Chip, Divider } from '@mui/material'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function SavedItem({ item }) {
     const dispatch = useDispatch()
@@ -23,7 +24,7 @@ function SavedItem({ item }) {
     const handleRemoveFromSaved = async () => {
         dispatch(removeFromSavedForLater(item))
         try{
-            const response = await fetch("http://localhost:3000/wishlist/remove", {
+            const response = await fetch(`${API_URL}/wishlist/remove`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

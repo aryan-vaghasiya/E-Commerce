@@ -39,6 +39,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import InfoIcon from '@mui/icons-material/Info';
 import SendIcon from '@mui/icons-material/Send';
 import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCampaignsTemplates() {
     const userState = useSelector(state => state.userReducer)
@@ -88,7 +89,7 @@ function AdminCampaignsTemplates() {
         setCooldown(30);
 
         try {
-            const res = await fetch("http://localhost:3000/admin/campaigns/send-test", {
+            const res = await fetch(`${API_URL}/admin/campaigns/send-test`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
@@ -122,7 +123,7 @@ function AdminCampaignsTemplates() {
 
     const fetchAllTemplates = async (token, active = "any") => {
         try {
-            const res = await fetch(`http://localhost:3000/admin/templates/get-files?active=${active}`, {
+            const res = await fetch(`${API_URL}/admin/templates/get-files?active=${active}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -159,7 +160,7 @@ function AdminCampaignsTemplates() {
 
     const handleAddTemplate = async (formData) => {
         try {
-            const res = await fetch("http://localhost:3000/admin/templates/add", {
+            const res = await fetch(`${API_URL}/admin/templates/add`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
@@ -194,7 +195,7 @@ function AdminCampaignsTemplates() {
 
         setIsSaving(true);
         try {
-            const res = await fetch("http://localhost:3000/admin/templates/save", {
+            const res = await fetch(`${API_URL}/admin/templates/save`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
@@ -225,7 +226,7 @@ function AdminCampaignsTemplates() {
         if (!selectedFileForRename) return;
         
         try {
-            const res = await fetch("http://localhost:3000/admin/templates/rename", {
+            const res = await fetch(`${API_URL}/admin/templates/rename`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
@@ -263,7 +264,7 @@ function AdminCampaignsTemplates() {
     const handleDeleteFile = async (fileName) => {
         console.log(fileName);
         try {
-            const res = await fetch("http://localhost:3000/admin/templates/delete", {
+            const res = await fetch(`${API_URL}/admin/templates/delete`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${userState.token}`,

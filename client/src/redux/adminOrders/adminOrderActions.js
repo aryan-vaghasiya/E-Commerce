@@ -1,4 +1,5 @@
 import { FETCH_ADMIN_ORDERS_REQUEST, FETCH_ADMIN_ORDERS_SUCCESS, FETCH_ADMIN_ORDERS_FAILED } from "./adminOrderTypes"
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 export const adminOrdersRequest = () => {
     return{
@@ -27,7 +28,7 @@ export const fetchAdminOrders = (page, limit) => {
         
         const token = getState().userReducer.token
         try{
-            const adminOrders = await fetch(`http://localhost:3000/admin/get-orders?page=${page}&limit=${limit}`, {
+            const adminOrders = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${limit}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },
@@ -62,7 +63,7 @@ export const updateOrderStatus = (id, status) => {
 
         // console.log(idArray);
         try{
-            const response = await fetch(`http://localhost:3000/admin/order-status`, {
+            const response = await fetch(`${API_URL}/admin/order-status`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

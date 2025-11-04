@@ -1,4 +1,5 @@
 import { FETCH_PRODUCTS_REQUEST, FETCH_PRODUCTS_SUCCESS, FETCH_PRODUCTS_FAILED, SET_CURRENT_PAGE_ALL, ADD_PRODUCT_TO_WISHLIST, REMOVE_PRODUCT_FROM_WISHLIST } from "./productTypes";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 export const productsRequest = () => {
     return{
@@ -49,7 +50,7 @@ export const fetchProducts = () => {
         dispatch(productsRequest())
         setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:3000/products?page=${currentPage}&limit=24`, {
+                const res = await fetch(`${API_URL}/products?page=${currentPage}&limit=24`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

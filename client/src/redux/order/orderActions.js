@@ -1,4 +1,5 @@
 import { ADD_ORDERS, ORDERS_FROM_DB } from "./orderTypes";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 // export const addOrders = (orders) => {
 //     return {
@@ -21,7 +22,7 @@ export const addOrders = (order, coupon) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
         try{
-            const response = await fetch("http://localhost:3000/orders/add-order", {
+            const response = await fetch(`${API_URL}/orders/add-order`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -49,7 +50,7 @@ export const fetchOrders = (token, page = 1, limit = 10) => {
         // console.log("Token : ", token);
         // const token = getState().userReducer.token
         try {
-            const res = await fetch(`http://localhost:3000/orders/get-orders?page=${page}&limit=${limit}`, {
+            const res = await fetch(`${API_URL}/orders/get-orders?page=${page}&limit=${limit}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

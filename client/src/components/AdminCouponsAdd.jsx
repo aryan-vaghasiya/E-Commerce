@@ -35,6 +35,7 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponsAdd() {
 
@@ -125,7 +126,7 @@ function AdminCouponsAdd() {
 
     const getAllCategories = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+            const response = await fetch(`${API_URL}/admin/product/categories`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -151,7 +152,7 @@ function AdminCouponsAdd() {
         try{
             // console.log(query);
             
-            const response = await fetch(`http://localhost:3000/admin/coupons/search-product?query=${query}&price=${price}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -196,7 +197,7 @@ function AdminCouponsAdd() {
         couponData.end_time = eTime
         console.log(couponData);
 
-        const response = await fetch("http://localhost:3000/admin/coupons/add", {
+        const response = await fetch(`${API_URL}/admin/coupons/add`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,

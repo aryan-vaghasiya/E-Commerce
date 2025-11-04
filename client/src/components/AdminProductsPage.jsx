@@ -32,6 +32,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import Tab from '@mui/material/Tab';
 import TabPanel from '@mui/lab/TabPanel';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -84,7 +85,7 @@ function AdminProductsPage() {
     const fetchData = async () => {
         try {
             // console.log("fetching...");
-            const response = await fetch(`http://localhost:3000/admin/product?productId=${productId}`, {
+            const response = await fetch(`${API_URL}/admin/product?productId=${productId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -118,7 +119,7 @@ function AdminProductsPage() {
 
     const getAllOffers = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/admin/product/get-offers?productId=${productId}`, {
+            const response = await fetch(`${API_URL}admin/product/get-offers?productId=${productId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -140,7 +141,7 @@ function AdminProductsPage() {
 
     const getAllCategories = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/admin/product/categories`, {
+            const response = await fetch(`${API_URL}/admin/product/categories`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -206,7 +207,7 @@ function AdminProductsPage() {
         console.log({ id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData });
 
 
-        const response = await fetch("http://localhost:3000/admin/edit-product", {
+        const response = await fetch(`${API_URL}/admin/edit-product`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -264,7 +265,7 @@ function AdminProductsPage() {
         const newStatus = productStatus === "active" ? "inactive" : "active"
         setProductStatus(newStatus)
 
-        const res = await fetch(`http://localhost:3000/admin/product/update-status`, {
+        const res = await fetch(`${API_URL}/admin/product/update-status`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -278,7 +279,7 @@ function AdminProductsPage() {
         // console.log(toDelete);
         const toDeleteIds = toDelete.map(item => item.id)
         console.log(toDeleteIds);
-        const res = await fetch(`http://localhost:3000/admin/product/remove-images`, {
+        const res = await fetch(`${API_URL}/admin/product/remove-images`, {
             method: "POST",
             body: JSON.stringify(toDeleteIds),
             headers: {
@@ -304,7 +305,7 @@ function AdminProductsPage() {
         // console.log(localThumbnailPreview);
         // console.log(formData);
 
-        const res = await fetch(`http://localhost:3000/admin/upload/product-thumbnail/${productId}`, {
+        const res = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
             method: "POST",
             body: formData,
             headers: {
@@ -332,7 +333,7 @@ function AdminProductsPage() {
             formData.append("images", files[i]);
         }
 
-        const res = await fetch(`http://localhost:3000/admin/upload/product/${productId}`, {
+        const res = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
             method: "POST",
             body: formData,
             headers: {

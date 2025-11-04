@@ -24,6 +24,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import ClearIcon from '@mui/icons-material/Clear';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCoupons() {
     const { register, handleSubmit, control, reset, watch, resetField, formState: {errors} } = useForm({
@@ -109,7 +110,7 @@ function AdminCoupons() {
         try {
             const params = new URLSearchParams({page, limit, ...filters})
             // console.log(Object.fromEntries(params));
-            const response = await fetch(`http://localhost:3000/admin/get-coupons?${params.toString()}`, {
+            const response = await fetch(`${API_URL}/admin/get-coupons?${params.toString()}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

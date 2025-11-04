@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer'
 import OrderInvoice from './OrderInvoice'
 import InvoicePreview from './InvoicePreview'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 const MyOrderPage = () => {
     const theme = useTheme()
@@ -47,7 +48,7 @@ const MyOrderPage = () => {
     const fetchOrder = async () => {
         // setLoading(true)
         try {
-            const res = await fetch(`http://localhost:3000/orders/${orderId}`, {
+            const res = await fetch(`${API_URL}/orders/${orderId}`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
                 },

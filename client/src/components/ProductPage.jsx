@@ -23,6 +23,7 @@ import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { getImageUrl } from '../utils/imageUrl'
 import OfferTimeLeft from './OfferTimeLeft'
 import { Stack } from '@mui/material'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function ProductPage() {
     const dispatch = useDispatch()
@@ -35,7 +36,7 @@ function ProductPage() {
 
     const fetchSingleProduct = async () => {
         try {
-            const res = await fetch(`http://localhost:3000/products/${productId}`, {
+            const res = await fetch(`${API_URL}/products/${productId}`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`,
                 },

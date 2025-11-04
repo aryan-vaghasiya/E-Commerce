@@ -1,4 +1,5 @@
 import { FETCH_ADMIN_PRODUCTS_REQUEST, FETCH_ADMIN_PRODUCTS_SUCCESS, FETCH_ADMIN_PRODUCTS_FAILED } from "./adminProductsTypes";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 export const adminProductsRequest = () => {
     return{
@@ -27,7 +28,7 @@ export const fetchAdminProducts = (page, limit) => {
         
         const token = getState().userReducer.token
         try{
-            const adminOrders = await fetch(`http://localhost:3000/admin/get-products?page=${page}&limit=${limit}`, {
+            const adminOrders = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

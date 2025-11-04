@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponEdit() {
 
@@ -50,7 +51,7 @@ function AdminCouponEdit() {
 
     const fetchCoupon = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -97,7 +98,7 @@ function AdminCouponEdit() {
     const fetchCouponProducts = async (page, limit) => {
         // setLoadingProducts(true)
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -123,7 +124,7 @@ function AdminCouponEdit() {
 
     const fetchCouponCategories = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/get-categories?couponId=${couponId}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/get-categories?couponId=${couponId}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -153,7 +154,7 @@ function AdminCouponEdit() {
         try{
             console.log(query);
             
-            const response = await fetch(`http://localhost:3000/admin/coupons/search-product?query=${query}&price=${price}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -190,7 +191,7 @@ function AdminCouponEdit() {
         console.log(formData);
 
         try{
-            const response = await fetch("http://localhost:3000/admin/coupons/edit", {
+            const response = await fetch(`${API_URL}/admin/coupons/edit`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -227,7 +228,7 @@ function AdminCouponEdit() {
         console.log("I ran");
 
         try{
-            const response = await fetch("http://localhost:3000/admin/coupons/deactivate", {
+            const response = await fetch(`${API_URL}/admin/coupons/deactivate`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

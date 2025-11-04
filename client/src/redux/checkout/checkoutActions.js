@@ -1,4 +1,5 @@
 import { ADD_DETAILS } from "./checkoutTypes";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 export const addDetails = (details) => {
     return {
@@ -13,7 +14,7 @@ export const fetchDetails = (token) => {
             
             // const token = getState().userReducer.token
             try {
-                const res = await fetch("http://localhost:3000/checkout/get-form", {
+                const res = await fetch(`${API_URL}/checkout/get-form`, {
                     headers: {
                     Authorization: `Bearer ${token}`,
                     },

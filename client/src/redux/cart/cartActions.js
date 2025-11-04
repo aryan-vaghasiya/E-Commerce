@@ -1,5 +1,6 @@
 import { ADD_TO_CART, REMOVE_FROM_CART, EMPTY_CART, CART_FROM_DB, REMOVE_CART_ITEM, SAVE_FOR_LATER, REMOVE_FROM_SAVE_FOR_LATER } from "./cartTypes";
 import { showSnack } from "../snackbar/snackbarActions";
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 export const emptyCart = () => {
     return {
@@ -38,7 +39,7 @@ export const addToCart = (product) => {
             return
         }
         const productId = product.id || product.product_id
-        const response = await fetch("http://localhost:3000/cart/add", {
+        const response = await fetch(`${API_URL}/cart/add`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -67,7 +68,7 @@ export const removeFromCart = (product) => {
             return
         }
         const productId = product.id
-        const response = await fetch("http://localhost:3000/cart/remove", {
+        const response = await fetch(`${API_URL}/cart/remove`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -89,7 +90,7 @@ export const removeCartItem = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
         const productId = product.id
-        const response = await fetch("http://localhost:3000/cart/remove-item", {
+        const response = await fetch(`${API_URL}/cart/remove-item`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -110,7 +111,7 @@ export const removeCartItem = (product) => {
 export const fetchCart = (token) => {
     return async (dispatch) => {
         try {
-            const res = await fetch("http://localhost:3000/cart/get-cart", {
+            const res = await fetch(`${API_URL}/cart/get-cart`, {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },
@@ -140,7 +141,7 @@ export const saveForLater = (product) => {
         }
 
         const productId = product.id
-        const response = await fetch("http://localhost:3000/wishlist/add/save-for-later", {
+        const response = await fetch(`${API_URL}/wishlist/add/save-for-later`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

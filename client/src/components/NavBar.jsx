@@ -448,8 +448,8 @@ function NavBar() {
                             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         >
                             <MenuItem onClick={(e) => handleAuth(e, "/my-orders")} id="orders">My Orders</MenuItem>
-                            <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem>
-                            {userState.userName ?
+                            <MenuItem onClick={(e) => handleAuth(e, "/my-wishlist")} id="wishlist">My Wishlist</MenuItem>
+                            {userState.token &&
                                 <Box>
                                     <MenuItem onClick={() => { navigate("/my-wallet"); handleClose(); }}>
                                         My Wallet
@@ -461,8 +461,7 @@ function NavBar() {
                                         Referral
                                     </MenuItem>
                                 </Box>
-                            : 
-                            null}
+                            }
                             <MenuItem onClick={handleAuth} id="login">
                                 {userState.userName ? "Logout" : "Login"}
                             </MenuItem>

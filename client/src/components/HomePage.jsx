@@ -163,7 +163,6 @@ const HomePage = () => {
 
   const getTrendingProducts = async (limit = 10) => {
     try {
-      // const res = await fetch(`http://localhost:3000/products/trending?limit=${limit}`, {
       const res = await fetch(`${API_URL}/products/trending?limit=${limit}`, {
           headers: {
             Authorization: `Bearer ${userState.token}`,
@@ -185,7 +184,7 @@ const HomePage = () => {
 
   const getRecentlyOrderedProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`http://localhost:3000/products/recently-ordered?limit=${limit}`, {
+      const res = await fetch(`${API_URL}/products/recently-ordered?limit=${limit}`, {
           headers: {
             Authorization: `Bearer ${userState.token}`,
           },

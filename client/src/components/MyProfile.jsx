@@ -47,6 +47,7 @@ import {
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 const ProfilePage = () => {
     const navigate = useNavigate()
@@ -98,7 +99,7 @@ const ProfilePage = () => {
 
     const fetchUserDetails = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/profile/user-details`, {
+            const response = await fetch(`${API_URL}/profile/user-details`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }
@@ -118,7 +119,7 @@ const ProfilePage = () => {
 
     const fetchRecentOrders = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/profile/recent-orders`, {
+            const response = await fetch(`${API_URL}/profile/recent-orders`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }

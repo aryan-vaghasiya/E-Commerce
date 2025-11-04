@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import dayjs from "dayjs"
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function UserReferrals() {
     const userState = useSelector(state => state.userReducer)
@@ -34,7 +35,7 @@ function UserReferrals() {
 
     const fetchReferralsSummary = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/referral/get-summary`, {
+            const response = await fetch(`${API_URL}/referral/get-summary`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }
@@ -55,7 +56,7 @@ function UserReferrals() {
 
     const fetchAcceptedReferrals = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/referral/get-referrals`, {
+            const response = await fetch(`${API_URL}/referral/get-referrals`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }
@@ -76,7 +77,7 @@ function UserReferrals() {
 
     const fetchReferralInvitations = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/referral/get-invites`, {
+            const response = await fetch(`${API_URL}/referral/get-invites`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }
@@ -106,7 +107,7 @@ function UserReferrals() {
 
         setSending(true)
         try{
-            const response = await fetch(`http://localhost:3000/referral/send-invite`, {
+            const response = await fetch(`${API_URL}/referral/send-invite`, {
                 method: "POST",
                 headers: {
                     Authorization : `Bearer ${userState.token}`,

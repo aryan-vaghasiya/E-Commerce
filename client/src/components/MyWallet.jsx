@@ -22,6 +22,7 @@ import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody'
 import dayjs from 'dayjs'
 import Paper from '@mui/material/Paper'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 const modalStyle = {
     position: "absolute",
@@ -73,7 +74,7 @@ function MyWallet() {
         console.log(data);
 
         try{
-            const response = await fetch(`http://localhost:3000/wallet/add-funds`, {
+            const response = await fetch(`${API_URL}/wallet/add-funds`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -105,7 +106,7 @@ function MyWallet() {
         console.log(data);
 
         try{
-            const response = await fetch(`http://localhost:3000/wallet/withdraw-funds`, {
+            const response = await fetch(`${API_URL}/wallet/withdraw-funds`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -133,7 +134,7 @@ function MyWallet() {
 
     const fetchWallet = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/wallet/get-wallet`, {
+            const response = await fetch(`${API_URL}/wallet/get-wallet`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }
@@ -154,7 +155,7 @@ function MyWallet() {
 
     const fetchWalletTransactions = async () => {
         try{
-            const response = await fetch(`http://localhost:3000/wallet/get-transactions`, {
+            const response = await fetch(`${API_URL}/wallet/get-transactions`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }

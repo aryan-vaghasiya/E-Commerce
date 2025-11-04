@@ -10,6 +10,7 @@ import WishlistItem from './WishlistItem'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyWishlist() {
     const userState = useSelector(state => state.userReducer)
@@ -31,7 +32,7 @@ function MyWishlist() {
     const fetchMyWishlist = async () => {
         setLoading(true)
         try{
-            const response = await fetch(`http://localhost:3000/wishlist/get-wishlist`, {
+            const response = await fetch(`${API_URL}/wishlist/get-wishlist`, {
                 headers: {
                     Authorization : `Bearer ${userState.token}`
                 }

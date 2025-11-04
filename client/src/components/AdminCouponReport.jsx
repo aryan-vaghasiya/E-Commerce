@@ -27,6 +27,7 @@ import { Page, Text, View, Document, StyleSheet, pdf, PDFViewer } from '@react-p
 import { saveAs } from 'file-saver';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponReport({couponData}) {
 
@@ -135,7 +136,7 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportSummary = async (coupon_id, from = getSqlToday(), to = getSqlNow()) => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/summary?from=${from}&to=${to}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/summary?from=${from}&to=${to}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -157,7 +158,7 @@ function AdminCouponReport({couponData}) {
     const fetchCouponReportProducts = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
 
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/products?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/products?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -180,7 +181,7 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportCategories = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/categories?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/categories?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -203,7 +204,7 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportUsers = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_sales", orderBy = "desc") => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/users?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/users?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }
@@ -226,7 +227,7 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportDates = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "times_used", orderBy = "desc") => {
         try{
-            const response = await fetch(`http://localhost:3000/admin/coupons/${couponId}/report/dates?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/dates?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
                 headers: {
                     Authorization : `Bearer ${token}`
                 }

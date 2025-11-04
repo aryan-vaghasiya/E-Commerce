@@ -13,6 +13,7 @@ import { fetchCart } from '../redux/cart/cartActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { Container, Paper, Divider } from '@mui/material'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyCart() {
     const savedItems = useSelector(state => state.cartReducer.saved)
@@ -28,7 +29,7 @@ function MyCart() {
 
     const checkOutNavigate = async () => {
         if (userState.token) {
-            const res = await fetch("http://localhost:3000/auth/check", {
+            const res = await fetch(`${API_URL}/auth/check`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
                 }
@@ -37,7 +38,7 @@ function MyCart() {
                 navigate("/login", { state: "/checkout" })
                 return dispatch(showSnack({ message: "Session Expired, Login Again", severity: "warning" }))
             }
-            const compareWalletBalance = await fetch(`http://localhost:3000/wallet/compare-balance?amount=${cartValue}`, {
+            const compareWalletBalance = await fetch(`${API_URL}/wallet/compare-balance?amount=${cartValue}`, {
                 headers: {
                     Authorization: `Bearer ${userState.token}`
                 }

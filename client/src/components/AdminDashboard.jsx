@@ -20,6 +20,7 @@ import TableCell from '@mui/material/TableCell'
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import IconButton from '@mui/material/IconButton'
 import { useState } from 'react'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminDashboard() {
 
@@ -31,7 +32,7 @@ function AdminDashboard() {
 
     const getDashboard = async (token) => {
         try {
-            const res = await fetch("http://localhost:3000/admin/get-dashboard", {
+            const res = await fetch(`${API_URL}/admin/get-dashboard`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }, 

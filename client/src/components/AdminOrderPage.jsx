@@ -29,6 +29,7 @@ import { useForm } from 'react-hook-form';
 import TextField from '@mui/material/TextField';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 
 function AdminOrderPage() {
@@ -50,7 +51,7 @@ function AdminOrderPage() {
 
     const fetchData = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/admin/order?orderId=${orderId}`, {
+            const response = await fetch(`${API_URL}/admin/order?orderId=${orderId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -105,7 +106,7 @@ function AdminOrderPage() {
 
         console.log(formData);
         try{
-            const response = await fetch(`http://localhost:3000/admin/order-cancel-admin`, {
+            const response = await fetch(`${API_URL}/admin/order-cancel-admin`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

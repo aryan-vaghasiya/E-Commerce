@@ -25,6 +25,7 @@ import DialogActions from '@mui/material/DialogActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+const API_URL = import.meta.env.VITE_API_SERVER;
 
 
 function LimitedTimeOffers({productId, mrp}) {
@@ -66,7 +67,7 @@ function LimitedTimeOffers({productId, mrp}) {
 
     const getAllOffers = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/admin/product/get-offers?productId=${productId}`, {
+            const response = await fetch(`${API_URL}/admin/product/get-offers?productId=${productId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -97,7 +98,7 @@ function LimitedTimeOffers({productId, mrp}) {
     }
 
     const handleEndNow = async (offerId, index) => {
-        const response = await fetch("http://localhost:3000/admin/product/offer/end", {
+        const response = await fetch(`${API_URL}/admin/product/offer/end`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -129,7 +130,7 @@ function LimitedTimeOffers({productId, mrp}) {
         if(dayjs(offers[index].start_time) < dayjs()){
             return console.log("Cannot delete, offer already started, End now instead")
         }
-        const response = await fetch("http://localhost:3000/admin/product/offer/delete", {
+        const response = await fetch(`${API_URL}/admin/product/offer/delete`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -193,7 +194,7 @@ function LimitedTimeOffers({productId, mrp}) {
         const eDate = editedEndTime ? dayjs(editedEndTime).format(`YYYY-MM-DD HH:mm:ss`) : null
         // console.log(id, sDate, eDate);
 
-        const response = await fetch("http://localhost:3000/admin/product/offer/extend", {
+        const response = await fetch(`${API_URL}/admin/product/offer/extend`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -267,7 +268,7 @@ function LimitedTimeOffers({productId, mrp}) {
 
         // console.log({ ...formData, product_id: productId, offer_discount: calcDiscount(base_mrp, offer_price) });
 
-        const response = await fetch("http://localhost:3000/admin/product/offer/add", {
+        const response = await fetch(`${API_URL}/admin/product/offer/add`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
