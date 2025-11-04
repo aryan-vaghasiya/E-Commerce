@@ -23,7 +23,36 @@ dotenv.config();
 const app = express();
 const port = process.env.EXPRESS_PORT;
 
-app.use(cors());
+// const whitelist = [
+//     'http://localhost:5173',                 // Your local React app (for dev)
+//     'https://e-commerce-orpin-rho-57.vercel.app', // Your deployed frontend
+//     'https://industriously-foxiest-arla.ngrok-free.dev' // Your CURRENT ngrok URL
+// ];
+
+// const corsOptions = {
+//     origin: function (origin, callback) {
+//         // Check if the origin is in the whitelist or if it's not a browser (e.g., Postman)
+//         if (whitelist.indexOf(origin) !== -1 || !origin) {
+//             callback(null, true);
+//         } else {
+//             callback(new Error('Not allowed by CORS'));
+//         }
+//     },
+//     // This is the line that fixes your problem:
+//     allowedHeaders: ['Content-Type', 'Authorization'] 
+// };
+
+// app.use(cors(corsOptions));
+
+
+const corsOptions = {
+  origin: '*', // Allow all origins
+  allowedHeaders: ['Content-Type', 'Authorization'] // Explicitly allow these
+};
+app.use(cors(corsOptions));
+
+
+// app.use(cors());
 app.use(express.json());
 
 cron.schedule('*/10 * * * *', async () => {
