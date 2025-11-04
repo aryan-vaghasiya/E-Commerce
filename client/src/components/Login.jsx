@@ -1,16 +1,14 @@
 import { useDispatch, useSelector } from 'react-redux'
 import { addUser } from '../redux/user/userActions'
 import { fetchCart } from '../redux/cart/cartActions'
-import { replace, useLocation, useNavigate } from 'react-router'
-import { Controller, useController, useForm } from 'react-hook-form'
+import { Link, useLocation, useNavigate } from 'react-router'
+import { useForm } from 'react-hook-form'
 import { DevTool } from '@hookform/devtools'
-
 import Card from '@mui/material/Card'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import Stack from '@mui/material/Stack'
-import userReducer from '../redux/user/userReducer'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
@@ -18,14 +16,18 @@ import { fetchOrders } from '../redux/order/orderActions'
 import { fetchDetails } from '../redux/checkout/checkoutActions'
 import { useState } from 'react'
 import { getFullWishlist } from '../redux/wishlist/wishlistActions'
+import { authService } from '../api/services/authService'
+
+const selectSnackbar = (state) => state.snackbarReducer;
 
 function Login() {
-    // const [signup, setSignup] = useState(false)
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    const snackbarState = useSelector((state) => state.snackbarReducer)
+    const snackbarState = useSelector(selectSnackbar)
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [hover, setHover] = useState(false);
 
-    const { register, handleSubmit, control, getValues, formState: { errors } } = useForm({
+    const { register, handleSubmit, control, formState: { errors } } = useForm({
         defaultValues: {
             username: "",
             password: ""
@@ -35,45 +37,30 @@ function Login() {
     const location = useLocation()
     const fromPath = location.state
 
-    const handleSignup = () => {
-        // setSignup(prev => !prev)
-        // navigate("/signup", {replace: true, state: "/my-orders"})
-        navigate("/signup")
-    }
+    const handleLogin = async (data) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
-    const onSubmitOne = async (data) => {
-        // console.log(data)
-        // console.log(signup)
-        // const request = signup ? "signup" : "login"
-        const response = await fetch(`http://localhost:3000/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
+        try {
+            const response = await authService.login({
                 username: data.username,
                 password: data.password
-            })
-        })
+            });
+            const token = response.token
 
-        if (response.status === 200) {
-            const resData = await response.json()
-            const token = resData.token
-            const decoded = JSON.parse(atob(token.split('.')[1]))
-            dispatch(addUser(decoded.username, token, decoded.role))
-            // dispatch(addUser(data.username, token))
+            dispatch(addUser(response.username, token, response.role));
             dispatch(fetchCart(token))
             dispatch(fetchOrders(token))
             dispatch(fetchDetails(token))
             dispatch(getFullWishlist(token))
             navigate(fromPath ?? "/", { replace: true })
+        } catch (err) {
+            console.error('Login error:', err);
+            dispatch(showSnack({ message: err.message || "Login failed", severity: "error" }));
+        } finally {
+            setIsSubmitting(false)
         }
-        else{
-            const error = await response.json()
-            console.error(error.error);
-            dispatch(showSnack({message: error.error, severity: "warning"}))
-        } 
-    }
+    };
 
     return (
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "91vh", bgcolor: "#EEEEEE" }}>
@@ -91,40 +78,38 @@ function Login() {
                 </Alert>
             </Snackbar>
             <Card sx={{ bgcolor: "white", p: 8, pb: 6 }}>
-                <form onSubmit={handleSubmit(onSubmitOne)} noValidate >
-                    <Stack spacing={3} width={400} >
+                <form onSubmit={handleSubmit(handleLogin)} noValidate>
+                    <Stack spacing={3} width={{ xs: 300, sm: 400 }}>
                         <TextField label="Username" type='text' {...register("username", {
-                            required: {
-                                value: true,
-                                message: "Username is required"
-                            },
-                            pattern: {
-                                value: /^.{5,20}$/,
-                                message: "Must have 5 - 20 characters"
-                            }
-                        })}
+                                required: "Username is required"
+                            })}
+                            autoComplete="username"
                             error={!!errors.username}
-                            helperText={errors.username ? errors.username.message : ""}
+                            helperText={errors.username?.message || ""}
+                            disabled={isSubmitting}
                         />
+
                         <TextField label="Password" type='password' {...register("password", {
-                            required: {
-                                value: true,
-                                message: "Password is required"
-                            },
-                            pattern: {
-                                value: /^(?=.*[A-Za-z])[A-Za-z\d]{5,20}$/,
-                                message: "Must be 5-20 characters long"
-                                // value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,20}$/,
-                                // message: "Must be alphanumeric and 5-20 characters long"
-                            }
-                        })}
+                                required: "Password is required"
+                            })}
+                            autoComplete="current-password"
                             error={!!errors.password}
-                            helperText={errors.password ? errors.password.message : ""}
+                            helperText={errors.password?.message || ""}
+                            disabled={isSubmitting}
                         />
-                        <Button type='submit' variant="contained">Login</Button>
+                        <Button type='submit' variant="contained" disabled={isSubmitting}>
+                            {isSubmitting ? "Logging In... " : "Login"}
+                        </Button>
                     </Stack>
-                    <Box textAlign='right' sx={{pt: 2, pb: 0}}>
-                        <Button onClick={handleSignup} sx={{mt: 1}} variant='text'>Sign Up ?</Button>
+                    <Box textAlign="center" sx={{pt: 3}}>
+                        <Link 
+                            to="/signup"
+                            style={{ color: hover ? "black" : "grey", transition: "color 0.5s", textDecoration: hover ? "underline" : "none" }}
+                            onMouseEnter={() => setHover(true)}
+                            onMouseLeave={() => setHover(false)}
+                        >
+                            Don't have an account? Sign Up
+                        </Link>
                     </Box>
                 </form>
             </Card>

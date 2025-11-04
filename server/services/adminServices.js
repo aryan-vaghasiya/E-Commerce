@@ -32,7 +32,11 @@ exports.loginAdmin = async(username, password) => {
             process.env.JWT_SECRET,
             { expiresIn: "10h" }
         );
-        return token
+        return {
+            token,
+            username: user.username,
+            role: "admin"
+        }
     }
     else {
         throw new Error("Wrong Password")

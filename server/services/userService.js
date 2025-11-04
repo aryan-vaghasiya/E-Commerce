@@ -22,7 +22,11 @@ exports.loginUser = async(username, password) => {
             process.env.JWT_SECRET,
             { expiresIn: "10h" }
         );
-        return token
+        return {
+            token,
+            username,
+            role: "user"
+        }
     }
     else {
         throw new Error("Wrong Password")
@@ -94,11 +98,17 @@ exports.signupUser = async(username, password, fName, lName, email, referral, re
         {
             id: userId,
             username: username,
+            role: "user"
         },
         process.env.JWT_SECRET,
         { expiresIn: "10h" }
     );
-    return token
+
+    return {
+        username,
+        token,
+        role: "user"
+    }
 }
 
 exports.checkoutForm = async (addLine1, addLine2, city, email, fName, lName, pNumber, pincode, state, username) => {

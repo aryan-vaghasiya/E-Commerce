@@ -5,8 +5,8 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     try{
-        const token = await userService.loginUser(username, password);
-        res.status(200).json({ message: "Login Successful", token: token});
+        const user = await userService.loginUser(username, password);
+        res.status(200).json({ message: "Login Successful", ...user});
     }
     catch (err){
         console.error("Error Logging in: ", err.message);
@@ -19,8 +19,8 @@ exports.signup = async (req, res) => {
     console.log(username, password, fName, lName, email, referral, referralMode);
 
     try{
-        const token = await userService.signupUser(username, password, fName, lName, email, referral, referralMode);
-        res.status(200).json({ message: "Signup Successful", token: token});
+        const user = await userService.signupUser(username, password, fName, lName, email, referral, referralMode);
+        res.status(200).json({ message: "Signup Successful", ...user});
     }
     catch (err){
         console.error("Error Signing Up: ", err.message);

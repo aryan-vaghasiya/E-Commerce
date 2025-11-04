@@ -6,8 +6,8 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     try{
-        const token = await adminServices.loginAdmin(username, password);
-        res.status(200).json({ message: "Admin Login Successful", token: token});
+        const admin = await adminServices.loginAdmin(username, password);
+        res.status(200).json({ message: "Admin Login Successful", ...admin});
     }
     catch (err){
         console.error("Error Logging in: ", err.message);

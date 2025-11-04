@@ -29,7 +29,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import '@fontsource-variable/playfair-display';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { InputAdornment } from "@mui/material"
+import { Button, InputAdornment } from "@mui/material"
 import { useForm } from "react-hook-form"
 
     // const MobileDrawer = ({ mobileDrawerOpen, setMobileDrawerOpen, toggleMobileDrawer, navigationItems, navigate, input, handleChange }) => (
@@ -246,7 +246,10 @@ function NavBar() {
         setMobileDrawerOpen(newOpen);
     };
 
-    const handleAuth = (e) => {
+    const handleAuth = (e, destination) => {
+        console.log(destination);
+        
+
         const navTo = e.target.id === "orders" ? "/my-orders" :
                     e.target.id === "wishlist" ? "/my-wishlist" :
                     "/"
@@ -392,16 +395,24 @@ function NavBar() {
                                 </IconButton>
                             </NavLink>
 
-                            <Tooltip title="Account">
-                                <IconButton 
-                                    onClick={handleMenu}
-                                    sx={{ p: { xs: 0.5, sm: 1 } }}
-                                >
-                                    <Avatar sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
-                                        {userState.userName?.charAt(0).toUpperCase()}
-                                    </Avatar>
-                                </IconButton>
-                            </Tooltip>
+                            {userState.token ?
+                                <Tooltip title="Account">
+                                    <IconButton 
+                                        onClick={handleMenu}
+                                        sx={{ p: { xs: 0.5, sm: 1 } }}
+                                    >
+                                        <Avatar sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                                            {userState.userName?.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                    </IconButton>
+                                </Tooltip>
+                                :
+                                <Tooltip title="Login">
+                                    <Button sx={{bgcolor: "white"}} onClick={() => navigate("/login")}>
+                                        Login
+                                    </Button>
+                                </Tooltip>
+                            }
                         </Box>
 
                         <Menu
@@ -436,7 +447,7 @@ function NavBar() {
                             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                         >
-                            <MenuItem onClick={handleAuth} id="orders">My Orders</MenuItem>
+                            <MenuItem onClick={(e) => handleAuth(e, "/my-orders")} id="orders">My Orders</MenuItem>
                             <MenuItem onClick={handleAuth} id="wishlist">My Wishlist</MenuItem>
                             {userState.userName ?
                                 <Box>

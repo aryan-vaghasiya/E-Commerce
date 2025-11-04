@@ -32,9 +32,9 @@ export const addToCart = (product) => {
         }
         const token = getState().userReducer.token
         if(!token){
-            dispatch({type: ADD_TO_CART, payload: product})
-            dispatch(showSnack({message: "Item added to Cart", severity: "success"}))
-            // dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
+            // dispatch({type: ADD_TO_CART, payload: product})
+            // dispatch(showSnack({message: "Item added to Cart", severity: "success"}))
+            dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
             return
         }
         const productId = product.id || product.product_id
@@ -61,8 +61,9 @@ export const removeFromCart = (product) => {
     return async (dispatch, getState) => {
         const token = getState().userReducer.token
         if(!token){
-            dispatch({type: REMOVE_FROM_CART, payload: product})
-            dispatch(showSnack({message: "Item removed from Cart", severity: "success"}))
+            // dispatch({type: REMOVE_FROM_CART, payload: product})
+            // dispatch(showSnack({message: "Item removed from Cart", severity: "success"}))
+            dispatch(showSnack({message: "Please Login to Add to Cart", severity: "warning"}))
             return
         }
         const productId = product.id
