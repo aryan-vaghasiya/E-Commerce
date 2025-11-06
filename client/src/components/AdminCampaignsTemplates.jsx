@@ -39,6 +39,8 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import InfoIcon from '@mui/icons-material/Info';
 import SendIcon from '@mui/icons-material/Send';
 import { hideSnack, showSnack } from "../redux/snackbar/snackbarActions";
+import { templateService } from "../api/services/templateService";
+import { campaignService } from "../api/services/campaignService";
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCampaignsTemplates() {
@@ -61,6 +63,7 @@ function AdminCampaignsTemplates() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [cooldown, setCooldown] = useState(0)
+    const [isSending, setIsSending] = useState(false)
 
     // Check if current file has unsaved changes
     const hasUnsavedChanges = activeFileContent && originalFileContent !== activeFileContent;
@@ -86,28 +89,35 @@ function AdminCampaignsTemplates() {
 
     const handleSendTest = async () => {
         if (cooldown > 0) return
-        setCooldown(30);
+        
 
         try {
-            const res = await fetch(`${API_URL}/admin/campaigns/send-test`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({template: activeFileName})
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not add new file:", error.error);
-            }
-            const email = await res.json()
-            dispatch(showSnack({message: `Sent a test email on ${email}`, severity: "success"}))
+            // const res = await fetch(`${API_URL}/admin/campaigns/send-test`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({template: activeFileName})
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not add new file:", error.error);
+            // }
+            // const email = await res.json()
+
+            setIsSending(true)
+            const email =  await campaignService.sendTestCampaign(activeFileName)
+            dispatch(showSnack({message: `Sent a test email on your email: ${email}`, severity: "success"}))
+            setCooldown(30);
         }
         catch (err) {
             dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Adding new template failed:", err.message);
+        }
+        finally{
+            setIsSending(false)
         }
     }
 
@@ -121,19 +131,21 @@ function AdminCampaignsTemplates() {
         return () => clearInterval(interval);
     }, [cooldown]);
 
-    const fetchAllTemplates = async (token, active = "any") => {
+    const fetchAllTemplates = async (active = "any") => {
         try {
-            const res = await fetch(`${API_URL}/admin/templates/get-files?active=${active}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not fetch all templates:", error.error);
-            }
-            const data = await res.json();
+            // const res = await fetch(`${API_URL}/admin/templates/get-files?active=${active}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not fetch all templates:", error.error);
+            // }
+            // const data = await res.json();
+
+            const data = await templateService.getTemplatesList(active)
 
             const fileNamesArr = []
             for(let item of data.files){
@@ -154,27 +166,30 @@ function AdminCampaignsTemplates() {
         }
         catch (err) {
             dispatch(showSnack({message: err.error, severity: "warning"}))
-            console.error("Basic template fetch failed:", err.message);
+            console.error("All template fetch failed:", err.message);
         }
     }
 
     const handleAddTemplate = async (formData) => {
         try {
-            const res = await fetch(`${API_URL}/admin/templates/add`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({fileName: formData.templateName})
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not add new file:", error.error);
-            }
+            // const res = await fetch(`${API_URL}/admin/templates/add`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({fileName: formData.templateName})
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not add new file:", error.error);
+            // }
 
-            const newFile = await res.json()
+            // const newFile = await res.json()
+
+            const newFile = await templateService.createNewTemplate(formData.templateName)
+
             setAllFileNames(prev => [...prev, newFile.name])
             setActiveFileName(newFile.name)
             setActiveFileContent(newFile.content)
@@ -182,7 +197,7 @@ function AdminCampaignsTemplates() {
             reset();
         }
         catch (err) {
-            dispatch(showSnack({message: err.error, severity: "warning"}))
+            dispatch(showSnack({message: err.error, severity: "error"}))
             console.error("Adding new template failed:", err.message);
         }
         finally{
@@ -195,22 +210,28 @@ function AdminCampaignsTemplates() {
 
         setIsSaving(true);
         try {
-            const res = await fetch(`${API_URL}/admin/templates/save`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    fileName: activeFileName,
-                    content: activeFileContent
-                })
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not save file:", error.error);
-            }
+            // const res = await fetch(`${API_URL}/admin/templates/save`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         fileName: activeFileName,
+            //         content: activeFileContent
+            //     })
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not save file:", error.error);
+            // }
+
+            const saveChanges = await templateService.saveTemplateChanges(activeFileName, activeFileContent)
+            // const saveChanges = await templateService.saveTemplateChanges({
+            //     fileName: activeFileName,
+            //     content: activeFileContent
+            // })
             setOriginalFileContent(activeFileContent)
         }
         catch (err) {
@@ -226,22 +247,24 @@ function AdminCampaignsTemplates() {
         if (!selectedFileForRename) return;
         
         try {
-            const res = await fetch(`${API_URL}/admin/templates/rename`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    oldFileName: selectedFileForRename,
-                    newFileName: formData.newTemplateName
-                })
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not rename file:", error.error);
-            }
+            // const res = await fetch(`${API_URL}/admin/templates/rename`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         oldFileName: selectedFileForRename,
+            //         newFileName: formData.newTemplateName
+            //     })
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not rename file:", error.error);
+            // }
+
+            const renameFile = await templateService.renameTemplate(selectedFileForRename, formData.newTemplateName)
             
             const newFileNames = allFileNames.map(old => old === selectedFileForRename ? formData.newTemplateName : old)
             setAllFileNames(newFileNames)
@@ -252,7 +275,7 @@ function AdminCampaignsTemplates() {
             resetRename();
         }
         catch (err) {
-            dispatch(showSnack({message: err.error, severity: "warning"}))
+            dispatch(showSnack({message: err.error, severity: "error"}))
             console.error("Renaming file failed:", err.message);
         }
         finally {
@@ -262,21 +285,23 @@ function AdminCampaignsTemplates() {
     }
 
     const handleDeleteFile = async (fileName) => {
-        console.log(fileName);
         try {
-            const res = await fetch(`${API_URL}/admin/templates/delete`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ fileName })
-            });
-            if(!res.ok){
-                const error = await res.json()
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-                return console.error("Could not delete file:", error.error);
-            }
+            // const res = await fetch(`${API_URL}/admin/templates/delete`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({ fileName })
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     dispatch(showSnack({message: error.error, severity: "warning"}))
+            //     return console.error("Could not delete file:", error.error);
+            // }
+
+            const deleteTemplate = await templateService.deleteTemplate(fileName)
+            dispatch(showSnack({message: deleteTemplate, severity: "success"}))
 
             const newFileNames = allFileNames.filter(item => item !== fileName)
             setAllFileNames(newFileNames)
@@ -290,6 +315,8 @@ function AdminCampaignsTemplates() {
         catch (err) {
             dispatch(showSnack({message: err.error, severity: "warning"}))
             console.error("Deleting file failed:", err.message);
+            setOpenDeleteDialog(false)
+            handleMenuClose();
         }
         finally {
             handleMenuClose();
@@ -302,7 +329,7 @@ function AdminCampaignsTemplates() {
             setOpenSaveDialog(true)
         }
         else{
-            fetchAllTemplates(userState.token, file)
+            fetchAllTemplates(file)
         }
     }
 
@@ -341,12 +368,12 @@ function AdminCampaignsTemplates() {
         if(confirmation){
             handleSaveFile()
         }
-        fetchAllTemplates(userState.token, selectedFile)
+        fetchAllTemplates(selectedFile)
         setOpenSaveDialog(false)
     }
 
     useEffect(() => {
-        fetchAllTemplates(userState.token)
+        fetchAllTemplates()
     }, [])
 
     return (
@@ -354,7 +381,7 @@ function AdminCampaignsTemplates() {
             <Snackbar
                 open={snackbarState.show}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                autoHideDuration={5000}
+                autoHideDuration={3000}
                 onClose={() => dispatch(hideSnack())}
                 sx={{
                     '&.MuiSnackbar-root': { top: '70px' },
@@ -523,9 +550,9 @@ function AdminCampaignsTemplates() {
                                 startIcon={<SendIcon />}
                                 fullWidth
                                 onClick={handleSendTest}
-                                disabled={cooldown > 0 || hasUnsavedChanges}
+                                disabled={cooldown > 0 || hasUnsavedChanges || isSending}
                             >
-                                { cooldown > 0 ? `Wait ${cooldown}s` : hasUnsavedChanges ? `Save to test` : "Send Test Email"}
+                                { cooldown > 0 ? `Wait ${cooldown}s` : hasUnsavedChanges ? `Save to test` : isSending ? "Sending..." : "Send Test Email"}
                             </Button>
 
                             {hasUnsavedChanges && (

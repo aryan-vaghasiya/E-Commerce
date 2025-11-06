@@ -27,6 +27,7 @@ import { Page, Text, View, Document, StyleSheet, pdf, PDFViewer } from '@react-p
 import { saveAs } from 'file-saver';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { couponService } from '../api/services/couponService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponReport({couponData}) {
@@ -136,17 +137,19 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportSummary = async (coupon_id, from = getSqlToday(), to = getSqlNow()) => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/summary?from=${from}&to=${to}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/summary?from=${from}&to=${to}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await couponService.getCouponReportSummary(couponId, from, to)
             setReport(result)
             console.log(result)
         }

@@ -24,6 +24,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+import { adminProductService } from '../api/services/adminProductService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 const VisuallyHiddenInput = styled('input')({
@@ -39,7 +40,6 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 function AdminAddProduct() {
-
     const token = useSelector(state => state.userReducer.token)
     const snackbarState = useSelector(state => state.snackbarReducer)
     const { register, handleSubmit, control, trigger, watch, setValue, formState: { errors } } = useForm({})
@@ -50,19 +50,9 @@ function AdminAddProduct() {
     const [categories, setCategories] = useState([])
     const dispatch = useDispatch()
 
-    const getAllCategories = async () => {
+    const getCategories = async () => {
         try{
-            const response = await fetch(`${API_URL}/admin/product/categories`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            })
-    
-            if(!response.ok){
-                const error = await response.json()
-                return console.error(error.error);
-            }
-            const categories = await response.json()
+            const categories = await adminProductService.getAllCategories()
             setCategories(categories)
         }
         catch(err){
@@ -74,24 +64,20 @@ function AdminAddProduct() {
         const mrp = parseFloat(inputMrp)
         const price = parseFloat(inputPrice)
 
-        // const percentage = ((parseFloat((parseFloat(inputPrice)/parseFloat(inputMrp)).toFixed(2)) * 100) - 100) * -1
         const percentage = ((mrp - price)/mrp) * 100
         setValue("discount", (percentage).toFixed(2) || 0.00)
 
-        // if(mrp && price > mrp){
-        //     trigger("price")
-        // }
         if(mrp && price){
             trigger("price")
         }
     }, [inputMrp, inputPrice])
 
     useEffect(() => {
-        getAllCategories()
+        getCategories()
     }, [])
 
     const submitProduct = async (data) => {
-        console.log(data);
+        // console.log(data);
         if(!thumbnailPreview){
             dispatch(showSnack({message: "Thumbnail is required", severity: "warning"}))
             console.error("Thumbnail is required");
@@ -104,34 +90,36 @@ function AdminAddProduct() {
         }
 
         try{
-            const res = await fetch(`${API_URL}/admin/product/add`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            })
-            let productId;
-            if(res.ok){
-                productId = await res.json()
-            }
-            else{
-                return console.error("Could not add Details")
-            }
+            // const res = await fetch(`${API_URL}/admin/product/add`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify(data)
+            // })
+            // let productId;
+            // if(res.ok){
+            //     productId = await res.json()
+            // }
+            // else{
+            //     return console.error("Could not add Details")
+            // }
+            const { productId } = await adminProductService.addProduct(data)
 
             const formDataThumb = new FormData()
             const thumbnailFile = thumbnailPreview.file
             formDataThumb.append('thumbnail', thumbnailFile)
 
-            const thumbUpload = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    // "Content-Type": "multipart/form-data"
-                },
-                body: formDataThumb
-            })
+            // const thumbUpload = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         // "Content-Type": "multipart/form-data"
+            //     },
+            //     body: formDataThumb
+            // })
+            const uploadThumbnail = await adminProductService.uploadProductThumbnail(formDataThumb, productId);
 
             const formDataImages = new FormData()
             const imagesFiles = imagesPreview.map(item => item.file)
@@ -139,18 +127,20 @@ function AdminAddProduct() {
             for (let i = 0; i < imagesFiles.length; i++) {
                 formDataImages.append("images", imagesFiles[i]);
             }
-            const imagesUpload = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    // "Content-Type": "multipart/form-data"
-                },
-                body: formDataImages
-            })
+            // const imagesUpload = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         // "Content-Type": "multipart/form-data"
+            //     },
+            //     body: formDataImages
+            // })
+            const uploadImages = await adminProductService.uploadProductImages(formDataImages, productId);
+
             navigate("/admin/products")
         }
         catch(err){
-            console.error(err);
+            console.error("Error adding new product", err);
         }
     }
 

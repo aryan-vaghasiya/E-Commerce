@@ -708,7 +708,7 @@ exports.addDetails = async (title, brand, description, price, status, stock, mrp
     let categoryId = selected_category.id
     const categoryName = selected_category.category
 
-    const category = await runQuery(`SELECT id FROM categories WHERE id = ? AND category = ?`, [categoryId, categoryName])
+    const category = await runQuery(`SELECT id FROM categories WHERE id = ? OR category = ?`, [categoryId, categoryName])
     if(category.length === 0){
         const insertCategory = await runQuery(`INSERT INTO categories (category) VALUES (?)`, [categoryName])
         categoryId = insertCategory.insertId
@@ -1908,11 +1908,16 @@ exports.renameTemplateFile = async (username, oldFileName, newFileName) => {
 
 exports.deleteTemplateFile = async (username, fileName) => {
 
+    const checkCampaign = await runQuery(`SELECT * FROM campaigns WHERE template_name = ? AND status != ?`, [fileName, "completed"]);
+
+    if(checkCampaign.length > 0){
+        throw new Error("Template assigned for campaign")
+    }
+
     const adminTemplatesDir = path.join(__dirname, "../mailer/adminTemplates", username)
     await fs.ensureDir(adminTemplatesDir)
     const templatePath = path.join(adminTemplatesDir, `${fileName}.hbs`)
     await fs.remove(templatePath)
-
 }
 
 exports.sendCampaignEmailService = async(campaignId) => {

@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router'
+import { couponService } from '../api/services/couponService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponEdit() {
@@ -51,18 +52,21 @@ function AdminCouponEdit() {
 
     const fetchCoupon = async () => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error);
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error);
+            // }
 
-            const result = await response.json()
+            // const result = await response.json()
+
+            const result = await couponService.getCouponInfo(couponId)
+
             if(result.is_active === 1){
                 setIsActive(true)
             }
@@ -70,7 +74,6 @@ function AdminCouponEdit() {
                 setIsActive(false)
             }
 
-            console.log(result);
             setOriginalData(result)
             setEditedData(result)
 
@@ -96,26 +99,23 @@ function AdminCouponEdit() {
     }
 
     const fetchCouponProducts = async (page, limit) => {
-        // setLoadingProducts(true)
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                setLoadingProducts(false)
-                return console.log(error)
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
 
-            const result = await response.json()
-            // console.log(result);
+            // const result = await response.json()
+
+            const result = await couponService.getCouponProducts(couponId, page, limit);
             setSelectedProducts(result.products)
             setValue("selected_products", result.products)
-            // setTotalProducts(result.totalProducts)
-            // setLoadingProducts(false)
         }
         catch(err){
             console.error(err.message)
@@ -124,19 +124,20 @@ function AdminCouponEdit() {
 
     const fetchCouponCategories = async () => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/get-categories?couponId=${couponId}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/get-categories?couponId=${couponId}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
 
-            const result = await response.json()
-            console.log(result);
+            // const result = await response.json()
+
+            const result = await couponService.getCouponCategories(couponId)
             setSelectedCategories(result)
             setValue("selected_categories", result)
             // setTotalProducts(result.totalProducts)
@@ -149,26 +150,24 @@ function AdminCouponEdit() {
 
     const searchProduct = async () => {
         const price = discount_type === "fixed"? getValues("discount_value") : null
-        // console.log(price);
-        
+
         try{
-            console.log(query);
-            
-            const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            // const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Could not fetch Products Data:", errData);
-                console.error("Could not fetch Products Data:", errData.error);
-                return
-            }
+            // if (!response.ok) {
+            //     const errData = await response.json();
+            //     console.error("Could not fetch Products Data:", errData);
+            //     console.error("Could not fetch Products Data:", errData.error);
+            //     return
+            // }
 
-            const result = await response.json();
-            // console.log(result);
+            // const result = await response.json();
+            const result = await couponService.searchProductsForCoupon(query, price)
+
             setOptions(result)
         }
         catch(err){
@@ -191,22 +190,23 @@ function AdminCouponEdit() {
         console.log(formData);
 
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/edit`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({...formData, id: originalData.id})
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/edit`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({...formData, id: originalData.id})
+            // })
     
-            if(!response.ok){
-                const error = await response.json()
-                console.log(error.error);
-            }
-            if(response.ok){
-                navigate("/admin/coupons")
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     console.log(error.error);
+            // }
+
+            const editCoupon = await couponService.editCoupon({...formData, id: originalData.id})
+
+            navigate("/admin/coupons")
         }
         catch(err){
             console.error(err);
@@ -225,25 +225,23 @@ function AdminCouponEdit() {
     };
 
     const deactivateCoupon = async () => {
-        console.log("I ran");
-
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/deactivate`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({couponId: originalData.id})
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/deactivate`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({couponId: originalData.id})
+            // })
     
-            if(!response.ok){
-                const error = await response.json()
-                console.log(error.error);
-            }
-            if(response.ok){
-                navigate("/admin/coupons")
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     console.log(error.error);
+            // }
+            
+            const deactivate = await couponService.deactivateCoupon(couponId)
+            navigate("/admin/coupons")
         }
         catch(err){
             console.error(err);
@@ -252,7 +250,7 @@ function AdminCouponEdit() {
 
     useEffect(() => {
         fetchCoupon()
-        fetchCouponProducts(1, 1000)
+        fetchCouponProducts(1, 100)
         fetchCouponCategories()
     },[])
 

@@ -26,6 +26,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import AdminCouponReport from './AdminCouponReport';
+import { couponService } from '../api/services/couponService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponDetails() {
@@ -66,8 +67,8 @@ function AdminCouponDetails() {
         { field: "user_id", headerName: "User ID", width: 120 },
         { field: "order_id", headerName: "Order ID", width: 120 },
         { 
-            field: "total", 
-            headerName: "Cart Value", 
+            field: "subtotal", 
+            headerName: "Order Value", 
             width: 140,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
@@ -88,7 +89,7 @@ function AdminCouponDetails() {
         },
         { 
             field: "final_total", 
-            headerName: "Order Total", 
+            headerName: "Final Total", 
             width: 140,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
@@ -105,9 +106,7 @@ function AdminCouponDetails() {
     ];
 
     const productColumns = [
-        {
-            field: 'id', headerName: 'Product ID', width: 90, align : "center"
-        },
+        { field: 'id', headerName: 'Product ID', width: 90, align : "center" },
         {
             field: 'title',
             headerName: 'Title',
@@ -136,7 +135,7 @@ function AdminCouponDetails() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography>${(params.value).toFixed(2)}</Typography>
+                    <Typography>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -147,7 +146,7 @@ function AdminCouponDetails() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography color='error'>${(params.value).toFixed(2)}</Typography>
+                    <Typography color='error'>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -158,7 +157,7 @@ function AdminCouponDetails() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography color='success'>${(params.value).toFixed(2)}</Typography>
+                    <Typography color='success'>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -181,8 +180,7 @@ function AdminCouponDetails() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography color='error'>{params.value > 0 ? `$${(params.value).toFixed(2)}` : "-" }</Typography>
-                    {/* <Typography color='error'>{params.row.total_quantity > 0 ? `$${(params.row.total_quantity * params.row.coupon_discount_amount).toFixed(2)}` : "-" }</Typography> */}
+                    <Typography color='error'>{params.value > 0 ? `$${params.value?.toFixed(2)}` : "-" }</Typography>
                 </Box>
             )
         },
@@ -193,29 +191,30 @@ function AdminCouponDetails() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    {/* <Typography color='success'>{params.value}</Typography> */}
-                    <Typography color='success'>{params.value > 0 ? `$${(params.value).toFixed(2)}` : "-" }</Typography>
+                    <Typography color='success'>{params.value > 0 ? `$${params.value?.toFixed(2)}` : "-" }</Typography>
                 </Box>
             )
         },
     ];
 
     const fetchCouponUsages = async (page, limit) => {
-        setLoadingUsages(true)
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/usages/${couponId}?page=${page}&limit=${limit}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            setLoadingUsages(true)
+            // const response = await fetch(`${API_URL}/admin/coupons/usages/${couponId}?page=${page}&limit=${limit}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                setLoadingProducts(false)
-                return console.log(error)
-            }
-            const result = await response.json()
-            // console.log(result);
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     setLoadingUsages(false)
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await couponService.getCouponUsages(couponId, page, limit)
+
             setUsages(result.usages)
             setTotalUsages(result.totalUsages)
             setLoadingUsages(false)
@@ -223,25 +222,30 @@ function AdminCouponDetails() {
         catch(err){
             console.error(err.message)
         }
+        finally{
+            setLoadingUsages(false)
+        }
     }
 
     const fetchCouponProducts = async (page, limit) => {
-        setLoadingProducts(true)
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            setLoadingProducts(true)
+            // const response = await fetch(`${API_URL}/admin/coupons/products/${couponId}?page=${page}&limit=${limit}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                setLoadingProducts(false)
-                return console.log(error)
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     setLoadingProducts(false)
+            //     return console.log(error)
+            // }
 
-            const result = await response.json()
-            // console.log(result);
+            // const result = await response.json()
+            
+            const result = await couponService.getCouponProducts(couponId, page, limit);
+
             setProducts(result.products)
             setTotalProducts(result.totalProducts)
             setLoadingProducts(false)
@@ -249,23 +253,27 @@ function AdminCouponDetails() {
         catch(err){
             console.error(err.message)
         }
+        finally{
+            setLoadingProducts(false)
+        }
     }
 
     const fetchCoupon = async () => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error);
-            }
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error);
+            // }
 
-            const result = await response.json()
-            // console.log(result);
+            // const result = await response.json()
+            const result = await couponService.getCouponInfo(couponId)
+
             setData(result)
             setTotalLoss(result.totalLoss)
             setTotalSales(result.totalSales)
@@ -275,15 +283,13 @@ function AdminCouponDetails() {
         }
     }
 
-    const handleUsagePaginationChange = (newModel) => {
-        // console.log(newModel);
-        setUsagesPaginationModel(newModel);
-        fetchCouponUsages(newModel.page + 1, newModel.pageSize);
-    }
+    // const handleUsagePaginationChange = (newModel) => {
+    //     setUsagesPaginationModel(newModel);
+    // }
     const handleProductPaginationChange = (newModel) => {
         // console.log(newModel);
         setProductsPaginationModel(newModel);
-        fetchCouponProducts(newModel.page + 1, newModel.pageSize);
+        // fetchCouponProducts(newModel.page + 1, newModel.pageSize);
     }
 
     useEffect(() => {
@@ -319,14 +325,14 @@ function AdminCouponDetails() {
                                     <Box>
                                         <Typography variant="h5" sx={{ mb: 1 }}>{data.name}</Typography>
                                         <Box sx={{display: "flex"}}>
-                                            <Chip label={`Code: ${data.code}`} color="primary" sx={{ mr: 1, fontSize: 16 }} />
+                                            <Chip label={`Code: ${data.code?.toUpperCase()}`} color="primary" sx={{ mr: 1, fontSize: 16 }} />
                                             <Chip label={data.is_active ? "Active" : "Inactive"} color={data.is_active ? "success" : "error"} sx={{fontSize: 14}}/>
                                         </Box>
                                     </Box>
                                     <Box sx={{display: "flex", gap: 2}}>
                                         <Box sx={{display: "flex", flexDirection: "column", alignItems: 'flex-end'}}>
                                             <Typography color='error' sx={{fontSize: 35}}>
-                                                {totalLoss > 0 ? (totalLoss).toFixed(2) : `0.00`}
+                                                {totalLoss > 0 ? totalLoss?.toFixed(2) : `0.00`}
                                                 <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
                                             </Typography>
                                             <Typography sx={{ml: "auto"}}>Total Discounts</Typography>
@@ -334,7 +340,7 @@ function AdminCouponDetails() {
                                         <Divider variant='middle' orientation='vertical' flexItem/>
                                         <Box sx={{display: "flex", flexDirection: "column", alignItems: 'flex-end'}}>
                                             <Typography color='success' sx={{fontSize: 35}}>
-                                                {totalSales > 0 ? (totalSales).toFixed(2) : `0.00`}
+                                                {totalSales > 0 ? totalSales?.toFixed(2) : `0.00`}
                                                 <Typography component={'span'} sx={{fontSize: 24}}>$</Typography>
                                             </Typography>
                                             <Typography sx={{ml: "auto"}}>Total Sales</Typography>
@@ -344,7 +350,7 @@ function AdminCouponDetails() {
                                 <Divider sx={{ my: 2 }} />
                                 <Typography>
                                     <Typography component={'span'} sx={{fontWeight: 700}}>Discount: </Typography>
-                                    {data.discount_type === "percent" ? `${data.discount_value}%` : `$${(data.discount_value).toFixed(2)}`}
+                                    {data.discount_type === "percent" ? `${data.discount_value}%` : `$${data.discount_value?.toFixed(2)}`}
                                     {data.threshold_amount ? ` (upto $${data.threshold_amount})` : null}
                                 </Typography>
                                 <Typography>
@@ -353,7 +359,7 @@ function AdminCouponDetails() {
                                 </Typography>
                                 <Typography>
                                     <Typography component={'span'} sx={{fontWeight: 700}}>Min. Cart Value: </Typography>
-                                    {data.min_cart_value ? `$${(data.min_cart_value).toFixed(2)}` : "No minimum value needed"}
+                                    {data.min_cart_value ? `$${data.min_cart_value?.toFixed(2)}` : "No minimum value needed"}
                                 </Typography>
                                 <Typography>
                                     <Typography component={'span'} sx={{fontWeight: 700}}>Limit per user: </Typography>
@@ -424,7 +430,7 @@ function AdminCouponDetails() {
                                             pagination
                                             paginationMode="server"
                                             paginationModel={usagesPaginationModel}
-                                            onPaginationModelChange={handleUsagePaginationChange}
+                                            onPaginationModelChange={(newModel) => setUsagesPaginationModel(newModel)}
                                             loading={loadingUsages}
                                             rowHeight={58}
                                             pageSizeOptions={[5, 8, 10, 20]}

@@ -2,7 +2,11 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
 
-    console.log('HEADERS RECEIVED BY VERIFYTOKEN:', req.headers);
+    // console.log(req);
+    // if (req.method === 'OPTIONS') {
+    //     console.log('Skipping token verification for OPTIONS request');
+    //     return res.sendStatus(204);
+    // }
 
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];

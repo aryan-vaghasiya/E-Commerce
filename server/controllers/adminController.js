@@ -246,7 +246,7 @@ exports.addProductDetails = async(req, res) => {
 
     try{
         const productId = await adminServices.addDetails(title, brand, description, price, status, stock, mrp, discount, selected_category);
-        return res.status(200).json(productId)
+        return res.status(200).json({ productId })
     }
     catch(err){
         console.error("Error Adding Product Details: ", err.message);

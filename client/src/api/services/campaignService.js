@@ -28,8 +28,8 @@ export const campaignService = {
         return response.data;
     },
 
-    sendTestCampaign: async(fileName) => {
-        const response = await authApi.post(`/admin/campaigns/send-test`, fileName)
+    sendTestCampaign: async(template) => {
+        const response = await authApi.post(`/admin/campaigns/send-test`, { template })
         return response.data
     }
 };
