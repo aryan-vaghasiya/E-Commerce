@@ -29,6 +29,7 @@ import { useForm } from 'react-hook-form';
 import TextField from '@mui/material/TextField';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
+import { orderService } from '../api/services/orderService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 
@@ -51,20 +52,20 @@ function AdminOrderPage() {
 
     const fetchData = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/order?orderId=${orderId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            });
-            if (!response.ok) {
-                const error = await response.json()
-                console.error(error.error);
-                return
-                // throw new Error(`Error status: ${response.status}`);
-            }
-            const result = await response.json();
-            console.log(result);
-            // setData(result);
+            // const response = await fetch(`${API_URL}/admin/order?orderId=${orderId}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }
+            // });
+            // if (!response.ok) {
+            //     const error = await response.json()
+            //     console.error(error.error);
+            //     return
+            //     // throw new Error(`Error status: ${response.status}`);
+            // }
+            // const result = await response.json();
+
+            const result =  await orderService.getAdminOrderPage(orderId)
             setOrder(result.order)
             setUser(result.user)
             setProducts(result.products)
@@ -106,32 +107,35 @@ function AdminOrderPage() {
 
         console.log(formData);
         try{
-            const response = await fetch(`${API_URL}/admin/order-cancel-admin`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    orderId,
-                    userId: user.user_id,
-                    reason: formData.reason
-                })
-            })
-            if(!response.ok){
-                const error = await adminOrders.json()
-                console.error("Could not cancel Order:", error.error);
-                return
-            }
+            // const response = await fetch(`${API_URL}/admin/order-cancel-admin`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         orderId,
+            //         userId: user.user_id,
+            //         reason: formData.reason
+            //     })
+            // })
+            // if(!response.ok){
+            //     const error = await adminOrders.json()
+            //     console.error("Could not cancel Order:", error.error);
+            //     return
+            // }
+
+            const cancelOrder = await orderService.cancelOrderAdmin(orderId, user.user_id, formData.reason)
             reset()
             setOpenDialog(false)
+            setOrder(prev => ({...prev, status: "cancelled"}))
             fetchData()
+            // NEW FETCH TO GET REFUND PAYMENT ENTRY. 
         }
         catch (err){
             // dispatch(adminOrdersFailed(err.message))
             console.error("Could not cancel Order:", err.message);
         }
-        // setOrder(prev => ({...prev, status: "cancelled"}))
     }
 
     if (error) {

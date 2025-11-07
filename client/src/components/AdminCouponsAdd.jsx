@@ -35,6 +35,8 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { adminProductService } from "../api/services/adminProductService"
+import { couponService } from "../api/services/couponService"
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCouponsAdd() {
@@ -124,20 +126,20 @@ function AdminCouponsAdd() {
         }
     };
 
-    const getAllCategories = async () => {
+    const fetchAllCategories = async () => {
         try{
-            const response = await fetch(`${API_URL}/admin/product/categories`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/product/categories`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }
+            // })
     
-            if(!response.ok){
-                const error = await response.json()
-                return console.error(error.error);
-            }
-            const categories = await response.json()
-            // console.log(categories);
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.error(error.error);
+            // }
+            // const categories = await response.json()
+            const categories = await adminProductService.getAllCategories()
             setCategories(categories)
         }
         catch(err){
@@ -149,24 +151,22 @@ function AdminCouponsAdd() {
         const price = discount_type === "fixed"? getValues("discount_value") : null
         // console.log(price);
         
-        try{
-            // console.log(query);
-            
-            const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+        try{            
+            // const response = await fetch(`${API_URL}/admin/coupons/search-product?query=${query}&price=${price}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Could not fetch Products Data:", errData);
-                console.error("Could not fetch Products Data:", errData.error);
-                return
-            }
+            // if (!response.ok) {
+            //     const errData = await response.json();
+            //     console.error("Could not fetch Products Data:", errData);
+            //     console.error("Could not fetch Products Data:", errData.error);
+            //     return
+            // }
 
-            const result = await response.json();
-            // console.log(result);
+            // const result = await response.json();
+            const result = await couponService.searchProductsForCoupon(query, price);
             setOptions(result)
         }
         catch(err){
@@ -185,37 +185,44 @@ function AdminCouponsAdd() {
     }, [query]);
 
     useEffect(() => {
-        getAllCategories()
-    }, []);
+        if(page === 3 && categories?.length < 1){
+            fetchAllCategories()
+        }
+        // fetchAllCategories()
+    }, [page]);
+    // }, []);
 
     const addCoupon = async (couponData) => {
         const sTime = dayjs(couponData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
         const eTime = dayjs(couponData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
         
-        // console.log(sTime, eTime);
         couponData.start_time = sTime
         couponData.end_time = eTime
-        console.log(couponData);
+        // console.log(couponData);
 
-        const response = await fetch(`${API_URL}/admin/coupons/add`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(couponData)
-        })
-
-        if(!response.ok){
-            const error = await response.json()
-            console.log(error.error);
-            if(error.error === "This Code is already Active"){
-                dispatch(showSnack({message: "This Code is already Active", severity: "warning"}))
-                setPage(1)
-            }
-        }
-        else{
+        try{
+            // const response = await fetch(`${API_URL}/admin/coupons/add`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify(couponData)
+            // })
+    
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     console.log(error.error);
+            //     if(error.error === "This Code is already Active"){
+            //         dispatch(showSnack({message: "This Code is already Active", severity: "warning"}))
+            //         setPage(1)
+            //     }
+            // }
+            
+            const newCoupon = await couponService.addNewCoupon(couponData);
             navigate("/admin/coupons")
+        } catch(err) {
+            console.error(err);
         }
     }
 
@@ -387,14 +394,18 @@ function AdminCouponsAdd() {
                                                 labelId="discount_on"
                                                 label="Discount On"
                                                 value={field.value ?? ""}
+                                                onChange={(e) => {
+                                                    field.onChange(e)
+                                                    setValue('selected_products', [])
+                                                    setValue('category', [])
+                                                    setSelectedCategories([])
+                                                    setSelectedProducts([])
+                                                }}
                                             >
-                                                <MenuItem value={"product"}>Individual Product(s)</MenuItem>
+                                                <MenuItem value={"product"}>Product(s)</MenuItem>
                                                 <MenuItem value={"all"}>Cart Value</MenuItem>
-                                                {
-                                                    discount_type === "percent"?
+                                                {discount_type === "percent" &&
                                                     <MenuItem value={"category"}>Category</MenuItem>
-                                                    :
-                                                    null
                                                 }
                                             </Select>
                                         )}
@@ -453,7 +464,8 @@ function AdminCouponsAdd() {
                                                     {selectedProducts.map((product) => (
                                                     <Chip
                                                         key={product.id}
-                                                        label={`id: ${product.id}, Title: ${product.title}`}
+                                                        label={product.title}
+                                                        // label={`id: ${product.id}, Title: ${product.title}`}
                                                         onDelete={() => {
                                                             const updated = selectedProducts.filter(p => p.id !== product.id);
                                                             setSelectedProducts(updated);
@@ -554,7 +566,8 @@ function AdminCouponsAdd() {
                                                     {selectedCategories.map((category) => (
                                                     <Chip
                                                         key={category.id}
-                                                        label={`id: ${category.id}, Title: ${category.category}`}
+                                                        label={category.category}
+                                                        // label={`id: ${category.id}, Title: ${category.category}`}
                                                         onDelete={() => {
                                                             const updated = selectedCategories.filter(p => p.id !== category.id);
                                                             setSelectedCategories(updated);

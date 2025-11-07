@@ -17,6 +17,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
+import { adminProductService } from '../api/services/adminProductService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminProducts() {
@@ -35,69 +36,70 @@ function AdminProducts() {
         pageSize: 8,
     });
 
-    const handleClickOpen = (productId) => {
-        // console.log(productId);
-        setToDelete(productId)
-        setOpen(true);
-    };
+    // const handleClickOpen = (productId) => {
+    //     // console.log(productId);
+    //     setToDelete(productId)
+    //     setOpen(true);
+    // };
 
-    const handleClose = () => {
-        setOpen(false);
-        setToDelete(null)
-    };
+    // const handleClose = () => {
+    //     setOpen(false);
+    //     setToDelete(null)
+    // };
 
-    const deleteProduct = async () => {
-        const productId = toDelete
-        console.log(productId);
-        handleClose()
+    // const deleteProduct = async () => {
+    //     const productId = toDelete
+    //     console.log(productId);
+    //     handleClose()
 
-        const res = await fetch(`${API_URL}/admin/product/delete`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({productId})
-        })
+    //     const res = await fetch(`${API_URL}/admin/product/delete`, {
+    //         method: "POST",
+    //         headers: {
+    //             Authorization: `Bearer ${token}`,
+    //             "Content-Type": "application/json"
+    //         },
+    //         body: JSON.stringify({productId})
+    //     })
 
-        if(res.ok){
-            fetchProducts(paginationModel.page + 1, paginationModel.pageSize)
-        }
-        else{
-            const error = await res.json()
-            console.error(error)
-        }
-    }
+    //     if(res.ok){
+    //         fetchProducts(paginationModel.page + 1, paginationModel.pageSize)
+    //     }
+    //     else{
+    //         const error = await res.json()
+    //         console.error(error)
+    //     }
+    // }
 
     const fetchProducts = async (page, limit) => {
-        setLoading(true);
-        setError(null);
         try {
-            const response = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            setLoading(true);
+            setError(null);
+            // const response = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Could not fetch Products Data:", errData);
-                console.error("Could not fetch Products Data:", errData.error);
-                return
-            }
+            // if (!response.ok) {
+            //     const errData = await response.json();
+            //     console.error("Could not fetch Products Data:", errData);
+            //     console.error("Could not fetch Products Data:", errData.error);
+            //     return
+            // }
 
-            const result = await response.json();
-            // console.log(result);
-            
-            const withDiscount = result.products.map(product => ({...product, price: product.offer_discount ? 
-                                                            (product.mrp - (product.mrp * product.offer_discount / 100)).toFixed(2) 
-                                                            : (product.price).toFixed(2)}))
+            // const result = await response.json();
+            const result = await adminProductService.getAllProducts(page, limit)
+
+
+            // const withDiscount = result.products.map(product => ({...product, price: product.offer_discount ? 
+            //                                                 (product.mrp - (product.mrp * product.offer_discount / 100)).toFixed(2) 
+            //                                                 : (product.price).toFixed(2)}))
             // console.log(withDiscount);
             
             // const price = result.offer_discount ? result.price * (1 - result.offer_discount / 100) : result.price
             // setProducts([...result.products, price ]);
-            setProducts(withDiscount);
-            setTotalProducts(result.total);
+            setProducts(result?.products);
+            setTotalProducts(result?.total);
         } catch (err) {
             console.error(err.message)
             setError(err.message);
@@ -107,11 +109,8 @@ function AdminProducts() {
     };
 
     const handlePaginationChange = (newModel) => {
-        // console.log(newModel);
-        
         setPaginationModel(newModel);
-        // dispatch(fetchAdminOrders(newModel.page + 1, newModel.pageSize));
-        fetchProducts(newModel.page + 1, newModel.pageSize);
+        // fetchProducts(newModel.page + 1, newModel.pageSize);
     };
 
     useEffect(() => {
@@ -177,7 +176,7 @@ function AdminProducts() {
             editable: false,
             renderCell: (params) => (
                 <Box sx={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%"}}>
-                    <Typography>${params.value}</Typography>
+                    <Typography>${params.value?.toFixed(2)}</Typography>
                 </Box>
             )
         },
@@ -230,7 +229,7 @@ function AdminProducts() {
 
     return (
         <Box sx={{ py: 1.5, px: 4, bgcolor: "#EEEEEE", minHeight: "91vh" }}>
-            <Dialog
+            {/* <Dialog
                 open={open}
                 onClose={handleClose}
                 // aria-labelledby="alert-dialog-title"
@@ -248,7 +247,7 @@ function AdminProducts() {
                 <Button onClick={handleClose} color='error'>No</Button>
                 <Button onClick={deleteProduct} autoFocus>Yes</Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog> */}
             <Box sx={{display : "flex", justifyContent : "space-between", pb: 1}}>
                 <Typography variant='h4' component='h1' sx={{fontWeight: "200"}}>Products</Typography>
                 <Button variant='contained' onClick={() => navigate("/admin/product/add")}>Add Product</Button>

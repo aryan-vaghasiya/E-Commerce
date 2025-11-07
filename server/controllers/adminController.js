@@ -75,7 +75,7 @@ exports.orderCancelRefund = async (req, res) => {
 
     try{
         const data = await adminServices.orderRefund(orderId, userId, reason, "admin");
-        res.status(200).json(data);
+        res.status(200).send("Order Cancelled Successfully");
     }
     catch(err){
         console.error("Error cancelling Order: ", err.message);

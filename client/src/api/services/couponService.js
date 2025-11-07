@@ -2,6 +2,16 @@ import { authApi } from "../axiosInstance";
 
 export const couponService = {
 
+    getCoupons: async(params) => {
+        const response = await authApi.get(`/admin/get-coupons?${params.toString()}`);
+        return response.data
+    },
+
+    addNewCoupon: async(couponData) => {
+        const response = await authApi.post(`/admin/coupons/add`, couponData);
+        return response.data
+    },
+
     getCouponUsages: async(couponId, page, limit) => {
         const response = await authApi.get(`/admin/coupons/usages/${couponId}`, {
             params: {page, limit}
@@ -50,10 +60,31 @@ export const couponService = {
         return response.data
     },
 
-    getCouponReportProducts: async(couponId, from, to) => {
-        const response = await authApi.get(`/admin/coupons/${couponId}/report/summary`, {
-            params: {from, to}
+    getCouponReportProducts: async(couponId, from, to, limit, sortBy, orderBy) => {
+        const response = await authApi.get(`/admin/coupons/${couponId}/report/products`, {
+            params: {from, to, limit, sortBy, orderBy}
         });
         return response.data
-    }
+    },
+
+    getCouponReportCategories: async(couponId, from, to, limit, sortBy, orderBy) => {
+        const response = await authApi.get(`/admin/coupons/${couponId}/report/categories`, {
+            params: {from, to, limit, sortBy, orderBy}
+        });
+        return response.data
+    },
+
+    getCouponReportUsers: async(couponId, from, to, limit, sortBy, orderBy) => {
+        const response = await authApi.get(`/admin/coupons/${couponId}/report/users`, {
+            params: {from, to, limit, sortBy, orderBy}
+        });
+        return response.data
+    },
+
+    getCouponReportDates: async(couponId, from, to, limit, sortBy, orderBy) => {
+        const response = await authApi.get(`/admin/coupons/${couponId}/report/dates`, {
+            params: {from, to, limit, sortBy, orderBy}
+        });
+        return response.data
+    },
 }

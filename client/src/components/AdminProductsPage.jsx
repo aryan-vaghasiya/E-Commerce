@@ -32,6 +32,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import Tab from '@mui/material/Tab';
 import TabPanel from '@mui/lab/TabPanel';
+import { adminProductService } from '../api/services/adminProductService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 const VisuallyHiddenInput = styled('input')({
@@ -60,6 +61,7 @@ function AdminProductsPage() {
     const [productStatus, setProductStatus] = useState(null)
     const [categories, setCategories] = useState([])
     const [offers, setOffers] = useState(null)
+    const [isSaving, setIsSaving] = useState(false)
 
     const [page, setPage] = useState(1);
 
@@ -68,9 +70,6 @@ function AdminProductsPage() {
 
     const base_mrp = watch('base_mrp');
     const base_price = watch('base_price');
-
-    // const offer_mrp = watch('offer_mrp');
-    const offer_price = watch('offer_price');
 
     const handlePageChange = (event, newValue) => {
         setPage(newValue);
@@ -84,19 +83,19 @@ function AdminProductsPage() {
 
     const fetchData = async () => {
         try {
-            // console.log("fetching...");
-            const response = await fetch(`${API_URL}/admin/product?productId=${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            });
-            if (!response.ok) {
-                const error = await response.json()
-                console.error(error.error);
-                return
-            }
-            const result = await response.json();
-            // console.log(result);
+            // const response = await fetch(`${API_URL}/admin/product?productId=${productId}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }
+            // });
+            // if (!response.ok) {
+            //     const error = await response.json()
+            //     console.error(error.error);
+            //     return
+            // }
+            // const result = await response.json();
+
+            const result = await adminProductService.getProductData(productId);
             setData(result);
             reset({
                 title: result.title,
@@ -117,42 +116,43 @@ function AdminProductsPage() {
         }
     };
 
-    const getAllOffers = async () => {
-        try {
-            const response = await fetch(`${API_URL}admin/product/get-offers?productId=${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            })
-            if (!response.ok) {
-                const error = await response.json()
-                console.error(error.error);
-                return
-            }
-            const result = await response.json();
-            console.log(result);
+    // const getAllOffers = async () => {
+    //     try {
+    //         const response = await fetch(`${API_URL}admin/product/get-offers?productId=${productId}`, {
+    //             headers: {
+    //                 Authorization: `Bearer ${token}`,
+    //             }
+    //         })
+    //         if (!response.ok) {
+    //             const error = await response.json()
+    //             console.error(error.error);
+    //             return
+    //         }
+    //         const result = await response.json();
+    //         console.log(result);
 
-            setOffers(result)
-        }
-        catch (err) {
-            console.error(err)
-        }
-    }
+    //         setOffers(result)
+    //     }
+    //     catch (err) {
+    //         console.error(err)
+    //     }
+    // }
 
     const getAllCategories = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/product/categories`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/product/categories`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }
+            // })
 
-            if (!response.ok) {
-                const error = await response.json()
-                return console.error(error.error);
-            }
-            const categories = await response.json()
-            // console.log(categories);
+            // if (!response.ok) {
+            //     const error = await response.json()
+            //     return console.error(error.error);
+            // }
+            // const categories = await response.json()
+
+            const categories = await adminProductService.getAllCategories();
             setCategories(categories)
         }
         catch (err) {
@@ -175,53 +175,31 @@ function AdminProductsPage() {
     // }, [inputMrp, inputPrice])
 
     const handleEdit = async (editedData) => {
-        // console.log("Editing");
-        // console.log(editedData);
+        // const response = await fetch(`${API_URL}/admin/edit-product`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({ ...editedData, id: data.id, base_discount: calcDiscount(base_mrp, base_price) })
+        // })
 
-        let sDate;
-        let eDate;
-
-        if (editedData.start_time && editedData.end_time) {
-            sDate = dayjs(editedData.start_time).format(`YYYY-MM-DD HH:mm:ss`)
-            eDate = dayjs(editedData.end_time).format(`YYYY-MM-DD HH:mm:ss`)
-
-            // console.log(sDate);
-            // console.log(eDate);
-            if (!editedData.start_time.isBefore(editedData.end_time, "minute")) {
-                return console.error("End Time cannot be before Start Time");
-            }
-            if (!dayjs().isBefore(editedData.start_time, "minute") || !dayjs().isBefore(editedData.end_time, "minute")) {
-                return console.error("Start Time or End Time is before current Time");
-            }
-            editedData.start_time = sDate
-            editedData.end_time = eDate
-        }
-        // console.log(sDate);
-        // console.log(eDate);
-        // console.log(dayjs().isBefore(editedData.start_time, "minute"));
-
-        console.log({ ...editedData, id: data.id, base_discount: calcDiscount(base_mrp, base_price), offer_discount: calcDiscount(base_mrp, offer_price) });
-
-
-
-        console.log({ id: data.id, price: parseFloat(parseInt(editedData.price).toFixed(2)), stock: (parseInt(editedData.stock)), ...editedData });
-
-
-        const response = await fetch(`${API_URL}/admin/edit-product`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ ...editedData, id: data.id, base_discount: calcDiscount(base_mrp, base_price), offer_discount: calcDiscount(base_mrp, offer_price) })
-        })
-
-        if (response.ok) {
-            // setTimeout(function() {
-            //     // console.log("This message appears after 2 seconds.");
-            //     navigate("/admin/products", {replace: true})
-            // }, 500);
-            navigate("/admin/products", { replace: true })
+        // if (response.ok) {
+        //     navigate("/admin/products", { replace: true })
+        // }
+        
+        try {
+            setIsSaving(true);
+            const editProduct = await adminProductService.editProduct({
+                ...editedData,
+                id: data.id,
+                base_discount: calcDiscount(base_mrp, base_price)
+            });
+            navigate("/admin/products");
+        } catch (error) {
+            console.error("Error editing product", error);
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -263,38 +241,55 @@ function AdminProductsPage() {
 
     const updateStatus = async () => {
         const newStatus = productStatus === "active" ? "inactive" : "active"
-        setProductStatus(newStatus)
 
-        const res = await fetch(`${API_URL}/admin/product/update-status`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ newStatus, productId: data.id })
-        })
+        // const res = await fetch(`${API_URL}/admin/product/update-status`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({ newStatus, productId: data.id })
+        // })
+        // if(res.ok){
+        //     setProductStatus(newStatus)
+        // }
+
+        try {
+            const updateStatus = await adminProductService.updateProductStatus(newStatus, data.id);
+            setProductStatus(newStatus);
+        } catch (error) {
+            console.error("Error updating product status", error);
+        }
     }
 
     const removeRequest = async () => {
-        // console.log(toDelete);
         const toDeleteIds = toDelete.map(item => item.id)
-        console.log(toDeleteIds);
-        const res = await fetch(`${API_URL}/admin/product/remove-images`, {
-            method: "POST",
-            body: JSON.stringify(toDeleteIds),
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-        if (res.ok) {
-            console.log("Removed Images Successfully");
-            setToDelete([])
+
+        // const res = await fetch(`${API_URL}/admin/product/remove-images`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(toDeleteIds),
+        // })
+        // if (res.ok) {
+        //     console.log("Removed Images Successfully");
+        //     setToDelete([])
+        // }
+        // else {
+        //     console.log("Couldn't Remove Images");
+        // }
+        // setEditable(false)
+
+        try {
+            const deleteImage = await adminProductService.deleteProductImages(toDeleteIds);
+            setToDelete([]);
+        } catch (error) {
+            console.error("Error deleting product images", error);
+        } finally {
+            setEditable(false)
         }
-        else {
-            console.log("Couldn't Remove Images");
-        }
-        setEditable(false)
     }
 
     const uploadThumbnail = async (event) => {
@@ -302,28 +297,32 @@ function AdminProductsPage() {
         const file = event.target.files
         formData.append("thumbnail", file[0])
         const localThumbnailPreview = URL.createObjectURL(file[0])
-        // console.log(localThumbnailPreview);
-        // console.log(formData);
 
-        const res = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                // "Content-Type": "multipart/form-data"
-            }
-        })
+        // const res = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         // "Content-Type": "multipart/form-data"
+        //     },
+        //     body: formData,
+        // })
 
-        if (res.ok) {
-            console.log("Thumbnail Upload Success");
-            // console.log(file[0]);
-            setThumbnailPreview({ file, url: localThumbnailPreview })
-        }
-        else {
-            console.log("Couldn't Upload Thumbnail");
+        // if (res.ok) {
+        //     console.log("Thumbnail Upload Success");
+        //     // console.log(file[0]);
+        //     setThumbnailPreview({ file, url: localThumbnailPreview })
+        // }
+        // else {
+        //     console.log("Couldn't Upload Thumbnail");
+        // }
+
+        try {
+            const updateThumbnail = await adminProductService.uploadProductThumbnail(formData, productId);
+            setThumbnailPreview({ file, url: localThumbnailPreview });
+        } catch (error) {
+            console.error("Error updating thumbnail", error);
         }
     }
-    // console.log(thumbnailPreview);
 
     const handleUpload = async (event) => {
         const formData = new FormData();
@@ -333,28 +332,34 @@ function AdminProductsPage() {
             formData.append("images", files[i]);
         }
 
-        const res = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                // "Content-Type": "multipart/form-data"
-            }
-        })
+        // const res = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         // "Content-Type": "multipart/form-data"
+        //     },
+        //     body: formData,
+        // })
 
-        if (res.ok) {
-            const newImages = await res.json()
-            // console.log(newImages);
+        // if (res.ok) {
+        //     const newImages = await res.json()
+        //     setData(prev => ({ ...prev, image: [...prev.image, ...newImages] }))
+        //     console.log("Upload Success");
+        //     setImagePreview([])
+        //     setShowPreview(false)
+        // }
+        // else {
+        //     console.log("Couldn't Upload");
+        // }
 
-            setData(prev => ({ ...prev, image: [...prev.image, ...newImages] }))
-            console.log("Upload Success");
-            // setLocalPreview(prev => [...prev, ...imagePreview]);
+        try {
+            const newImages = await adminProductService.uploadProductImages(formData, productId);
+            setData(prev => ({ ...prev, image: [...prev.image, ...newImages] }));
+        } catch (error) {
+            console.error("Error uploading images", error);
+        } finally {
             setImagePreview([])
-            // setShowUploaded(true)
             setShowPreview(false)
-        }
-        else {
-            console.log("Couldn't Upload");
         }
     }
 
@@ -445,25 +450,34 @@ function AdminProductsPage() {
                                                 spacing={2}
                                                 columns={9}
                                             >
-                                                {
-                                                    imagePreview.map(item => (
-                                                        <Grid key={item.url} size={3} sx={{ display: "flex", justifyContent: "center", alignItems: 'center' }}>
-                                                            <Box sx={{ position: "relative" }}>
-                                                                <IconButton
-                                                                    onClick={() => handleCancel(item)}
-                                                                    sx={{ position: "absolute", top: 0, right: 0 }}>
-                                                                    <CancelIcon></CancelIcon>
-                                                                </IconButton>
-                                                                <img src={item.url} style={{ width: 100, objectFit: "contain" }} />
-                                                            </Box>
-                                                        </Grid>
-                                                    ))
-                                                }
+                                                {imagePreview.map(item => (
+                                                    <Grid key={item.url} size={3} sx={{ display: "flex", justifyContent: "center", alignItems: 'center' }}>
+                                                        <Box sx={{ position: "relative" }}>
+                                                            <IconButton
+                                                                onClick={() => handleCancel(item)}
+                                                                sx={{ position: "absolute", top: 0, right: 0 }}
+                                                            >
+                                                                <CancelIcon></CancelIcon>
+                                                            </IconButton>
+                                                            <img
+                                                                src={item.url} 
+                                                                style={{ width: 100, objectFit: "contain" }}
+                                                            />
+                                                        </Box>
+                                                    </Grid>
+                                                ))}
                                             </Grid>
                                         </Card>
                                     </Box>
                                 }
                                 <Box sx={{ display: "flex", justifyContent: "space-around", gap: 2, mt: 2 }}>
+                                    {!editable && imagePreview.length === 0 &&
+                                            <Button 
+                                                onClick={() => setEditable(true)} 
+                                                variant='contained'>
+                                                    Remove Images
+                                            </Button>
+                                    }
                                     {!editable &&
                                         <Button
                                             component="label"
@@ -482,13 +496,6 @@ function AdminProductsPage() {
                                     }
                                     {imagePreview.length > 0 &&
                                         <Button onClick={handleUpload} variant='contained'>Submit</Button>
-                                    }
-                                    {!editable && imagePreview.length === 0 &&
-                                            <Button 
-                                                onClick={() => setEditable(true)} 
-                                                variant='contained'>
-                                                    Remove Images
-                                            </Button>
                                     }
                                     {editable &&
                                         <Box>
@@ -653,7 +660,7 @@ function AdminProductsPage() {
                                                 disabled
                                             />
                                         </Box>
-                                        <Button type='submit' variant="contained">Save Changes</Button>
+                                        <Button type='submit' variant="contained" disabled={isSaving}>Save Changes</Button>
                                     </Stack>
                                 </form>
                             </Card>

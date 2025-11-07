@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import { useNavigate } from 'react-router';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
+import { orderService } from '../api/services/orderService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminOrders() {
@@ -30,19 +31,20 @@ function AdminOrders() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${pageSize}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            // const response = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${pageSize}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Failed to fetch admin orders", errData.error);
-            }
+            // if (!response.ok) {
+            //     const errData = await response.json();
+            //     console.error("Failed to fetch admin orders", errData.error);
+            // }
 
-            const result = await response.json();
-            // console.log(result);
+            // const result = await response.json();
+
+            const result = await orderService.getAdminOrders(page, pageSize);
             setOrders(result.orders);
             setTotalOrders(result.total);
         } 

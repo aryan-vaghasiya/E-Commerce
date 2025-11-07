@@ -1,4 +1,3 @@
-import flipkartLogo from "../assets/flipkart-logo.png"
 import cartifyLogo from "../assets/cartify-logo.png"
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, useNavigate } from 'react-router'
@@ -79,29 +78,29 @@ function AdminNavBar() {
         return () => clearInterval(timeOut)
     },[input])
 
-    const HandleLogin = async (e) => {
-        e.preventDefault()
+    // const HandleLogin = async (e) => {
+    //     e.preventDefault()
 
-        if(userState.token){
-            const res = await fetch(`${API_URL}/auth/check`, {
-                headers: {
-                    Authorization: `Bearer ${userState.token}`
-                    // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`
-                }
-            });
-            if(res.status === 200){
-                navigate("/my-orders")
-            }
-            else{
-                dispatch(showSnack({message: "Session Expired, Login Again", severity: "warning"}))
-                navigate("/login", {state: "/my-orders"})
-            }
-        }
-        else{
-            dispatch(showSnack({message: "Please Login to access this Section", severity: "warning"}))
-            return navigate("/login", {state: "/my-orders"})
-        }
-    }
+    //     if(userState.token){
+    //         const res = await fetch(`${API_URL}/auth/check`, {
+    //             headers: {
+    //                 Authorization: `Bearer ${userState.token}`
+    //                 // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXN`
+    //             }
+    //         });
+    //         if(res.status === 200){
+    //             navigate("/my-orders")
+    //         }
+    //         else{
+    //             dispatch(showSnack({message: "Session Expired, Login Again", severity: "warning"}))
+    //             navigate("/login", {state: "/my-orders"})
+    //         }
+    //     }
+    //     else{
+    //         dispatch(showSnack({message: "Please Login to access this Section", severity: "warning"}))
+    //         return navigate("/login", {state: "/my-orders"})
+    //     }
+    // }
 
     return (
         <AppBar position="sticky">

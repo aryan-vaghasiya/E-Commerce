@@ -20,6 +20,7 @@ import TableCell from '@mui/material/TableCell'
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import IconButton from '@mui/material/IconButton'
 import { useState } from 'react'
+import { adminDashboardService } from '../api/services/adminDashboardService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminDashboard() {
@@ -32,18 +33,19 @@ function AdminDashboard() {
 
     const getDashboard = async (token) => {
         try {
-            const res = await fetch(`${API_URL}/admin/get-dashboard`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }, 
-            });
-            if(!res.ok){
-                const error = await res.json()
-                console.error("Could not fetch Dashboard Data:", error.error);
-                return false
-            }
-            const data = await res.json();
-            // console.log(data);
+            // const res = await fetch(`${API_URL}/admin/get-dashboard`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }, 
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     console.error("Could not fetch Dashboard Data:", error.error);
+            //     return false
+            // }
+            // const data = await res.json();
+
+            const data = await adminDashboardService.getDashboard();
             setDashboardState(data)
         }
         catch (err) {

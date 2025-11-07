@@ -24,6 +24,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import ClearIcon from '@mui/icons-material/Clear';
+import { couponService } from '../api/services/couponService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function AdminCoupons() {
@@ -110,27 +111,30 @@ function AdminCoupons() {
         try {
             const params = new URLSearchParams({page, limit, ...filters})
             // console.log(Object.fromEntries(params));
-            const response = await fetch(`${API_URL}/admin/get-coupons?${params.toString()}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Could not fetch Coupons Data:", errData)
-                console.error("Could not fetch Coupons Data:", errData.error)
-                return
-            }
+            // const response = await fetch(`${API_URL}/admin/get-coupons?${params.toString()}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
 
-            const result = await response.json()
+            // if (!response.ok) {
+            //     const errData = await response.json();
+            //     console.error("Could not fetch Coupons Data:", errData)
+            //     console.error("Could not fetch Coupons Data:", errData.error)
+            //     return
+            // }
+
+            // const result = await response.json()
+
+            const result = await couponService.getCoupons(params);
             setCoupons(result.coupons)
             setTotalCoupons(result.total)
-            handleClose()
         } catch (err) {
             console.error(err.message)
             setError(err.message)
         } finally {
+            handleClose()
             setLoading(false)
         }
     };
@@ -166,7 +170,6 @@ function AdminCoupons() {
     };
 
     const handleFilter = (filters = {}) => {
-        console.log(filters);
         setActiveFilters(filters)
 
         setFilterParams(buildFilterParams(filters))

@@ -41,7 +41,7 @@ function AdminCouponReport({couponData}) {
     const [users, setUsers] = useState(null)
     const [dates, setDates] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
-    const [chips, setChips] = useState(null)
+    const [chips, setChips] = useState([])
 
     const timeRange = watch("timeRange")
 
@@ -76,7 +76,7 @@ function AdminCouponReport({couponData}) {
     }
 
     const handleReportFilter = async (formData) => {
-        console.log(formData);
+        // console.log(formData);
 
         setProducts(null)
         setCategories(null)
@@ -100,7 +100,7 @@ function AdminCouponReport({couponData}) {
         if(formData.timeRange === "custom" && formData.start_time && formData.end_time){
             fromTime = dayjs(formData.start_time).format("YYYY-MM-DD HH:mm:ss")
             toTime = dayjs(formData.end_time).format("YYYY-MM-DD HH:mm:ss")
-            setChips(prev => [...prev, `Start: ${formData.start_time}`, `End: ${formData.end_time}`])
+            setChips(prev => [...prev, `Start: ${dayjs(formData.start_time)?.format("D MMM YYYY, hh:mm A")}`, `End: ${dayjs(formData.end_time)?.format("D MMM YYYY, hh:mm A")}`])
         }
 
         fetchCouponReportSummary(couponId, fromTime, toTime)
@@ -129,13 +129,13 @@ function AdminCouponReport({couponData}) {
     }
 
     const handleModalClose = (event, reason) => {
-        if (reason === "backdropClick") {
-            handleSubmit(handleReportFilter)();
-        }
+        // if (reason === "backdropClick") {
+        //     handleSubmit(handleReportFilter)();
+        // }
         setModalOpen(false);
     }
 
-    const fetchCouponReportSummary = async (coupon_id, from = getSqlToday(), to = getSqlNow()) => {
+    const fetchCouponReportSummary = async (couponId, from = getSqlToday(), to = getSqlNow()) => {
         try{
             // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/summary?from=${from}&to=${to}`, {
             //     headers: {
@@ -151,31 +151,33 @@ function AdminCouponReport({couponData}) {
 
             const result = await couponService.getCouponReportSummary(couponId, from, to)
             setReport(result)
-            console.log(result)
         }
         catch(err){
             console.error(err.message)
         }
     }
 
-    const fetchCouponReportProducts = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
+    const fetchCouponReportProducts = async (couponId, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
 
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/products?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/products?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await couponService.getCouponReportProducts(couponId, from, to, limit, sortBy, orderBy);
             setProducts(result)
-            console.log(result)
-            // setChips(prev => [...prev, `Products`])
-            result.products.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Products"]))) : null
+            if(result.products?.length > 0){
+                setChips(prev => Array.from(new Set([...prev, "Products"])))
+            }
+            // result.products?.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Products"]))) : null
         }
         catch(err){
             console.error(err.message)
@@ -184,21 +186,24 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportCategories = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_purchase_price", orderBy = "desc") => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/categories?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/categories?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+            
+            const result = await couponService.getCouponReportCategories(couponId, from, to, limit, sortBy, orderBy);
             setCategories(result)
-            console.log(result)
-            // setChips(prev => [...prev, `Categories`])
-            result.categories.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Categories"]))) : null
+            if(result.products?.length > 0){
+                setChips(prev => Array.from(new Set([...prev, "Categories"])))
+            }
+            // result.categories.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Categories"]))) : null
         }
         catch(err){
             console.error(err.message)
@@ -207,21 +212,24 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportUsers = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "total_sales", orderBy = "desc") => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/users?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/users?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await couponService.getCouponReportUsers(couponId, from, to, limit, sortBy, orderBy);
             setUsers(result)
-            console.log(result)
-            // setChips(prev => [...prev, `Users`])
-            result.users.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Users"]))) : null
+            if(result.products?.length > 0){
+                setChips(prev => Array.from(new Set([...prev, "Users"])))
+            }
+            // result.users.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Users"]))) : null
         }
         catch(err){
             console.error(err.message)
@@ -230,21 +238,24 @@ function AdminCouponReport({couponData}) {
 
     const fetchCouponReportDates = async (coupon_id, from = getSqlToday(), to = getSqlNow(), limit = 10, sortBy = "times_used", orderBy = "desc") => {
         try{
-            const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/dates?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
-                headers: {
-                    Authorization : `Bearer ${token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/admin/coupons/${couponId}/report/dates?from=${from}&to=${to}&limit=${limit}&sortBy=${sortBy}&orderBy=${orderBy}`, {
+            //     headers: {
+            //         Authorization : `Bearer ${token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await couponService.getCouponReportDates(couponId, from, to, limit, sortBy, orderBy);
             setDates(result)
-            console.log(result)
-            // setChips(prev => [...prev, `Dates`])
-            result.dates.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Dates"]))) : null
+            if(result.products?.length > 0){
+                setChips(prev => Array.from(new Set([...prev, "Dates"])))
+            }
+            // result.dates.length > 0 ? setChips(prev => Array.from(new Set([...prev, "Dates"]))) : null
         }
         catch(err){
             console.error(err.message)
@@ -252,7 +263,7 @@ function AdminCouponReport({couponData}) {
     }
 
     useEffect(() => {
-        setChips([])
+        // setChips([])
         setChips(["Timerange: Today"])
         fetchCouponReportSummary(couponId)
         fetchCouponReportProducts(couponId)
@@ -815,7 +826,7 @@ function AdminCouponReport({couponData}) {
 
             <Box>
                 <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2}}>
-                    {chips && chips.length > 0 ?
+                    {chips?.length > 0 &&
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                             {chips.map((value, index) => {
                                 if (!value) return null;
@@ -829,7 +840,6 @@ function AdminCouponReport({couponData}) {
                                 )
                             })}
                         </Box>
-                    :null
                     }
                     <Box sx={{display: "flex", gap: 1}}>
                         <Button variant='contained' startIcon={<FilterAltIcon/>} onClick={() => setModalOpen(true)}>Filter</Button>
@@ -852,7 +862,7 @@ function AdminCouponReport({couponData}) {
                         </Typography>
                         <Typography>
                             <Typography component={'span'} sx={{fontWeight: 700}}>Code: </Typography>
-                            {couponData.code}
+                            {couponData.code?.toUpperCase()}
                         </Typography>
 
                         <Typography>
@@ -881,7 +891,7 @@ function AdminCouponReport({couponData}) {
                             <Typography component={'span'} sx={{fontWeight: 700}}>
                                 {`Validity: `}
                             </Typography> 
-                            {dayjs(couponData.start_time).format("DD MMM YYYY")} - {dayjs(couponData.end_time).format("DD MMM YYYY")}
+                            {dayjs(couponData.start_time).format("D MMM YYYY")} - {dayjs(couponData.end_time).format("D MMM YYYY")}
                         </Typography>
                     </Box>
                     {report && report.totalUsage > 0?
@@ -890,7 +900,7 @@ function AdminCouponReport({couponData}) {
                                 <Box sx={{py: 2, display: "flex", flexDirection: "column", gap: 1}}>
                                     <Divider flexItem></Divider>
                                     <Typography sx={{fontSize: 20, fontWeight: 500}}>Coupon Report
-                                        <Typography component={"span"}> ({dayjs(report.fromTime).format("DD MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("DD MMM YYYY, hh:mm A")} )</Typography>
+                                        <Typography component={"span"}> ({dayjs(report.fromTime).format("D MMM YYYY, hh:mm A")} - {dayjs(report.toTime).format("D MMM YYYY, hh:mm A")})</Typography>
                                     </Typography>
                                     <Divider flexItem></Divider>
                                 </Box>
