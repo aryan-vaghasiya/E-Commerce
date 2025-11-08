@@ -12,7 +12,6 @@ import Stack from '@mui/material/Stack'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
-import { fetchOrders } from '../redux/order/orderActions'
 import { fetchDetails } from '../redux/checkout/checkoutActions'
 import { useState } from 'react'
 import { getFullWishlist } from '../redux/wishlist/wishlistActions'
@@ -50,7 +49,7 @@ function Login() {
 
             dispatch(addUser(response.username, token, response.role));
             dispatch(fetchCart(token))
-            dispatch(fetchOrders(token))
+            // dispatch(fetchOrders(token))
             dispatch(fetchDetails(token))
             dispatch(getFullWishlist(token))
             navigate(fromPath ?? "/", { replace: true })

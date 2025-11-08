@@ -1,3 +1,4 @@
+import { userService } from "../../api/services/userService";
 import { addProductToWishlist, removeProductFromWishlist } from "../products/productActions";
 import { addToWishlistSearch, removeFromWishlistSearch } from "../search/searchActions";
 import { showSnack } from "../snackbar/snackbarActions";
@@ -34,24 +35,35 @@ export const addWishlistDb = (product) => {
             return 
         }
         const productId = product.id
-        const response = await fetch(`${API_URL}/wishlist/add`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({productId})
-        })
-        if(!response.ok){
-            const error = await response.json()
+
+        // const response = await fetch(`${API_URL}/wishlist/add`, {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //         Authorization: `Bearer ${token}`
+        //     },
+        //     body: JSON.stringify({productId})
+        // })
+        // if(!response.ok){
+        //     const error = await response.json()
+        //     console.error("Could not add to Wishlist:", error.error);
+        //     return false
+        // }
+
+        try {
+            const add = await userService.addToWishlist(productId)
+
+            dispatch(addProductToWishlist(product))
+            dispatch(addToWishlistSearch(product))
+            dispatch(showSnack({message: "Item added to Wishlist", severity: "success"}))
+        } catch (error) {
             console.error("Could not add to Wishlist:", error.error);
-            return false
         }
-        dispatch(addProductToWishlist(product))
-        dispatch(addToWishlistSearch(product))
-        // dispatch(addToWishlist(product))
-        dispatch(showSnack({message: "Item added to Wishlist", severity: "success"}))
-        return true
+        // dispatch(addProductToWishlist(product))
+        // dispatch(addToWishlistSearch(product))
+        // // dispatch(addToWishlist(product))
+        // dispatch(showSnack({message: "Item added to Wishlist", severity: "success"}))
+        // return true
     }
 }
 
@@ -64,24 +76,36 @@ export const removeWishlistDb = (product) => {
             return 
         }
         const productId = product.id
-        const response = await fetch(`${API_URL}/wishlist/remove`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({productId})
-        })
-        if(!response.ok){
-            const error = await response.json()
-            console.error("Could not remove from Wishlist:", error.error);
-            return false
+
+        // const response = await fetch(`${API_URL}/wishlist/remove`, {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //         Authorization: `Bearer ${token}`
+        //     },
+        //     body: JSON.stringify({productId})
+        // })
+        // if(!response.ok){
+        //     const error = await response.json()
+        //     console.error("Could not remove from Wishlist:", error.error);
+        //     return false
+        // }
+
+        try {
+            const remove = await userService.removeFromWishlist(productId)
+
+            dispatch(removeProductFromWishlist(product))
+            dispatch(removeFromWishlistSearch(product))
+            dispatch(showSnack({message: "Item removed from Wishlist", severity: "success"}))
+        } catch (error) {
+            console.error("Could not add to Wishlist:", error.error);
         }
-        dispatch(removeProductFromWishlist(product))
-        dispatch(removeFromWishlistSearch(product))
-        // dispatch(removeFromWishlist(product))
-        dispatch(showSnack({message: "Item removed from Wishlist", severity: "success"}))
-        return true
+
+        // dispatch(removeProductFromWishlist(product))
+        // dispatch(removeFromWishlistSearch(product))
+        // // dispatch(removeFromWishlist(product))
+        // dispatch(showSnack({message: "Item removed from Wishlist", severity: "success"}))
+        // return true
     }
 }
 
@@ -89,17 +113,19 @@ export const getFullWishlist = (token) => {
     return async (dispatch) => {
         // const token = getState().userReducer.token
         try {
-            const res = await fetch(`${API_URL}/wishlist/get-wishlist`, {
-                headers: {
-                Authorization: `Bearer ${token}`,
-                },
-            });
-            if(!res.ok){
-                const error = await res.json()
-                console.error("Could not fetch Wishlist:", error.error);
-                return false
-            }
-            const data = await res.json();
+            // const res = await fetch(`${API_URL}/wishlist/get-wishlist`, {
+            //     headers: {
+            //     Authorization: `Bearer ${token}`,
+            //     },
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     console.error("Could not fetch Wishlist:", error.error);
+            //     return false
+            // }
+            // const data = await res.json();
+
+            const data = await userService.getWishlist();
             dispatch({type: GET_FULL_WISHLIST, payload: data});
         }
         catch (err) {

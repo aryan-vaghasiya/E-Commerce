@@ -12,7 +12,6 @@ import CardContent from '@mui/material/CardContent';
 import HomeIcon from '@mui/icons-material/Home';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import EmailIcon from '@mui/icons-material/Email';
-import { updateOrderStatus } from '../redux/adminOrders/adminOrderActions';
 import { getImageUrl } from '../utils/imageUrl';
 import TableContainer from '@mui/material/TableContainer';
 import Table from '@mui/material/Table';
@@ -91,20 +90,26 @@ function AdminOrderPage() {
 
     const getNextStatus = (status) => {
         const index = allStatus.indexOf(status)
-        // if(index === allStatus.length-1){
-        //     return allStatus[1]
-        // }
+        if(index === allStatus.length-1){
+            return allStatus[1]
+        }
         return allStatus[index+1]
     }
 
-    const handleStatus = () => {
-        dispatch(updateOrderStatus(parseInt(orderId), getNextStatus(order.status)))
-        setOrder(prev => ({...prev, status: getNextStatus(order.status)}))
+    const updateOrderStatus = async(orderId, newStatus) => {
+        try {
+            const updateStatus = await orderService.updateOrderStatusAdmin(orderId, newStatus);
+            setOrder(prev => ({...prev, status: getNextStatus(order.status)}))
+        } catch (error) {
+            console.error(error.message);
+        }
     }
 
-    const handleCancel = async (formData) => {
-        // dispatch(updateOrderStatus(parseInt(orderId), "cancelled"))
+    // const handleStatus = () => {
+    //     updateOrderStatus(parseInt(orderId), getNextStatus(order.status))
+    // }
 
+    const handleCancel = async (formData) => {
         console.log(formData);
         try{
             // const response = await fetch(`${API_URL}/admin/order-cancel-admin`, {
@@ -205,7 +210,8 @@ function AdminOrderPage() {
                                 :
                                 null
                             }
-                            <Button variant='contained' onClick={handleStatus}>
+                            <Button variant='contained' onClick={() => updateOrderStatus(parseInt(orderId), getNextStatus(order.status))}>
+                                {/* Mark as {getNextStatus(order.status)} */}
                                 Mark as {getNextStatus(order.status)}
                             </Button>
                         </Box>

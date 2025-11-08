@@ -21,31 +21,31 @@ export const adminProductsFailed = (error) => {
     }
 }
 
-export const fetchAdminProducts = (page, limit) => {
-    return async(dispatch, getState) => {
-        dispatch(adminProductsRequest())
-        // console.log(page, limit);
+// export const fetchAdminProducts = (page, limit) => {
+//     return async(dispatch, getState) => {
+//         dispatch(adminProductsRequest())
+//         // console.log(page, limit);
         
-        const token = getState().userReducer.token
-        try{
-            const adminOrders = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
-                headers: {
-                Authorization: `Bearer ${token}`,
-                },
-            });
+//         const token = getState().userReducer.token
+//         try{
+//             const adminOrders = await fetch(`${API_URL}/admin/get-products?page=${page}&limit=${limit}`, {
+//                 headers: {
+//                 Authorization: `Bearer ${token}`,
+//                 },
+//             });
 
-            if(!adminOrders.ok){
-                const error = await adminOrders.json()
-                console.error("Could not fetch Products Data:", error.error);
-                return false
-            }
-            const data = await adminOrders.json();
-            console.log(data);
-            dispatch(adminProductsSuccess(data))
-        }
-        catch (err) {
-            dispatch(adminProductsFailed(err.message))
-            console.error("Products fetch failed:", err.message);
-        }
-    }
-}
+//             if(!adminOrders.ok){
+//                 const error = await adminOrders.json()
+//                 console.error("Could not fetch Products Data:", error.error);
+//                 return false
+//             }
+//             const data = await adminOrders.json();
+//             console.log(data);
+//             dispatch(adminProductsSuccess(data))
+//         }
+//         catch (err) {
+//             dispatch(adminProductsFailed(err.message))
+//             console.error("Products fetch failed:", err.message);
+//         }
+//     }
+// }

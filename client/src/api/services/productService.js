@@ -15,8 +15,22 @@ export const productService = {
         return response.data;
     },
 
+    getAllProducts: async(page, limit) => {
+        const response = await authApi.get(`/products`, {
+            params: { page, limit}
+        });
+        return response.data;
+    },
+
     getProductPageData: async(productId) => {
         const response = await authApi.get(`/products/${productId}`);
         return response.data;
     },
+
+    getSearchedProducts: async(params) => {
+        const response = await authApi.get(`/products/search?${params.toString()}`);
+        return response.data;
+    },
+
+    
 }

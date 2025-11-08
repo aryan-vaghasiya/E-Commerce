@@ -125,7 +125,7 @@ exports.checkoutForm = async (addLine1, addLine2, city, email, fName, lName, pNu
 }
 
 exports.formData = async (userId) => {
-    const formResult = await runQuery(`SELECT addLine1, addLine2, city, email, first_name, last_name, number, pincode, state FROM users WHERE id = ?`, [userId]);
+    const [formResult] = await runQuery(`SELECT addLine1, addLine2, city, email, first_name, last_name, number, pincode, state FROM users WHERE id = ?`, [userId]);
     if (formResult.length === 0){
         throw new Error("Can't find record")
     }

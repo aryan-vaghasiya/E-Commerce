@@ -1,3 +1,4 @@
+import { productService } from "../../api/services/productService";
 import { SET_SEARCH_QUERY, SET_SEARCH_PRODUCTS, SET_CURRENT_PAGE_SEARCH, SEARCH_PRODUCTS_REQUEST, ADD_TO_WISHLIST_SEARCH, REMOVE_FROM_WISHLIST_SEARCH } from "./searchTypes";
 const API_URL = import.meta.env.VITE_API_SERVER;
 
@@ -49,18 +50,19 @@ export const searchProducts = (filters) => {
         dispatch(searchRequest())
         setTimeout(async () => {
             try {
-                const res = await fetch(`${API_URL}/products/search?${params.toString()}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                if(!res.ok){
-                    const error = await res.json()
-                    console.error("Could not fetch Search Results:", error.error);
-                    return
-                }
-                const data = await res.json();
-                console.log(data);
+                // const res = await fetch(`${API_URL}/products/search?${params.toString()}`, {
+                //     headers: {
+                //         Authorization: `Bearer ${token}`,
+                //     },
+                // });
+                // if(!res.ok){
+                //     const error = await res.json()
+                //     console.error("Could not fetch Search Results:", error.error);
+                //     return
+                // }
+                // const data = await res.json();
+
+                const data = await productService.getSearchedProducts(params)
                 dispatch(setSearchedProducts(data));
             } 
             catch (err) {

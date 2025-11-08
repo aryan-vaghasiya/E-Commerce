@@ -28,6 +28,11 @@ export const orderService = {
         return response.data
     },
 
+    updateOrderStatusAdmin: async(id, status) => {
+        const response = await authApi.post(`/admin/order-status`, {id, status});
+        return response.data;
+    },
+
     cancelOrderAdmin: async(orderId, userId, reason) => {
         const response = await authApi.post(`/admin/order-cancel-admin`, {orderId, userId, reason});
         return response.data;

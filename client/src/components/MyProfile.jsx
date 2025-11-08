@@ -111,7 +111,7 @@ const ProfilePage = () => {
             // }
             // const result = await response.json()
 
-            const result = await userService.getUserDetails()
+            const result = await userService.getUserProfileDetails()
             setUserData(result)
         }
         catch(err){

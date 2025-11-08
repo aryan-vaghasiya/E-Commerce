@@ -21,68 +21,69 @@ export const adminOrdersFailed = (error) => {
     }
 }
 
-export const fetchAdminOrders = (page, limit) => {
-    return async(dispatch, getState) => {
-        dispatch(adminOrdersRequest())
-        // console.log(page, limit);
+// export const fetchAdminOrders = (page, limit) => {
+//     return async(dispatch, getState) => {
+//         dispatch(adminOrdersRequest())
+//         // console.log(page, limit);
         
-        const token = getState().userReducer.token
-        try{
-            const adminOrders = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${limit}`, {
-                headers: {
-                Authorization: `Bearer ${token}`,
-                },
-            });
+//         const token = getState().userReducer.token
+//         try{
+//             const adminOrders = await fetch(`${API_URL}/admin/get-orders?page=${page}&limit=${limit}`, {
+//                 headers: {
+//                 Authorization: `Bearer ${token}`,
+//                 },
+//             });
 
-            if(!adminOrders.ok){
-                const error = await adminOrders.json()
-                console.error("Could not fetch Orders Data:", error.error);
-                return false
-            }
-            const data = await adminOrders.json();
-            // console.log(data);
+//             if(!adminOrders.ok){
+//                 const error = await adminOrders.json()
+//                 console.error("Could not fetch Orders Data:", error.error);
+//                 return false
+//             }
+//             const data = await adminOrders.json();
+//             // console.log(data);
             
-            dispatch(adminOrdersSuccess(data))
-        }
-        catch (err) {
-            dispatch(adminOrdersFailed(err.message))
-            console.error("Orders fetch failed:", err.message);
-        }
-    }
-}
+//             dispatch(adminOrdersSuccess(data))
+//         }
+//         catch (err) {
+//             dispatch(adminOrdersFailed(err.message))
+//             console.error("Orders fetch failed:", err.message);
+//         }
+//     }
+// }
 
-// export const updateOrderStatus = (ids, status) => {
-export const updateOrderStatus = (id, status) => {
-    return async(dispatch, getState) => {
-        const token = getState().userReducer.token
-        // const idArray = Array.isArray(ids)
-        //     ? ids
-        //     : ids instanceof Set
-        //     ? Array.from(ids)
-        //     : [ids];
 
-        // console.log(idArray);
-        try{
-            const response = await fetch(`${API_URL}/admin/order-status`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    id,
-                    status
-                })
-            })
-            if(!response.ok){
-                const error = await adminOrders.json()
-                console.error("Could accept Orders:", error.error);
-                return
-            }
-        }
-        catch (err){
-            // dispatch(adminOrdersFailed(err.message))
-            console.error("Could not Accept Orders:", err.message);
-        }
-    }
-}
+// export const updateOrderStatus = (id, status) => {
+// // export const updateOrderStatus = (ids, status) => {
+//     return async(dispatch, getState) => {
+//         const token = getState().userReducer.token
+//         // const idArray = Array.isArray(ids)
+//         //     ? ids
+//         //     : ids instanceof Set
+//         //     ? Array.from(ids)
+//         //     : [ids];
+
+//         // console.log(idArray);
+//         try{
+//             const response = await fetch(`${API_URL}/admin/order-status`, {
+//                 method: "POST",
+//                 headers: {
+//                     Authorization: `Bearer ${token}`,
+//                     "Content-Type": "application/json"
+//                 },
+//                 body: JSON.stringify({
+//                     id,
+//                     status
+//                 })
+//             })
+//             if(!response.ok){
+//                 const error = await adminOrders.json()
+//                 console.error("Could accept Orders:", error.error);
+//                 return
+//             }
+//         }
+//         catch (err){
+//             // dispatch(adminOrdersFailed(err.message))
+//             console.error("Could not Accept Orders:", err.message);
+//         }
+//     }
+// }
