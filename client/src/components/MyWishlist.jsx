@@ -10,6 +10,7 @@ import WishlistItem from './WishlistItem'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
+import { userService } from '../api/services/userService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyWishlist() {
@@ -32,17 +33,18 @@ function MyWishlist() {
     const fetchMyWishlist = async () => {
         setLoading(true)
         try{
-            const response = await fetch(`${API_URL}/wishlist/get-wishlist`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            console.log(result)
+            // const response = await fetch(`${API_URL}/wishlist/get-wishlist`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getWishlist();
             if(result.items){
                 setNoOfItems(result.noOfItems)
                 setWishlist(result.items)

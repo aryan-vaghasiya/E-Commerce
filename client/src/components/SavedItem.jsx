@@ -11,6 +11,7 @@ import { getImageUrl } from '../utils/imageUrl'
 import IconButton from '@mui/material/IconButton'
 import { Tooltip, Chip, Divider } from '@mui/material'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import { userService } from '../api/services/userService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function SavedItem({ item }) {
@@ -22,22 +23,23 @@ function SavedItem({ item }) {
     }
 
     const handleRemoveFromSaved = async () => {
-        dispatch(removeFromSavedForLater(item))
         try{
-            const response = await fetch(`${API_URL}/wishlist/remove`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${userState.token}`
-                },
-                body: JSON.stringify({productId: item.id, name: "save_for_later"})
-            })
-            if(!response.ok){
-                const error = await response.json()
-                console.error("Could not remove from Wishlist:", error.error);
-                return false
-            }
-            return
+            // const response = await fetch(`${API_URL}/wishlist/remove`, {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //         Authorization: `Bearer ${userState.token}`
+            //     },
+            //     body: JSON.stringify({productId: item.id, name: "save_for_later"})
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     console.error("Could not remove from Wishlist:", error.error);
+            //     return false
+            // }
+
+            const remove = await userService.removeFromSaveForLater({ productId: item.id, name: "save_for_later" })
+            dispatch(removeFromSavedForLater(item))
         }
         catch(err){
             console.error(err.error);

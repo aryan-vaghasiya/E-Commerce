@@ -1,6 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router'
-import { addOrders } from '../redux/order/orderActions'
 import { emptyCart } from '../redux/cart/cartActions'
 import { useForm } from 'react-hook-form'
 import { addDetails } from '../redux/checkout/checkoutActions'
@@ -19,6 +18,7 @@ import { getImageUrl } from '../utils/imageUrl'
 import { useState } from 'react'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
+import { orderService } from '../api/services/orderService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function CheckOut() {
@@ -55,40 +55,45 @@ function CheckOut() {
     const handleCouponQuery = async () => {
         if(!couponQuery) return
 
-        const response = await fetch(`${API_URL}/orders/check-coupon`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${userState.token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({code: couponQuery})
-        })
+        // const response = await fetch(`${API_URL}/orders/check-coupon`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${userState.token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({code: couponQuery})
+        // })
 
-        if(!response.ok && couponQuery){
-            setIsCouponApplied(false)
-            setCouponQuery("")
+        // if(!response.ok && couponQuery){
+        //     setIsCouponApplied(false)
+        //     setCouponQuery("")
 
-            const error = await response.json()
+        //     const error = await response.json()
 
-            if(response.status === 501){
-                console.log(error.error);
-                dispatch(showSnack({message: error.error, severity: "warning"}))
-            }
-            else{
-                console.error(error.error);
-                dispatch(showSnack({message: "Server error! Please try again", severity: "error"}))
-            }
-            return
+        //     if(response.status === 501){
+        //         console.log(error.error);
+        //         dispatch(showSnack({message: error.error, severity: "warning"}))
+        //     }
+        //     else{
+        //         console.error(error.error);
+        //         dispatch(showSnack({message: "Server error! Please try again", severity: "error"}))
+        //     }
+        //     return
+        // }
+
+        // const couponRes = await response.json()
+
+        try {
+            const couponRes = await orderService.checkCoupon(couponQuery)
+
+            setCouponData(couponRes.couponData)
+            setNewCart(couponRes.newCart)
+            setIsCouponApplied(true)
+            dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
+        } catch (error) {
+            console.error(error);
+            dispatch(showSnack({message: error.message, severity: "error"}))
         }
-
-        const couponRes = await response.json()
-        console.log(couponRes);
-
-        setCouponData(couponRes.couponData)
-        setNewCart(couponRes.newCart)
-        setIsCouponApplied(true)
-        dispatch(showSnack({message: "Coupon Applied", severity: "success"}))
-        // console.log(couponRes)
     }
 
     const removeCoupon = () => {
@@ -101,27 +106,44 @@ function CheckOut() {
     const handleCheckout = async (data) => {
         // console.log(data)
 
-        const response = await fetch(`${API_URL}/checkout`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${userState.token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({username: userState.userName, ...data})
-        })
-        if (response.status === 200){
-            const added = await dispatch(addOrders(isCouponApplied ? newCart : cartReducer, isCouponApplied ? couponData : {}))
-            if(added.error){
-                navigate("/cart")
-                dispatch(showSnack({message: added.message, severity: "warning"}))
-                console.log("Order Failed");
-                return
-            }
-            dispatch(addDetails(getValues()))
+        // const response = await fetch(`${API_URL}/checkout`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${userState.token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({ ...data, username: userState.userName })
+        // })
+
+        const order = isCouponApplied ? newCart : cartReducer;
+        const coupon = isCouponApplied ? couponData : {};
+        try {
+            const checkoutDetails = await orderService.checkoutForm({ ...data, username: userState.userName })
+            const addOrder = await orderService.placeOrder({ order, coupon })
+
+            dispatch(addDetails(data))
             dispatch(emptyCart())
             dispatch(showSnack({message: "Order Confirmed!", severity: "success"}))
             navigate("/order-complete", { replace: true })
+        } catch (error) {
+            console.error(error)
+            dispatch(showSnack({message: error.message, severity: "error"}))
+            navigate("/cart")
         }
+
+        // if (response.status === 200){
+        //     const added = await dispatch(addOrders(isCouponApplied ? newCart : cartReducer, isCouponApplied ? couponData : {}))
+        //     if(added.error){
+        //         navigate("/cart")
+        //         dispatch(showSnack({message: added.message, severity: "warning"}))
+        //         console.log("Order Failed");
+        //         return
+        //     }
+        //     dispatch(addDetails(getValues()))
+        //     dispatch(emptyCart())
+        //     dispatch(showSnack({message: "Order Confirmed!", severity: "success"}))
+        //     navigate("/order-complete", { replace: true })
+        // }
     }
 
     return (

@@ -17,7 +17,6 @@ exports.addOrder = async(userId, order, coupon) => {
     const cartId = checkCart[0].id; 
 
     const [{totalOrders}] = await runQuery(`SELECT COUNT(id) as totalOrders FROM orders WHERE user_id = ?`, [userId])
-    console.log(totalOrders);
 
     let isReferral = false
     if(totalOrders === 0){
@@ -325,14 +324,14 @@ exports.getOrdersService = async (userId, queryParams) => {
 exports.checkCouponCode = async (userId, code) => {
     // console.log(code);
 
-    const [coupon] = await runQuery(`SELECT * FROM coupons WHERE code = ? AND is_active = ?`, [code, 1])
+    const [coupon] = await runQuery(`SELECT * FROM coupons WHERE code = ?`, [code])
 
     if(!coupon){
-        throw new Error("This coupon does not exist")
+        throw new Error("Invalid Coupon")
     }
 
-    if(coupon.coupons_left !== null && coupon.coupons_left <= 0){
-        throw new Error("This coupon has reached its usage limit and is no longer valid")
+    if((coupon.coupons_left !== null && coupon.coupons_left <= 0) || !coupon.is_active){
+        throw new Error("This coupon is no longer active")
     }
 
     if(coupon.for_new_users_only){

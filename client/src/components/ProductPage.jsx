@@ -23,6 +23,7 @@ import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { getImageUrl } from '../utils/imageUrl'
 import OfferTimeLeft from './OfferTimeLeft'
 import { Stack } from '@mui/material'
+import { productService } from '../api/services/productService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function ProductPage() {
@@ -36,19 +37,20 @@ function ProductPage() {
 
     const fetchSingleProduct = async () => {
         try {
-            const res = await fetch(`${API_URL}/products/${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                },
-            });
-            if(!res.ok){
-                const error = await res.json()
-                console.error("Could not fetch Product:", error.error);
-                return false
-            }
-            const data = await res.json();
-            console.log(data);
-            setProduct(data)
+            // const res = await fetch(`${API_URL}/products/${productId}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //     },
+            // });
+            // if(!res.ok){
+            //     const error = await res.json()
+            //     console.error("Could not fetch Product:", error.error);
+            //     return false
+            // }
+            // const data = await res.json();
+
+            const data = await productService.getProductPageData(productId);
+            setProduct(data);
         }
         catch (err) {
             console.error("Product fetch failed:", err.message);

@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import dayjs from "dayjs"
+import { userService } from "../api/services/userService";
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function UserReferrals() {
@@ -35,18 +36,19 @@ function UserReferrals() {
 
     const fetchReferralsSummary = async () => {
         try{
-            const response = await fetch(`${API_URL}/referral/get-summary`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/referral/get-summary`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            console.log(result)
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getReferralSummary();
             setSummary(result)
         }
         catch(err){
@@ -56,18 +58,19 @@ function UserReferrals() {
 
     const fetchAcceptedReferrals = async () => {
         try{
-            const response = await fetch(`${API_URL}/referral/get-referrals`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/referral/get-referrals`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            console.log(result)
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getAcceptedReferrals();
             setReferrals(result)
         }
         catch(err){
@@ -77,18 +80,19 @@ function UserReferrals() {
 
     const fetchReferralInvitations = async () => {
         try{
-            const response = await fetch(`${API_URL}/referral/get-invites`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/referral/get-invites`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            console.log(result)
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getSentReferrals();
             setInvites(result)
         }
         catch(err){
@@ -107,21 +111,23 @@ function UserReferrals() {
 
         setSending(true)
         try{
-            const response = await fetch(`${API_URL}/referral/send-invite`, {
-                method: "POST",
-                headers: {
-                    Authorization : `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email: formData.email
-                })
-            })
-            if (!response.ok) {
-                const error = await response.json()
-                return console.error(error.error);
-            }
-            const invitationId = await response.json()
+            // const response = await fetch(`${API_URL}/referral/send-invite`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         email: formData.email
+            //     })
+            // })
+            // if (!response.ok) {
+            //     const error = await response.json()
+            //     return console.error(error.error);
+            // }
+            // const invitationId = await response.json()
+
+            const invitationId = await userService.sendReferralInvite(formData.email);
             setInvites(prev => [{
                 id: invitationId, 
                 referee_email: formData.email, 

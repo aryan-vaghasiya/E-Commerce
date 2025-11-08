@@ -15,35 +15,35 @@ export const ordersFromDb = (orderItems) => {
     }
 }
 
-export const addOrders = (order, coupon) => {
-    // console.log(order);
-    // console.log(coupon);
+// export const addOrders = (order, coupon) => {
+//     // console.log(order);
+//     // console.log(coupon);
 
-    return async (dispatch, getState) => {
-        const token = getState().userReducer.token
-        try{
-            const response = await fetch(`${API_URL}/orders/add-order`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({order, coupon})
-            })
-            if(!response.ok){
-                const error = await response.json();
-                console.error("Order can't be placed:", error.error)
-                return {error: true, message: error.error}
-            }
-            dispatch({type: ADD_ORDERS, payload: order})
-            return {error: false}
-        }
-        catch(err){
-            console.error("Error placing order:", err.message);
-            return {error: true, message: "Server Error"}
-        }
-    }
-}
+//     return async (dispatch, getState) => {
+//         const token = getState().userReducer.token
+//         try{
+//             const response = await fetch(`${API_URL}/orders/add-order`, {
+//                 method: "POST",
+//                 headers: {
+//                     Authorization: `Bearer ${token}`,
+//                     "Content-Type": "application/json"
+//                 },
+//                 body: JSON.stringify({order, coupon})
+//             })
+//             if(!response.ok){
+//                 const error = await response.json();
+//                 console.error("Order can't be placed:", error.error)
+//                 return {error: true, message: error.error}
+//             }
+//             dispatch({type: ADD_ORDERS, payload: order})
+//             return {error: false}
+//         }
+//         catch(err){
+//             console.error("Error placing order:", err.message);
+//             return {error: true, message: "Server Error"}
+//         }
+//     }
+// }
 
 export const fetchOrders = (token, page = 1, limit = 10) => {
     return async (dispatch) => {

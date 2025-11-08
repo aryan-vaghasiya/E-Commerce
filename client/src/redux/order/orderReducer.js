@@ -1,4 +1,3 @@
-import { act } from "react";
 import { ADD_ORDERS, ORDERS_FROM_DB } from "./orderTypes";
 
 const orderInitState = []

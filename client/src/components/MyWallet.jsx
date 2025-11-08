@@ -3,7 +3,7 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import AddIcon from '@mui/icons-material/Add';
@@ -22,6 +22,7 @@ import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody'
 import dayjs from 'dayjs'
 import Paper from '@mui/material/Paper'
+import { userService } from '../api/services/userService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 const modalStyle = {
@@ -74,24 +75,36 @@ function MyWallet() {
         console.log(data);
 
         try{
-            const response = await fetch(`${API_URL}/wallet/add-funds`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization : `Bearer ${userState.token}`
-                },
-                body: JSON.stringify({amount: data.amount})
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
+            // const response = await fetch(`${API_URL}/wallet/add-funds`, {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //         Authorization : `Bearer ${userState.token}`
+            //     },
+            //     body: JSON.stringify({amount: data.amount})
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+
+            const addFunds = await userService.addFundsToWallet(data.amount);
             setWallet(prev => ({...prev, balance: prev.balance + parseFloat(data.amount)}))
 
-            const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "CREDIT", type: "DEPOSIT", description: "wallet_topup/self"}, ...transactions];
+            const newTransactions = [
+                {
+                    amount: parseFloat(data.amount),
+                    created_at: dayjs(),
+                    transaction: "CREDIT",
+                    type: "DEPOSIT",
+                    description: "wallet_topup/self"
+                },
+            ...transactions];
+
             if(newTransactions.length > 10){
                 newTransactions.pop();
             }
+            
             setTransactions(newTransactions);
         }
         catch(err){
@@ -106,19 +119,21 @@ function MyWallet() {
         console.log(data);
 
         try{
-            const response = await fetch(`${API_URL}/wallet/withdraw-funds`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization : `Bearer ${userState.token}`
-                },
-                body: JSON.stringify({amount: data.amount})
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            setWallet(prev => ({...prev, balance: prev.balance - parseFloat(data.amount)}))
+            // const response = await fetch(`${API_URL}/wallet/withdraw-funds`, {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //         Authorization : `Bearer ${userState.token}`
+            //     },
+            //     body: JSON.stringify({amount: data.amount})
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+
+            const withdrawFunds = await userService.withdrawFundsFromWallet(data.amount);
+            setWallet(prev => ({...prev, balance: prev.balance - parseFloat(data.amount)}));
 
             const newTransactions = [{amount: parseFloat(data.amount), created_at: dayjs(), transaction: "DEBIT", type: "WITHDRAWAL", description: "wallet_withdrawal/self"}, ...transactions];
             if(newTransactions.length > 10){
@@ -134,19 +149,20 @@ function MyWallet() {
 
     const fetchWallet = async () => {
         try{
-            const response = await fetch(`${API_URL}/wallet/get-wallet`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
+            // const response = await fetch(`${API_URL}/wallet/get-wallet`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
 
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getWalletData();
             setWallet(result)
-            console.log(result)
         }
         catch(err){
             console.error(err.message)
@@ -155,18 +171,19 @@ function MyWallet() {
 
     const fetchWalletTransactions = async () => {
         try{
-            const response = await fetch(`${API_URL}/wallet/get-transactions`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
+            // const response = await fetch(`${API_URL}/wallet/get-transactions`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getWalletTransactions();
             setTransactions(result)
-            console.log(result)
         }
         catch(err){
             console.error(err.message)

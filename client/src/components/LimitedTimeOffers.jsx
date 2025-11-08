@@ -25,6 +25,7 @@ import DialogActions from '@mui/material/DialogActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
+import { adminProductService } from '../api/services/adminProductService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 
@@ -67,18 +68,19 @@ function LimitedTimeOffers({productId, mrp}) {
 
     const getAllOffers = async () => {
         try {
-            const response = await fetch(`${API_URL}/admin/product/get-offers?productId=${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            })
-            if (!response.ok) {
-                const error = await response.json()
-                console.error(error.error);
-                return
-            }
-            const result = await response.json();
-            // console.log(result);
+            // const response = await fetch(`${API_URL}/admin/product/get-offers?productId=${productId}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     }
+            // })
+            // if (!response.ok) {
+            //     const error = await response.json()
+            //     console.error(error.error);
+            //     return
+            // }
+            // const result = await response.json();
+
+            const result = await adminProductService.getProductOffers(productId);
             setOffers(result)
             setEditable(0)
             // setEditable(result.length - 1)
@@ -98,31 +100,37 @@ function LimitedTimeOffers({productId, mrp}) {
     }
 
     const handleEndNow = async (offerId, index) => {
-        const response = await fetch(`${API_URL}/admin/product/offer/end`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({offer_id : offerId})
-        })
+        // const response = await fetch(`${API_URL}/admin/product/offer/end`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({ offer_id : offerId })
+        // })
 
-        if (response.ok) {
-            dispatch(showSnack({message: "Offer Ended", severity: "success"}))
+        // if (response.ok) {
+        //     dispatch(showSnack({message: "Offer Ended", severity: "success"}))
+        //     const newOffers = [...offers];
+        //     if (newOffers[index]?.id === offerId) {
+        //         newOffers[index] = {...newOffers[index], end_time: dayjs(), is_active: 0}
+        //     }
+        //     setOffers(newOffers);
+        //     setOpenEndDialog(false)
+        // }
+
+        try {
+            const endOffer = await adminProductService.endProductOffer(offerId);
+
+            dispatch(showSnack({message: "Offer Ended", severity: "success"}));
             const newOffers = [...offers];
             if (newOffers[index]?.id === offerId) {
                 newOffers[index] = {...newOffers[index], end_time: dayjs(), is_active: 0}
             }
             setOffers(newOffers);
             setOpenEndDialog(false)
-
-            // let newOffers = offers
-            // if(newOffers[index].id === offerId){
-            //     newOffers[index].end_time = dayjs()
-            //     newOffers[index].is_active = 0
-            // }
-            // console.log(newOffers);
-            // setOffers(newOffers)
+        } catch (error) {
+            console.error(error)
         }
     }
 
@@ -130,23 +138,33 @@ function LimitedTimeOffers({productId, mrp}) {
         if(dayjs(offers[index].start_time) < dayjs()){
             return console.log("Cannot delete, offer already started, End now instead")
         }
-        const response = await fetch(`${API_URL}/admin/product/offer/delete`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({offer_id : offerId})
-        })
 
-        if (response.ok) {
+        // const response = await fetch(`${API_URL}/admin/product/offer/delete`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({offer_id : offerId})
+        // })
+
+        // if (response.ok) {
+        //     dispatch(showSnack({message: "Offer Deleted", severity: "success"}))
+        //     const newOffers = offers.filter(item => item.id !== offerId)
+
+        //     setOffers(newOffers)
+        //     setOpenDeleteDialog(false)
+        // }
+
+        try {
+            const deleteOffer = await adminProductService.deleteProductOffer(offerId)
+
             dispatch(showSnack({message: "Offer Deleted", severity: "success"}))
             const newOffers = offers.filter(item => item.id !== offerId)
-            // const newOffers = offers
-            // newOffers.splice(index, 1)
-
             setOffers(newOffers)
             setOpenDeleteDialog(false)
+        } catch (error) {
+            console.error(error)
         }
     }
 
@@ -159,9 +177,8 @@ function LimitedTimeOffers({productId, mrp}) {
             const prevStartDate = dayjs(offers[index].start_time);
             const prevOfferEndDate = dayjs(offers[index + 1]?.end_time);
 
-            // console.log(prevOfferEndDate);
             if( editedStartTime < prevStartDate){
-                dispatch(showSnack({message: "Start time can't be extended backwards", severity: "warning"}))
+                dispatch(showSnack({message: "Start time can't be moved backwards", severity: "warning"}))
                 return console.log("cant go backwards")
             }
             if(prevOfferEndDate && editedStartTime < prevOfferEndDate){
@@ -188,44 +205,41 @@ function LimitedTimeOffers({productId, mrp}) {
                 dispatch(showSnack({message: "End time can't be before Start time", severity: "warning"}))
                 return console.log("End time cant be less than start time")
             }
+            if( editedEndTime < dayjs()){
+                dispatch(showSnack({message: "End time can't be before Current time, END NOW instead", severity: "warning"}))
+                return console.log("End time cant be less than current time")
+            }
         }
 
         const sDate = editedStartTime ? dayjs(editedStartTime).format(`YYYY-MM-DD HH:mm:ss`) : null
         const eDate = editedEndTime ? dayjs(editedEndTime).format(`YYYY-MM-DD HH:mm:ss`) : null
-        // console.log(id, sDate, eDate);
 
-        const response = await fetch(`${API_URL}/admin/product/offer/extend`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({offer_id: id, start_time : sDate, end_time : eDate })
-        })
+        // const response = await fetch(`${API_URL}/admin/product/offer/extend`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({offer_id: id, start_time : sDate, end_time : eDate })
+        // })
 
-        if (response.ok) {
-            // const newOffers = offers.map(item => {
-            //     if(item.id === id){
-            //         item.end_time = editedEndTime
-            //         editedStartTime ? item.start_time = editedStartTime : null
-            //         return item
-            //     }
-            //     else{
-            //         return item
-            //     }
-            // })
+        // if (response.ok) {
+        //     dispatch(showSnack({message: "Offer Extended", severity: "success"}))
+        //     let newOffers = [...offers];
+        //     newOffers[index] = {
+        //         ...newOffers[index],
+        //         end_time: editedEndTime,
+        //         start_time: editedStartTime || newOffers[index].start_time,
+        //         is_active: dayjs().isBetween(editedStartTime || newOffers[index].start_time, editedEndTime) ? 1 : 0
+        //     }
+        //     setOffers(newOffers);
+        //     setToggleEditing(false)
+        // }
 
-            // let newOffers = offers
-            // if(newOffers[index].id === id){
-            //     newOffers[index].end_time = editedEndTime
-            //     editedStartTime ? newOffers[index].start_time = editedStartTime : null
-            //     if(newOffers[index].start_time < dayjs() < newOffers[index].end_time){
-            //         newOffers[index].is_active = 1
-            //     }
-            // }
-            // setOffers(newOffers)
+        try {
+            const extend = await adminProductService.extendProductOffer(id, sDate, eDate);
 
-            dispatch(showSnack({message: "Offer Extended", severity: "success"}))
+            dispatch(showSnack({message: "Offer Edited", severity: "success"}))
             let newOffers = [...offers];
             newOffers[index] = {
                 ...newOffers[index],
@@ -234,13 +248,15 @@ function LimitedTimeOffers({productId, mrp}) {
                 is_active: dayjs().isBetween(editedStartTime || newOffers[index].start_time, editedEndTime) ? 1 : 0
             }
             setOffers(newOffers);
+        } catch (error) {
+            console.error(error)
+            dispatch(showSnack({message: error.message, severity: "error"}))
+        } finally {
             setToggleEditing(false)
         }
     }
 
     const addNewOffer = async (formData) => {
-        // console.log(formData);
-
         let sDate;
         let eDate;
 
@@ -253,36 +269,45 @@ function LimitedTimeOffers({productId, mrp}) {
                 return console.error("End time cannot be before Start time");
             }
             if (!dayjs().isBefore(formData.start_time, "minute") || !dayjs().isBefore(formData.end_time, "minute")) {
-                // console.log("i ran 1");
                 dispatch(showSnack({message: "Start time or End time is before current time", severity: "warning"}))
                 return console.error("Start time or End time is before current time");
             }
             if (dayjs(formData.start_time).isBefore(offers[0]?.end_time, "minute")) {
-                // console.log("i ran 2");
-                dispatch(showSnack({message: "Start time cant be before previous offers Tnd time", severity: "warning"}))
-                return console.error("Start time cant be before previous offers Tnd time");
+                dispatch(showSnack({message: "Start time cant be before previous offers End time", severity: "warning"}))
+                return console.error("Start time cant be before previous offers End time");
             }
             formData.start_time = sDate
             formData.end_time = eDate
         }
 
-        // console.log({ ...formData, product_id: productId, offer_discount: calcDiscount(base_mrp, offer_price) });
+        // const response = await fetch(`${API_URL}/admin/product/offer/add`, {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify({ ...formData, product_id: productId, offer_discount: calcDiscount(base_mrp, offer_price) })
+        // })
 
-        const response = await fetch(`${API_URL}/admin/product/offer/add`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ ...formData, product_id: productId, offer_discount: calcDiscount(base_mrp, offer_price) })
-        })
+        // if (response.ok) {
+        //     const newOffers = await response.json()
+        //     setOffers(newOffers)
+        //     setToggleForm(false)
+        // }
 
-        if (response.ok) {
-            const newOffers = await response.json()
-            // console.log(newOffers);
+        try {
+            const newOffers = await adminProductService.addProductOffer({
+                ...formData,
+                product_id: productId,
+                offer_discount: calcDiscount(base_mrp, offer_price)
+            });
+
             setOffers(newOffers)
+        } catch (error) {
+            console.error(error)
+            dispatch(showSnack({message: error.message, severity: "error"}))
+        } finally {
             setToggleForm(false)
-            // navigate("/admin/products", { replace: true })
         }
     }
 
@@ -291,7 +316,7 @@ function LimitedTimeOffers({productId, mrp}) {
             <Snackbar
                 open={snackbarState.show}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                autoHideDuration={2000}
+                autoHideDuration={5000}
                 onClose={() => dispatch(hideSnack())}
                 sx={{
                     '&.MuiSnackbar-root': { top: '70px' },
@@ -352,6 +377,7 @@ function LimitedTimeOffers({productId, mrp}) {
                     toggleForm ?
                     <Box sx={{mt: 2}}>
                     <Typography sx={{pb: 1}}>Add new offer: </Typography>
+                    <Typography sx={{pb: 1}}>Current MRP: ${base_mrp}</Typography>
                     <form onSubmit={handleSubmit(addNewOffer)} noValidate>
                         {/* <Stack spacing={3}> */}
                         <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}> 

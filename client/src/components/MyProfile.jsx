@@ -47,6 +47,7 @@ import {
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router';
+import { userService } from '../api/services/userService';
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 const ProfilePage = () => {
@@ -99,17 +100,18 @@ const ProfilePage = () => {
 
     const fetchUserDetails = async () => {
         try{
-            const response = await fetch(`${API_URL}/profile/user-details`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            // console.log(result)
+            // const response = await fetch(`${API_URL}/profile/user-details`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getUserDetails()
             setUserData(result)
         }
         catch(err){
@@ -119,17 +121,18 @@ const ProfilePage = () => {
 
     const fetchRecentOrders = async () => {
         try{
-            const response = await fetch(`${API_URL}/profile/recent-orders`, {
-                headers: {
-                    Authorization : `Bearer ${userState.token}`
-                }
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
-            const result = await response.json()
-            // console.log(result)
+            // const response = await fetch(`${API_URL}/profile/recent-orders`, {
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`
+            //     }
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+            // const result = await response.json()
+
+            const result = await userService.getRecentOrdersProfile();
             setRecentOrders(result)
         }
         catch(err){

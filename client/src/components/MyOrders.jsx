@@ -21,6 +21,8 @@ import { ExpandMore, ExpandLess, LocalShipping, CheckCircle, Cancel, Pending, Re
 import OrderItem from './OrderItem'
 import OrderFilterModal from './OrderFilterModal'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
+import { orderService } from '../api/services/orderService'
+import { cartService } from '../api/services/cartService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyOrders() {
@@ -54,17 +56,20 @@ function MyOrders() {
         setLoading(true)
         try {
             const params = new URLSearchParams({page, limit, ...filters})
-            const res = await fetch(`${API_URL}/orders/get-orders?${params.toString()}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if(!res.ok){
-                const error = await res.json();
-                console.error("Could not fetch Orders:", error.error)
-                return false
-            }
-            const orderData = await res.json();
+
+            // const res = await fetch(`${API_URL}/orders/get-orders?${params.toString()}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`,
+            //     },
+            // });
+            // if(!res.ok){
+            //     const error = await res.json();
+            //     console.error("Could not fetch Orders:", error.error)
+            //     return false
+            // }
+            // const orderData = await res.json();
+
+            const orderData = await orderService.getUserOrders(params)
             setAllOrders(orderData.orders)
             setCurrentPage(orderData.currentPage)
             setTotalPages(orderData.pages)
@@ -82,18 +87,20 @@ function MyOrders() {
     const handleRepeatOrder = async (products)=> {
         const newItems = products.map(item => ({productId: item.id, quantity: item.quantity}))
         try{
-            const response = await fetch(`${API_URL}/cart/bulk-add`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization : `Bearer ${userState.token}`
-                },
-                body: JSON.stringify({items: newItems})
-            })
-            if(!response.ok){
-                const error = await response.json()
-                return console.log(error)
-            }
+            // const response = await fetch(`${API_URL}/cart/bulk-add`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization : `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({items: newItems})
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     return console.log(error)
+            // }
+
+            const bulkAddToCart = await cartService.repeatOrder(newItems)
             navigate("/cart")
         }
         catch(err){
@@ -104,24 +111,28 @@ function MyOrders() {
     const handleCancel = async () => {
         if(!selectedOrderId) return
         try{
-            const response = await fetch(`${API_URL}/orders/cancel-user`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({orderId: selectedOrderId})
-            })
-            if(!response.ok){
-                const error = await response.json()
-                console.error("Could not cancel Order:", error.error);
-                return
-            }
+            // const response = await fetch(`${API_URL}/orders/cancel-user`, {
+            //     method: "POST",
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({orderId: selectedOrderId})
+            // })
+            // if(!response.ok){
+            //     const error = await response.json()
+            //     console.error("Could not cancel Order:", error.error);
+            //     return
+            // }
+
+            const cancelOrder = await orderService.cancelOrderUser(selectedOrderId)
             handleDialogClose()
             fetchOrders(userState.token, 1, 10)
         }
         catch (err){
             console.error("Could not cancel Order:", err.message);
+        } finally {
+            handleDialogClose()
         }
     }
 

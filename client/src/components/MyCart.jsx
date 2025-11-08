@@ -13,6 +13,7 @@ import { fetchCart } from '../redux/cart/cartActions'
 import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { Container, Paper, Divider } from '@mui/material'
+import { orderService } from '../api/services/orderService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 function MyCart() {
@@ -20,7 +21,7 @@ function MyCart() {
     const productState = useSelector(state => state.cartReducer.items)
     const noOfItems = useSelector(state => state.cartReducer.noOfItems)
     const cartValue = useSelector(state => state.cartReducer.cartValue)
-    const userState = useSelector(state => state.userReducer)
+    const token = useSelector(state => state.userReducer.token)
     const snackbarState = useSelector(state => state.snackbarReducer)
     const navigate = useNavigate()
     const dispatch = useDispatch()
@@ -28,29 +29,49 @@ function MyCart() {
     const shippingCharges = 4.99
 
     const checkOutNavigate = async () => {
-        if (userState.token) {
-            const res = await fetch(`${API_URL}/auth/check`, {
-                headers: {
-                    Authorization: `Bearer ${userState.token}`
+        if (token) {
+            // const res = await fetch(`${API_URL}/auth/check`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`
+            //     }
+            // });
+            // if(!res.ok){
+            //     navigate("/login", { state: "/checkout" })
+            //     return dispatch(showSnack({ message: "Session Expired, Login Again", severity: "warning" }))
+            // }
+
+            try {
+                await orderService.checkToken();
+            } catch (error) {
+                console.error(error);
+                dispatch(showSnack({ message: "Session Expired, Please Login", severity: "warning" }));
+                return navigate("/login", { state: "/checkout" });
+            }
+
+            // const compareWalletBalance = await fetch(`${API_URL}/wallet/compare-balance?amount=${cartValue}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${token}`
+            //     }
+            // })
+            // if(!compareWalletBalance.ok){
+            //     return dispatch(showSnack({ message: "Wallet balance mismatch/Server Error", severity: "error" }))
+            // }
+            // const canAfford = await compareWalletBalance.json()
+            // if(!canAfford){
+            //     return dispatch(showSnack({ message: "Insufficient wallet balance", severity: "warning" }))
+            // }
+            // navigate("/checkout")
+
+            try {
+                const canAfford = await orderService.checkWalletBalance(cartValue);
+                if(!canAfford){
+                    return dispatch(showSnack({ message: "Insufficient wallet balance", severity: "warning" }))
                 }
-            });
-            if(!res.ok){
-                navigate("/login", { state: "/checkout" })
-                return dispatch(showSnack({ message: "Session Expired, Login Again", severity: "warning" }))
+                navigate("/checkout")
+            } catch (error) {
+                console.error(error);
+                return dispatch(showSnack({ message: "Wallet balance mismatch", severity: "error" }))
             }
-            const compareWalletBalance = await fetch(`${API_URL}/wallet/compare-balance?amount=${cartValue}`, {
-                headers: {
-                    Authorization: `Bearer ${userState.token}`
-                }
-            })
-            if(!compareWalletBalance.ok){
-                return dispatch(showSnack({ message: "Wallet balance mismatch/Server Error", severity: "error" }))
-            }
-            const canAfford = await compareWalletBalance.json()
-            if(!canAfford){
-                return dispatch(showSnack({ message: "Insufficient wallet balance", severity: "warning" }))
-            }
-            navigate("/checkout")
         }
         else {
             navigate("/login", { state: "/checkout" })
@@ -59,8 +80,8 @@ function MyCart() {
     }
 
     useEffect(() => {
-        if(userState.userName){
-            dispatch(fetchCart(userState.token))
+        if(token){
+            dispatch(fetchCart(token))
         }
         const timeOut = setTimeout(() => {
             setLoading(false)

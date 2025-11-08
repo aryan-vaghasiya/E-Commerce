@@ -23,6 +23,7 @@ import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRound
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import { productService } from "../api/services/productService";
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 // ---- Helper: Smooth scrollable horizontal carousel with buttons ----
@@ -163,19 +164,20 @@ const HomePage = () => {
 
   const getTrendingProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`${API_URL}/products/trending?limit=${limit}`, {
-          headers: {
-            Authorization: `Bearer ${userState.token}`,
-            // 'ngrok-skip-browser-warning': 'true'
-          },
-        });
-        if(!res.ok){
-          const error = await res.json()
-          console.error("Could not fetch Trending Products:", error.error);
-          return
-        }
-      const data = await res.json();
-      // console.log(data);
+      // const res = await fetch(`${API_URL}/products/trending?limit=${limit}`, {
+      //     headers: {
+      //       Authorization: `Bearer ${userState.token}`,
+      //       // 'ngrok-skip-browser-warning': 'true'
+      //     },
+      //   });
+      //   if(!res.ok){
+      //     const error = await res.json()
+      //     console.error("Could not fetch Trending Products:", error.error);
+      //     return
+      //   }
+      // const data = await res.json();
+
+      const data = await productService.getTrending(limit);
       setTrendingProducts(data);
     } 
     catch (err) {
@@ -185,19 +187,20 @@ const HomePage = () => {
 
   const getRecentlyOrderedProducts = async (limit = 10) => {
     try {
-      const res = await fetch(`${API_URL}/products/recently-ordered?limit=${limit}`, {
-          headers: {
-            Authorization: `Bearer ${userState.token}`,
-            // 'ngrok-skip-browser-warning': 'true'
-          },
-        });
-        if(!res.ok){
-          const error = await res.json()
-          console.error("Could not fetch Recently Ordered Products:", error.error);
-          return
-        }
-      const data = await res.json();
-      // console.log(data);
+      // const res = await fetch(`${API_URL}/products/recently-ordered?limit=${limit}`, {
+      //     headers: {
+      //       Authorization: `Bearer ${userState.token}`,
+      //       // 'ngrok-skip-browser-warning': 'true'
+      //     },
+      //   });
+      //   if(!res.ok){
+      //     const error = await res.json()
+      //     console.error("Could not fetch Recently Ordered Products:", error.error);
+      //     return
+      //   }
+      // const data = await res.json();
+
+      const data = await productService.getRecentlyOrdered(limit);
       setRecentProducts(data);
     } 
     catch (err) {

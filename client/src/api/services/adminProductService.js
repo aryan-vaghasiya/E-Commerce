@@ -33,7 +33,6 @@ export const adminProductService = {
 
     uploadProductImages: async(images, productId) => {
         const response = await fileUploadApi.post(`/admin/upload/product/${productId}`, images);
-        console.log(response);
         return response.data;
     },
 
@@ -51,4 +50,31 @@ export const adminProductService = {
         const response = await authApi.post(`/admin/product/update-status`, { newStatus, productId });
         return response.data
     },
+
+    getProductOffers: async(productId) => {
+        const response = await authApi.get(`/admin/product/get-offers`, {
+            params: { productId }
+        });
+        return response.data;
+    },
+
+    endProductOffer: async(offer_id)=> {
+        const response = await authApi.post(`/admin/product/offer/end`, { offer_id });
+        return response.data;
+    },
+
+    deleteProductOffer: async(offer_id)=> {
+        const response = await authApi.post(`/admin/product/offer/delete`, { offer_id });
+        return response.data;
+    },
+
+    extendProductOffer: async(offer_id, start_time, end_time) => {
+        const response = await authApi.post(`/admin/product/offer/extend`, { offer_id, start_time, end_time });
+        return response.data;
+    },
+
+    addProductOffer: async(offerData) => {
+        const response = await authApi.post(`/admin/product/offer/add`, offerData);
+        return response.data;
+    }
 }

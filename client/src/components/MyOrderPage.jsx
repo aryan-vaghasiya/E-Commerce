@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer'
 import OrderInvoice from './OrderInvoice'
 import InvoicePreview from './InvoicePreview'
+import { orderService } from '../api/services/orderService'
 const API_URL = import.meta.env.VITE_API_SERVER;
 
 const MyOrderPage = () => {
@@ -48,17 +49,18 @@ const MyOrderPage = () => {
     const fetchOrder = async () => {
         // setLoading(true)
         try {
-            const res = await fetch(`${API_URL}/orders/${orderId}`, {
-                headers: {
-                    Authorization: `Bearer ${userState.token}`,
-                },
-            });
-            if(!res.ok){
-                const error = await res.json();
-                return console.error("Could not fetch Orders:", error.error)
-            }
-            const order = await res.json();
-            console.log(order);
+            // const res = await fetch(`${API_URL}/orders/${orderId}`, {
+            //     headers: {
+            //         Authorization: `Bearer ${userState.token}`,
+            //     },
+            // });
+            // if(!res.ok){
+            //     const error = await res.json();
+            //     return console.error("Could not fetch Orders:", error.error)
+            // }
+            // const order = await res.json();
+
+            const order = await orderService.getUserOrderPage(orderId)
             setOrderData(order)
         }
         catch (err) {
