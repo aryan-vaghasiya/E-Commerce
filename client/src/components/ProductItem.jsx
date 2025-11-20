@@ -160,14 +160,14 @@ function ProductItem({ product, loading = true }) {
                                 color="text.secondary" 
                                 sx={{ ml: 0.5 }}
                             >
-                                ({product.rating.toFixed(1)})
+                                {product.rating?.toFixed(1)}
                             </Typography>
                         </Box>
                     }
                     
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                         <Typography variant="h5" color="text.primary">
-                            ${product.price.toFixed(2)}
+                            ${product.price?.toFixed(2)}
                         </Typography>
                         {discountPercent > 0 &&
                             <Typography 
@@ -175,7 +175,7 @@ function ProductItem({ product, loading = true }) {
                                 color="text.secondary" 
                                 sx={{ textDecoration: 'line-through' }}
                             >
-                                ${product.mrp.toFixed(2)}
+                                ${product.mrp?.toFixed(2)}
                             </Typography>
                         }
                     </Box>

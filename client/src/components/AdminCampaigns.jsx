@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Box,
     Button,
@@ -32,7 +32,7 @@ import { templateService } from "../api/services/templateService";
 export default function AdminCampaigns() {
     const navigate = useNavigate()
 
-    const { register, control, handleSubmit, reset, formState: { errors }} = useForm({
+    const { register, control, handleSubmit, reset, setValue, formState: { errors }} = useForm({
         defaultValues: {
             name: "",
             template_name: "",
@@ -53,7 +53,7 @@ export default function AdminCampaigns() {
         pageSize: 5,
     });
 
-    const fetchCampaigns = async(page = 1, limit = 5) => {
+    const fetchCampaigns = useCallback(async(page = 1, limit = 5) => {
         setLoading(true)
         try {
             const data = await campaignService.getCampaignsList(page, limit)
@@ -66,26 +66,22 @@ export default function AdminCampaigns() {
         finally{
             setLoading(false)
         }
-    }
+    }, [])
 
     const fetchAllTemplates = async(active = "any") => {
         try {
             const data = await templateService.getTemplatesList(active)
-
-            const fileNamesArr = []
-            for(let item of data.files){
-                fileNamesArr.push(item.name)
-                if(item.name === active){
-                    setActiveFileName(item.name)
-                    setActiveFileContent(item.content)
-                }
-            }
+            
+            const fileNamesArr = data.files.map(item => item.name)
             setAllFileNames(fileNamesArr)
 
-            if(active === "any"){
-                setActiveFileName(data.files[0].name);
-                setActiveFileContent(data.files[0].content)
-            }
+            const activeFile = active === "any" 
+                ? data.files[0] 
+                : data.files.find(item => item.name === active) || data.files[0]
+            
+            setActiveFileName(activeFile.name)
+            setActiveFileContent(activeFile.content)
+            setValue("template_name", activeFile.name)
         }
         catch (err) {
             console.error("Template fetch failed:", err.message);
@@ -94,7 +90,7 @@ export default function AdminCampaigns() {
 
     useEffect(() => {
         fetchCampaigns(paginationModel.page + 1, paginationModel.pageSize);
-    }, [paginationModel]);
+    }, [paginationModel, fetchCampaigns]);
 
     const handleAddCampaign = async (formData) => {
         const schedule_time = dayjs(formData.schedule_time).startOf('minute').format(`YYYY-MM-DD HH:mm:ss`)
@@ -161,9 +157,17 @@ export default function AdminCampaigns() {
             </Box>
             <Divider sx={{mt: 1, mb: 2}}/>
 
-            {/* Dialog for new campaign */}
-            <Dialog open={open} onClose={() => {setOpen(false); reset();}} fullWidth slotProps={{paper: {elevation: 5, sx: {minWidth: "80%", minHeight: "80%"}}}}>
-                
+            <Dialog 
+                open={open}
+                onClose={() => {setOpen(false); reset();}}
+                fullWidth
+                slotProps={{
+                    paper: {
+                        elevation: 5,
+                        sx: {minWidth: "80%", minHeight: "80%"}
+                    }
+                }}
+            >
                 <Box sx={{display: "flex", width: "100%", flexGrow: 1, minWidth: "500px"}}>
                     <Box component="form" onSubmit={handleSubmit(handleAddCampaign)} sx={{width: "50%", display: "flex", flexDirection: "column", justifyContent: "space-between"}}>
                         <DialogContent sx={{pt: 2}}>
@@ -192,13 +196,12 @@ export default function AdminCampaigns() {
                                         render={({field}) => (
                                             <Select
                                                 {...field}
-                                                // defaultValue={activeFileName}
                                                 labelId="template_name"
                                                 label="Template Name"
-                                                // value={field.value ?? ""}
-                                                value={activeFileName ?? ""}
+                                                // value={activeFileName ?? ""}
+                                                value={field.value || ""}
                                                 onChange={(e) => {
-                                                    field.onChange(e)
+                                                    field.onChange(e.target.value)
                                                     fetchAllTemplates(e.target.value)
                                                 }}
                                             >
@@ -238,7 +241,8 @@ export default function AdminCampaigns() {
                                         name="schedule_time"
                                         rules={{ 
                                             required: "Schedule Time is required", 
-                                            validate: (value) => dayjs(value).isAfter(dayjs()) || "Schedule must be in the future" }}
+                                            validate: (value) => dayjs(value).isAfter(dayjs()) || "Schedule must be in the future" 
+                                        }}
                                         render={({ field, fieldState}) => (
                                             <DateTimePicker
                                                 // disablePast
@@ -261,7 +265,7 @@ export default function AdminCampaigns() {
                             </Stack>
                         </DialogContent>
                         <DialogActions sx={{pb: 2, pt: 0, px: 3}}>
-                            <Button color="error" onClick={() => setOpen(false)}>Cancel</Button>
+                            <Button color="error" onClick={() => {setOpen(false); reset();}}>Cancel</Button>
                             <Button type="submit" variant="contained">
                                 Save
                             </Button>

@@ -19,7 +19,8 @@ const { campaignCronJob, tenMinuteCronJob } = require("./utils/cronJobs")
 
 dotenv.config();
 const app = express();
-const port = process.env.EXPRESS_PORT;
+// const port = process.env.EXPRESS_PORT;
+const port = process.env.PORT || process.env.EXPRESS_PORT || 3000;
 
 app.use(cors());
 

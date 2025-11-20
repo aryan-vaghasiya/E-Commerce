@@ -99,15 +99,12 @@ exports.indexBulkProducts = async (client, products, indexName = 'products') => 
 }
 
 exports.searchProductsElastic = async (filters = {}) => {
-
     const {query: searchTerm, limit, offset} = filters
-
     const mainFilterClauses = [{
         term: {
             status: "active"
         }
     }];
-    // const mainFilterClauses = [];
     const postFilterClauses = [];
     const sortClause = [];
 
@@ -186,7 +183,6 @@ exports.searchProductsElastic = async (filters = {}) => {
     }
 
     const aggFilterClauses = [];
-    // if (priceFilter) aggFilterClauses.push(priceFilter);
     if (brandFilter) aggFilterClauses.push(brandFilter);
 
     const response = await client.search({
@@ -202,7 +198,6 @@ exports.searchProductsElastic = async (filters = {}) => {
                                 query: searchTerm,
                                 fields: ["title^5", "brand^3", "category^2", "description^1"],
                                 type: "best_fields",
-                                // "fuzziness": "AUTO",
                                 "fuzziness": 1,
                             }
                         }
@@ -233,8 +228,10 @@ exports.searchProductsElastic = async (filters = {}) => {
         }
     });
 
-    const actualMin = Math.floor(response.aggregations.price_stats.min || 0);
-    const actualMax = Math.ceil(response.aggregations.price_stats.max || 1000);
+    const body = response.body || response
+
+    const actualMin = Math.floor(body.aggregations.price_stats.min || 0);
+    const actualMax = Math.ceil(body.aggregations.price_stats.max || 1000);
     const range = actualMax - actualMin;
 
     let displayMin = actualMin;
@@ -255,17 +252,10 @@ exports.searchProductsElastic = async (filters = {}) => {
     }
 
     return {
-        products: response.hits.hits,
-        total: response.hits.total.value,
-        // brands: response.aggregations.filtered_brands.brands.buckets || [],
-        brands: response.aggregations.brands.buckets || [],
+        products: body.hits.hits,
+        total: body.hits.total.value,
+        brands: body.aggregations.brands.buckets || [],
         price_stats: {
-            // min: Math.floor(response.aggregations.filtered_price_stats.price_stats.min || 0),
-            // max: Math.ceil(response.aggregations.filtered_price_stats.price_stats.max || 1000)
-
-            // min: Math.floor(response.aggregations.price_stats.min || 0),
-            // max: Math.ceil(response.aggregations.price_stats.max || 1000)
-
             min: displayMin,
             max: displayMax,
             actualMax

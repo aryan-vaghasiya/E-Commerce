@@ -400,7 +400,7 @@ const HomePage = () => {
         {/* CAROUSELS */}
         {trendingProducts.length > 0 && (
           <ProductCarousel
-            title="🔥 Trending Now"
+            title="🔥 Trending Products"
             subtitle="Most loved by shoppers this week"
             products={trendingProducts}
           />

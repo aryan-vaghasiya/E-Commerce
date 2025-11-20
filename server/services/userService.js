@@ -5,9 +5,6 @@ const {sendMail} = require("../mailer/sendMail")
 const crypto = require("crypto");
 
 exports.loginUser = async(username, password) => {
-    console.log(username);
-    console.log(password);
-    
     const result = await runQuery("SELECT * FROM users WHERE username = ?", [username])
     if (result.length === 0) {
         throw new Error ("User not found")

@@ -25,7 +25,6 @@ import Snackbar from '@mui/material/Snackbar'
 import Alert from '@mui/material/Alert'
 import { hideSnack, showSnack } from '../redux/snackbar/snackbarActions'
 import { adminProductService } from '../api/services/adminProductService'
-const API_URL = import.meta.env.VITE_API_SERVER;
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -40,15 +39,23 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 function AdminAddProduct() {
-    const token = useSelector(state => state.userReducer.token)
-    const snackbarState = useSelector(state => state.snackbarReducer)
-    const { register, handleSubmit, control, trigger, watch, setValue, formState: { errors } } = useForm({})
-    const [thumbnailPreview, setThumbnailPreview] = useState(null)
+    const snackbarState = useSelector(state => state.snackbarReducer);
+    const { register, handleSubmit, control, trigger, watch, setValue, formState: { errors } } = useForm({
+        defaultValues: INITIAL_FORM_VALUES
+    });
+    const [thumbnailPreview, setThumbnailPreview] = useState(null);
     const [imagesPreview, setImagesPreview] = useState([])
     const navigate = useNavigate()
     const [inputMrp, inputPrice] = watch(["mrp", "price"])
     const [categories, setCategories] = useState([])
     const dispatch = useDispatch()
+
+    const INITIAL_FORM_VALUES = {
+        name: "",
+        template_name: "",
+        subject: "",
+        schedule_time: dayjs()
+    };
 
     const getCategories = async () => {
         try{
@@ -77,7 +84,6 @@ function AdminAddProduct() {
     }, [])
 
     const submitProduct = async (data) => {
-        // console.log(data);
         if(!thumbnailPreview){
             dispatch(showSnack({message: "Thumbnail is required", severity: "warning"}))
             console.error("Thumbnail is required");
@@ -90,53 +96,21 @@ function AdminAddProduct() {
         }
 
         try{
-            // const res = await fetch(`${API_URL}/admin/product/add`, {
-            //     method: "POST",
-            //     headers: {
-            //         Authorization: `Bearer ${token}`,
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify(data)
-            // })
-            // let productId;
-            // if(res.ok){
-            //     productId = await res.json()
-            // }
-            // else{
-            //     return console.error("Could not add Details")
-            // }
             const { productId } = await adminProductService.addProduct(data)
 
             const formDataThumb = new FormData()
             const thumbnailFile = thumbnailPreview.file
             formDataThumb.append('thumbnail', thumbnailFile)
 
-            // const thumbUpload = await fetch(`${API_URL}/admin/upload/product-thumbnail/${productId}`, {
-            //     method: "POST",
-            //     headers: {
-            //         Authorization: `Bearer ${token}`,
-            //         // "Content-Type": "multipart/form-data"
-            //     },
-            //     body: formDataThumb
-            // })
             const uploadThumbnail = await adminProductService.uploadProductThumbnail(formDataThumb, productId);
 
             const formDataImages = new FormData()
             const imagesFiles = imagesPreview.map(item => item.file)
-
             for (let i = 0; i < imagesFiles.length; i++) {
                 formDataImages.append("images", imagesFiles[i]);
             }
-            // const imagesUpload = await fetch(`${API_URL}/admin/upload/product/${productId}`, {
-            //     method: "POST",
-            //     headers: {
-            //         Authorization: `Bearer ${token}`,
-            //         // "Content-Type": "multipart/form-data"
-            //     },
-            //     body: formDataImages
-            // })
-            const uploadImages = await adminProductService.uploadProductImages(formDataImages, productId);
 
+            const uploadImages = await adminProductService.uploadProductImages(formDataImages, productId);
             navigate("/admin/products")
         }
         catch(err){

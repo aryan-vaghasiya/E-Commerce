@@ -107,7 +107,7 @@ function AdminNavBar() {
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
                     <Box sx={{width: "7%", marginRight: 3, paddingTop: 0}}>
-                        <NavLink to={"/dashboard"}>
+                        <NavLink to={"/admin/dashboard"}>
                             {/* <img src={flipkartLogo} alt="logo"/> */}
                             <img src={cartifyLogo}  alt="logo"/>
                         </NavLink>
