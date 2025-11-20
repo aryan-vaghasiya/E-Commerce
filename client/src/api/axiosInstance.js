@@ -2,7 +2,7 @@ import axios from 'axios';
 import { store } from "../redux/store"
 
 const BASE_URL = import.meta.env.VITE_API_SERVER;
-const TIMEOUT = 10000;
+const TIMEOUT = 100000;
 
 // ============================================
 // 1. Public API Instance (No Auth Required)
@@ -74,7 +74,7 @@ authApi.interceptors.response.use(
 // ============================================
 export const fileUploadApi = axios.create({
     baseURL: BASE_URL,
-    timeout: 30000,
+    timeout: 300000,
     headers: {},
 });
 
