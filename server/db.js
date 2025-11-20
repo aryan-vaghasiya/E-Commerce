@@ -42,7 +42,7 @@ const dbConfig = {
 
 if (process.env.DB_HOST !== 'localhost') {
     dbConfig.ssl = {
-        rejectUnauthorized: true
+        rejectUnauthorized: false
     };
 }
 
