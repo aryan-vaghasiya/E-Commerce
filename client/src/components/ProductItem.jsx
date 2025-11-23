@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router';
 import {
@@ -42,6 +42,7 @@ const selectUserName = (state) => state.userReducer.userName;
 function ProductItem({ product, loading = true }) {
     const dispatch = useDispatch();
     const userName = useSelector(selectUserName);
+    const [wishlisted, setWishlisted] = useState(product?.wishlisted)
 
     const handleWishlist = useCallback(() => {
         if (!userName) {
@@ -52,11 +53,13 @@ function ProductItem({ product, loading = true }) {
             return;
         }
         
-        if (product.wishlisted) {
+        // if (product.wishlisted) {
+        if (wishlisted) {
             dispatch(removeWishlistDb(product));
         } else {
             dispatch(addWishlistDb(product));
         }
+        setWishlisted(prev => !prev)
     }, [dispatch, product, userName]);
 
     if (loading) {
@@ -211,15 +214,15 @@ function ProductItem({ product, loading = true }) {
                 >
                     {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
-                <Tooltip title={product.wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}>
+                <Tooltip title={wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}>
                     <Button 
                         variant='outlined' 
                         onClick={handleWishlist} 
                         sx={{ minWidth: '40px', p: '7px' }} 
-                        color={product.wishlisted ? "error" : "primary"}
-                        aria-label={product.wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                        color={wishlisted ? "error" : "primary"}
+                        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
                     >
-                        {product.wishlisted ? <Favorite /> : <FavoriteBorder />}
+                        {wishlisted ? <Favorite /> : <FavoriteBorder />}
                     </Button>
                 </Tooltip>
             </CardActions>

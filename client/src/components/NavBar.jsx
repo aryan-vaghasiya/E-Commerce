@@ -121,7 +121,7 @@ import { useForm } from "react-hook-form"
             open={mobileDrawerOpen}
             onClose={toggleMobileDrawer(false)}
             sx={{
-                display: { xs: 'block', md: 'none' },
+                display: { xs: 'block', sm: 'none' },
                 '& .MuiDrawer-paper': {
                     maxWidth: "60%",
                     bgcolor: 'background.paper',
@@ -164,7 +164,7 @@ import { useForm } from "react-hook-form"
                 ))}
             </List> */}
 
-            <Box sx={{ p: 2, mt: 'auto' }}>
+            <Box sx={{ p: 2, mb: 'auto' }}>
                 <form 
                     onSubmit={handleSubmit((data) => {
                         handleSearchSubmit(data);
@@ -308,7 +308,7 @@ function NavBar() {
                             aria-label="open drawer"
                             edge="start"
                             onClick={toggleMobileDrawer(true)}
-                            sx={{ mr: 1, my: "auto", display: { xs: 'block', md: 'none' }, pt: 0, }}
+                            sx={{ mr: 1, my: "auto", display: { xs: 'block', sm: 'none' }, pt: 0, }}
                         >
                             <MenuIcon sx={{fontSize: 30}}/>
                         </IconButton>
