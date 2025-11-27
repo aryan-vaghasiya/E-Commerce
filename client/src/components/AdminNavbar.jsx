@@ -126,13 +126,13 @@ function AdminNavBar() {
                             </Typography>
                         )}
                     </NavLink>
-                    <NavLink to={"/admin/users"}>
+                    {/* <NavLink to={"/admin/users"}>
                         {({isActive}) => (
                             <Typography sx={getNavClass(isActive)}>
                             Customers
                             </Typography>
                         )}
-                    </NavLink>
+                    </NavLink> */}
                     <NavLink to={"/admin/sales"}>
                         {({isActive}) => (
                             <Typography sx={getNavClass(isActive)}>
