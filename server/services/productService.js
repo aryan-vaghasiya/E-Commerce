@@ -113,124 +113,6 @@ exports.getSearchedProducts = async (queryParams, userId) => {
     return productsRes
 }
 
-// KEEP THIS COMMENTED SERVICE
-
-// exports.getSearchedProducts = async (queryParams, userId) => {
-//     const {
-//         query,
-//         page,
-//         limit,
-//         offset,
-//         priceRange,
-//         inStock,
-//         rating,
-//         sortBy // Added for flexible sorting
-//     } = queryParams;
-
-//     if (!query || query.trim().length < 1) {
-//         return { products: [], totalCount: 0, pages: 0, currentPage: 1 };
-//     }
-
-//     const booleanQuery = query
-//         .split(/\s+/)
-//         .map(word => `+${word}*`)
-//         .join(" ");
-
-//     // const params = [booleanQuery, userId, booleanQuery];
-//     const params = [query, userId, query];
-    
-//     // 2. Dynamically build the WHERE clause for the OUTER query
-//     let whereClause = '';
-
-//     if (priceRange) {
-//         const [from, to] = priceRange.split(",");
-//         whereClause += ` AND price >= ? AND (? = '' OR price <= ?) `;
-//         params.push(from, to, to);
-//     }
-
-//     if (inStock === 'true') {
-//         whereClause += ` AND stock > 0`;
-//     }
-
-//     if (rating) {
-//         whereClause += ` AND rating >= ?`;
-//         params.push(rating);
-//     }
-
-//     // 3. Dynamically build the ORDER BY clause
-//     let orderByClause = 'ORDER BY relevance_score DESC'; // Default sort
-//     switch (sortBy) {
-//         case 'price_asc':
-//             orderByClause = 'ORDER BY price ASC';
-//             break;
-//         case 'price_desc':
-//             orderByClause = 'ORDER BY price DESC';
-//             break;
-//         case 'rating':
-//             orderByClause = 'ORDER BY rating DESC';
-//             break;
-//     }
-
-//     // 4. Construct the final query string
-//     const finalQuery = `
-//         SELECT
-//             *,
-//             COUNT(*) OVER() AS total_filtered
-//         FROM (
-//             SELECT 
-//                 p.id, p.title, p.description, p.rating, p.brand, p.thumbnail, p.status,
-//                 c.category, pp.mrp, i.stock,
-                
-//                 MATCH(p.title, p.description) AGAINST(? IN NATURAL LANGUAGE MODE) AS relevance_score,
-
-//                 CASE 
-//                     WHEN pd.offer_price IS NOT NULL THEN pd.offer_price
-//                     ELSE pp.price
-//                 END AS price,
-                
-//                 CASE 
-//                     WHEN wi.product_id IS NOT NULL THEN TRUE 
-//                     ELSE FALSE 
-//                 END AS wishlisted
-//             FROM 
-//                 products p
-//                 JOIN product_inventory i ON p.id = i.product_id
-//                 JOIN categories c ON c.id = p.category_id
-//                 JOIN product_pricing pp ON p.id = pp.product_id AND NOW() BETWEEN pp.start_time AND pp.end_time
-//                 LEFT JOIN product_discounts pd ON p.id = pd.product_id AND pd.is_active = 1 AND NOW() BETWEEN IFNULL(pd.start_time, NOW()) AND IFNULL(pd.end_time, NOW())
-//                 LEFT JOIN wishlist_items wi ON p.id = wi.product_id AND wi.wishlist_id = (SELECT id FROM wishlists WHERE user_id = ? AND name = 'my_wishlist') 
-//             WHERE
-//                 p.status = 'active'
-//                 AND MATCH(p.title, p.description) AGAINST(? IN NATURAL LANGUAGE MODE)
-//         ) AS FilterableProducts
-//         WHERE 1=1 ${whereClause}
-//         ${orderByClause}
-//         LIMIT ? OFFSET ?
-//     `;
-
-//     // Add pagination params at the end
-//     params.push(limit, offset);
-
-//     const results = await runQuery(finalQuery, params);
-
-//     // The rest of your processing logic remains the same
-//     if (results.length === 0) {
-//         return { products: [], totalCount: 0, pages: 0, currentPage: 1 };
-//     }
-
-//     const total = results[0].total_filtered;
-
-//     const products = results.map(({ total_filtered, ...productData }) => productData);
-
-//     return {
-//         products: products,
-//         currentPage: page,
-//         pages: Math.ceil(total / limit),
-//         totalCount: total
-//     };
-// };
-
-
 exports.getTrendingProducts = async (limit, userId) => {
     const threeMonthsAgo = dayjs().startOf('day').subtract(3, 'month').format('YYYY-MM-DD HH:mm:ss')
 
@@ -248,7 +130,7 @@ exports.getTrendingProducts = async (limit, userId) => {
     `, [threeMonthsAgo, limit])
 
     let finalProducts = products
-    if (finalProducts.length === 0) {
+    if (finalProducts.length < limit) {
         finalProducts = await runQuery(`
             SELECT 
                 oi.product_id,
